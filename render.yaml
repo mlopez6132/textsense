@@ -3,9 +3,11 @@ services:
     name: textsense
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt && python -m spacy download en_core_web_sm
-    startCommand: gunicorn wsgi:app --workers 2 --threads 2 --timeout 120 --preload --bind 0.0.0.0:$PORT
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn relay_fastapi:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: TOKENIZERS_PARALLELISM
         value: "true"
+      - key: HF_INFERENCE_URL
+        sync: false
 

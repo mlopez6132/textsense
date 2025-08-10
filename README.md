@@ -76,7 +76,7 @@ The application features a modern, gradient-based design with:
 ## Technical Details
 
 ### Architecture
-- **Backend**: Flask web framework
+- **Backend**: Flask web framework (Render relay can run FastAPI)
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
 - **AI Model**: Transformer-based text classification
 - **Styling**: Bootstrap 5 + custom CSS
@@ -106,6 +106,18 @@ Modify the Flask app configuration in `app.py`:
 - `SECRET_KEY`: Change for production use
 - `MAX_CONTENT_LENGTH`: Maximum file upload size
 - Port and host settings in the `app.run()` call
+
+## Deployment
+
+Render (relay): the app can run a lightweight FastAPI relay that forwards `/analyze` to a GPU-backed Hugging Face Space. Start command:
+
+```
+uvicorn relay_fastapi:app --host 0.0.0.0 --port $PORT
+```
+
+Set environment variables on Render:
+- `HF_INFERENCE_URL`: your Space `/analyze` endpoint, e.g. `https://<org>-<space>.hf.space/analyze`
+- `HF_API_KEY` (optional, if the Space is private)
 
 ## Troubleshooting
 
