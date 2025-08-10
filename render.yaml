@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: textsense
+    env: python
+    plan: free
+    buildCommand: |
+      pip install -U pip
+      pip install -r requirements.txt gunicorn
+      python -m spacy download en_core_web_sm
+    startCommand: |
+      gunicorn app:app --workers 2 --threads 2 --timeout 120 --preload --bind 0.0.0.0:$PORT
+    envVars:
+      - key: TOKENIZERS_PARALLELISM
+        value: "true"
+
