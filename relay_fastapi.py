@@ -9,7 +9,7 @@ from fastapi.templating import Jinja2Templates
 import requests
 
 
-HF_INFERENCE_URL_ENV = "HF_INFERENCE_URL"
+HF_INFERENCE_URL_ENV = "https://mlopez6132-textsense-inference.hf.space/analyze"
 DEFAULT_TIMEOUT_SECONDS = 120
 
 
