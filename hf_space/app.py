@@ -14,6 +14,20 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 DEFAULT_MAX_LEN = int(os.getenv("MAX_LEN", "256"))
 DEFAULT_BATCH_SIZE = int(os.getenv("BATCH_SIZE", "16"))
 
+# Ensure model cache is writable in HF Spaces/Docker
+HF_CACHE_DIR = os.getenv("HF_CACHE_DIR", "/data/hf")
+try:
+    os.makedirs(HF_CACHE_DIR, exist_ok=True)
+except Exception:
+    # Fallback to /tmp if /data is unavailable
+    HF_CACHE_DIR = "/tmp/hf"
+    os.makedirs(HF_CACHE_DIR, exist_ok=True)
+
+# Also set env vars commonly used by transformers and huggingface_hub
+os.environ.setdefault("HF_HOME", HF_CACHE_DIR)
+os.environ.setdefault("TRANSFORMERS_CACHE", HF_CACHE_DIR)
+os.environ.setdefault("HUGGINGFACE_HUB_CACHE", HF_CACHE_DIR)
+
 
 class DesklibAIDetectionModel(PreTrainedModel):
     config_class = AutoConfig
@@ -36,8 +50,8 @@ class DesklibAIDetectionModel(PreTrainedModel):
 
 
 def load_model():
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
-    model = DesklibAIDetectionModel.from_pretrained(MODEL_ID)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, cache_dir=HF_CACHE_DIR)
+    model = DesklibAIDetectionModel.from_pretrained(MODEL_ID, cache_dir=HF_CACHE_DIR)
     model.to(DEVICE)
     model.eval()
 
