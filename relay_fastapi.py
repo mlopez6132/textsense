@@ -3,7 +3,7 @@ import io
 from typing import Optional
 
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import requests
@@ -138,6 +138,13 @@ async def cookies(request: Request):
         "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
     }
     return templates.TemplateResponse("cookies.html", context)
+
+
+@app.get("/ads.txt", response_class=PlainTextResponse)
+async def ads_txt():
+    pub_id = os.getenv("ADSENSE_PUB_ID", "pub-2409576003450898").strip()
+    # IAB ads.txt entry for Google AdSense
+    return f"google.com, {pub_id}, DIRECT, f08c47fec0942fa0"
 
 
 @app.post("/analyze")
