@@ -8,16 +8,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import requests
 
-
-HF_INFERENCE_URL_ENV = "https://mlopez6132-textsense-inference.hf.space/analyze"
+HF_INFERENCE_URL_ENV = "HF_INFERENCE_URL"
+HF_INFERENCE_URL_DEFAULT = "https://mlopez6132-textsense-inference.hf.space/analyze"
 DEFAULT_TIMEOUT_SECONDS = 120
 
 
 def get_remote_url() -> str:
-    remote = os.getenv(HF_INFERENCE_URL_ENV, "").strip()
+    remote = os.getenv(HF_INFERENCE_URL_ENV, HF_INFERENCE_URL_DEFAULT).strip()
     if not remote:
         raise RuntimeError(
-            f"Missing {HF_INFERENCE_URL_ENV} environment variable pointing to your Hugging Face Space /analyze endpoint"
+            "No remote inference URL configured. Set HF_INFERENCE_URL to your Hugging Face Space /analyze endpoint."
         )
     return remote
 
