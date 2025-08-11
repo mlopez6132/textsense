@@ -31,7 +31,86 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    context = {
+        "request": request,
+        "contact_email": os.getenv("CONTACT_EMAIL", "support@example.com"),
+    }
+    return templates.TemplateResponse("index.html", context)
+
+
+@app.get("/about", response_class=HTMLResponse)
+async def about(request: Request):
+    context = {
+        "request": request,
+        "contact_email": os.getenv("CONTACT_EMAIL", "support@example.com"),
+    }
+    return templates.TemplateResponse("about.html", context)
+
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def privacy(request: Request):
+    context = {
+        "request": request,
+        "contact_email": os.getenv("CONTACT_EMAIL", "support@example.com"),
+    }
+    return templates.TemplateResponse("privacy.html", context)
+
+
+@app.get("/terms", response_class=HTMLResponse)
+async def terms(request: Request):
+    context = {
+        "request": request,
+        "contact_email": os.getenv("CONTACT_EMAIL", "support@example.com"),
+    }
+    return templates.TemplateResponse("terms.html", context)
+
+
+@app.get("/contact", response_class=HTMLResponse)
+async def contact(request: Request):
+    context = {
+        "request": request,
+        "contact_email": os.getenv("CONTACT_EMAIL", "support@example.com"),
+        "recaptcha_site_key": os.getenv("RECAPTCHA_SITE_KEY", ""),
+    }
+    return templates.TemplateResponse("contact.html", context)
+
+
+@app.post("/contact")
+async def submit_contact(request: Request):
+    form = await request.form()
+    name = (form.get("name") or "").strip()
+    email = (form.get("email") or "").strip()
+    message = (form.get("message") or "").strip()
+    token = (form.get("g-recaptcha-response") or "").strip()
+
+    # Optional reCAPTCHA verification
+    secret = os.getenv("RECAPTCHA_SECRET_KEY", "").strip()
+    if secret:
+        import requests as _r
+        try:
+            verify = _r.post("https://www.google.com/recaptcha/api/siteverify", data={
+                "secret": secret,
+                "response": token,
+            }, timeout=10)
+            ok = verify.status_code == 200 and verify.json().get("success")
+            if not ok:
+                return JSONResponse({"ok": False, "error": "reCAPTCHA verification failed"}, status_code=400)
+        except Exception:
+            return JSONResponse({"ok": False, "error": "reCAPTCHA network error"}, status_code=400)
+    # For now, just acknowledge receipt. Integrate email service later.
+    return JSONResponse({
+        "ok": True,
+        "received": {"name": name, "email": email, "message": message}
+    })
+
+
+@app.get("/cookies", response_class=HTMLResponse)
+async def cookies(request: Request):
+    context = {
+        "request": request,
+        "contact_email": os.getenv("CONTACT_EMAIL", "support@example.com"),
+    }
+    return templates.TemplateResponse("cookies.html", context)
 
 
 @app.post("/analyze")
@@ -95,5 +174,4 @@ async def analyze(text: Optional[str] = Form(None), file: Optional[UploadFile] =
 @app.get("/healthz")
 async def healthz():
     return {"ok": True}
-
-
+    

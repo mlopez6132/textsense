@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact — TextSense</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', path='css/style.css') }}" rel="stylesheet">
+  <style>.page-container{max-width:920px;margin:0 auto;padding:24px}</style>
+</head>
+<body>
+  <div class="container-fluid page-container">
+    <header class="py-4">
+      <h1 class="fw-bold">Contact Us</h1>
+      <p class="text-muted">We'd love to hear from you</p>
+      <nav class="mt-2">
+        <a href="/" class="me-3">Home</a>
+        <a href="/about" class="me-3">About</a>
+        <a href="/privacy" class="me-3">Privacy</a>
+        <a href="/terms" class="me-3">Terms</a>
+      </nav>
+    </header>
+
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div class="card p-4 shadow-sm">
+          <h2 class="h5 mb-3">Send us a message</h2>
+          <form id="contactForm">
+            <div class="mb-3">
+              <label class="form-label">Name</label>
+              <input type="text" name="name" class="form-control" placeholder="Your name" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" placeholder="name@example.com" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Message</label>
+              <textarea name="message" class="form-control" rows="6" placeholder="How can we help?" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Send</button>
+            <div id="contactStatus" class="mt-3 small"></div>
+          </form>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="card p-4 shadow-sm">
+          <h2 class="h5 mb-3">Contact details</h2>
+          <p>Email: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+          <p>Response time: 2–3 business days</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="mt-5 border-top pt-3 small text-muted d-flex flex-wrap gap-3">
+      <span>&copy; textsense.org 2025 &mdash; your trusted AI text detector</span>
+      <a href="/about">About</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/cookies">Cookies</a>
+      <a href="/contact">Contact</a>
+      {% if contact_email %}<span class="ms-auto">Contact: {{ contact_email }}</span>{% endif %}
+    </footer>
+  </div>
+
+  <script>
+  // reCAPTCHA render if site key provided
+  (function(){
+    var siteKey = '{{ recaptcha_site_key|default("") }}';
+    if (!siteKey) return;
+    var script = document.createElement('script');
+    script.src = 'https://www.google.com/recaptcha/api.js';
+    document.head.appendChild(script);
+    document.addEventListener('DOMContentLoaded', function(){
+      var form = document.getElementById('contactForm');
+      var widget = document.createElement('div');
+      widget.className = 'g-recaptcha';
+      widget.setAttribute('data-sitekey', siteKey);
+      form.insertBefore(widget, form.querySelector('button[type="submit"]'));
+    });
+  })();
+  </script>
+
+  <script>
+  document.getElementById('contactForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const data = new FormData(form);
+    const status = document.getElementById('contactStatus');
+    status.textContent = 'Sending...';
+    try {
+      const resp = await fetch('/contact', { method: 'POST', body: data });
+      const json = await resp.json();
+      if (json && json.ok) {
+        status.textContent = 'Thanks! Your message has been received.';
+        form.reset();
+      } else {
+        status.textContent = 'There was a problem sending your message.';
+      }
+    } catch (err) {
+      status.textContent = 'Network error. Please try again later.';
+    }
+  });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', path='js/site.js') }}"></script>
+</body>
+</html>
+
+
