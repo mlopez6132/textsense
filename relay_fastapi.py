@@ -3,7 +3,7 @@ import io
 from typing import Optional
 
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import requests
@@ -28,6 +28,10 @@ app = FastAPI(title="TextSense Relay (FastAPI)")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+
+@app.get("/favicon.ico")
+async def favicon():
+    return FileResponse("static/favicon.ico")
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
@@ -83,7 +87,7 @@ async def submit_contact(request: Request):
     message = (form.get("message") or "").strip()
     token = (form.get("g-recaptcha-response") or "").strip()
 
-    # Optional reCAPTCHA verification
+    # Optional reCAPTCHA v3 verification
     secret = os.getenv("RECAPTCHA_SECRET_KEY", "").strip()
     if secret:
         import requests as _r
@@ -92,11 +96,34 @@ async def submit_contact(request: Request):
                 "secret": secret,
                 "response": token,
             }, timeout=10)
-            ok = verify.status_code == 200 and verify.json().get("success")
-            if not ok:
-                return JSONResponse({"ok": False, "error": "reCAPTCHA verification failed"}, status_code=400)
+            
+            if verify.status_code == 200:
+                result = verify.json()
+                if result.get("success"):
+                    # reCAPTCHA v3 returns a score from 0.0 to 1.0
+                    score = result.get("score", 0.0)
+                    threshold = float(os.getenv("RECAPTCHA_THRESHOLD", "0.5"))
+                    
+                    if score < threshold:
+                        return JSONResponse({
+                            "ok": False, 
+                            "error": f"reCAPTCHA score too low ({score:.2f}). Please try again."
+                        }, status_code=400)
+                else:
+                    return JSONResponse({
+                        "ok": False, 
+                        "error": "reCAPTCHA verification failed"
+                    }, status_code=400)
+            else:
+                return JSONResponse({
+                    "ok": False, 
+                    "error": "reCAPTCHA verification error"
+                }, status_code=400)
         except Exception:
-            return JSONResponse({"ok": False, "error": "reCAPTCHA network error"}, status_code=400)
+            return JSONResponse({
+                "ok": False, 
+                "error": "reCAPTCHA network error"
+            }, status_code=400)
     # For now, just acknowledge receipt. Integrate email service later.
     return JSONResponse({
         "ok": True,

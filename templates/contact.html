@@ -64,44 +64,54 @@
   </div>
 
   <script>
-  // reCAPTCHA render if site key provided
+  // reCAPTCHA v3 integration
   (function(){
     var siteKey = '{{ recaptcha_site_key|default("") }}';
     if (!siteKey) return;
+    
+    // Load reCAPTCHA v3 script
     var script = document.createElement('script');
-    script.src = 'https://www.google.com/recaptcha/api.js';
+    script.src = 'https://www.google.com/recaptcha/api.js?render=' + siteKey;
     document.head.appendChild(script);
+    
+    // Handle form submission with reCAPTCHA v3
     document.addEventListener('DOMContentLoaded', function(){
       var form = document.getElementById('contactForm');
-      var widget = document.createElement('div');
-      widget.className = 'g-recaptcha';
-      widget.setAttribute('data-sitekey', siteKey);
-      form.insertBefore(widget, form.querySelector('button[type="submit"]'));
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        try {
+          // Execute reCAPTCHA v3
+          const token = await grecaptcha.execute(siteKey, {action: 'contact'});
+          
+          // Add token to form data
+          const formData = new FormData(form);
+          formData.append('g-recaptcha-response', token);
+          
+          // Submit form
+          const status = document.getElementById('contactStatus');
+          status.textContent = 'Sending...';
+          
+          const resp = await fetch('/contact', { method: 'POST', body: formData });
+          const json = await resp.json();
+          
+          if (json && json.ok) {
+            status.textContent = 'Thanks! Your message has been received.';
+            form.reset();
+            // Reset reCAPTCHA
+            grecaptcha.reset();
+          } else {
+            status.textContent = json.error || 'There was a problem sending your message.';
+            grecaptcha.reset();
+          }
+        } catch (err) {
+          document.getElementById('contactStatus').textContent = 'Network error. Please try again later.';
+        }
+      });
     });
   })();
   </script>
 
-  <script>
-  document.getElementById('contactForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const form = e.target;
-    const data = new FormData(form);
-    const status = document.getElementById('contactStatus');
-    status.textContent = 'Sending...';
-    try {
-      const resp = await fetch('/contact', { method: 'POST', body: data });
-      const json = await resp.json();
-      if (json && json.ok) {
-        status.textContent = 'Thanks! Your message has been received.';
-        form.reset();
-      } else {
-        status.textContent = 'There was a problem sending your message.';
-      }
-    } catch (err) {
-      status.textContent = 'Network error. Please try again later.';
-    }
-  });
-  </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', path='js/site.js') }}"></script>
 </body>
