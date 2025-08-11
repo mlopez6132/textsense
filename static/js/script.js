@@ -7,6 +7,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const textInput = document.getElementById('textInput');
     const charCounter = document.getElementById('charCounter');
     const fileInput = document.getElementById('fileInput');
+
+    // Cache submit buttons
+    const textSubmitBtn = textForm ? textForm.querySelector('button[type="submit"]') : null;
+    const fileSubmitBtn = fileForm ? fileForm.querySelector('button[type="submit"]') : null;
+    
+    // Limits
+    const MAX_CHARS = 50000;
     
     // UI elements
     const loadingSpinner = document.getElementById('loadingSpinner');
@@ -26,6 +33,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Store original text for copy functionality
     let originalText = '';
+
+    // Helper to toggle submit buttons
+    function setSubmitting(isSubmitting) {
+        if (textSubmitBtn) textSubmitBtn.disabled = isSubmitting;
+        if (fileSubmitBtn) fileSubmitBtn.disabled = isSubmitting;
+    }
     
     // Text form submission
     textForm.addEventListener('submit', function(e) {
@@ -36,12 +49,16 @@ document.addEventListener('DOMContentLoaded', function() {
             showError('Please enter some text to analyze.');
             return;
         }
+        if (text.length > MAX_CHARS) {
+            showError(`Text is too long. Maximum ${MAX_CHARS.toLocaleString()} characters allowed.`);
+            return;
+        }
         
         analyzeText(text);
     });
     
     // File form submission
-    fileForm.addEventListener('submit', function(e) {
+    fileForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const file = fileInput.files[0];
         
@@ -65,6 +82,22 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Show loading while we validate content length client-side
+        showLoading();
+        try {
+            const textContent = await file.text();
+            if (textContent.length > MAX_CHARS) {
+                hideLoading();
+                showError(`File content is too long. Maximum ${MAX_CHARS.toLocaleString()} characters allowed.`);
+                return;
+            }
+        } catch (err) {
+            hideLoading();
+            showError('Could not read file content. Please try a different file.');
+            return;
+        }
+        
+        // Proceed with upload and analysis
         analyzeFile(file);
     });
     
@@ -98,8 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Analyze file via API
     function analyzeFile(file) {
-        showLoading();
-        
+        // showLoading is already called in the submit handler (keep idempotent)
         const formData = new FormData();
         formData.append('file', file);
         
@@ -260,12 +292,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Old global spinner hidden; show in-text overlay instead
         loadingSpinner.classList.add('d-none');
         if (inputLoadingOverlay) inputLoadingOverlay.classList.remove('d-none');
+        setSubmitting(true);
     }
     
     // Hide loading spinner
     function hideLoading() {
         loadingSpinner.classList.add('d-none');
         if (inputLoadingOverlay) inputLoadingOverlay.classList.add('d-none');
+        setSubmitting(false);
     }
     
     // Show error message
@@ -496,7 +530,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Text input character counter
     textInput.addEventListener('input', function() {
-        const maxChars = 50000;
+        const maxChars = MAX_CHARS;
         let charCount = this.value.length;
         if (charCount > maxChars) {
             this.value = this.value.substring(0, maxChars);
