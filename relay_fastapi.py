@@ -33,7 +33,7 @@ templates = Jinja2Templates(directory="templates")
 async def index(request: Request):
     context = {
         "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "support@example.com"),
+        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
     }
     return templates.TemplateResponse("index.html", context)
 
@@ -42,7 +42,7 @@ async def index(request: Request):
 async def about(request: Request):
     context = {
         "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "support@example.com"),
+        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
     }
     return templates.TemplateResponse("about.html", context)
 
@@ -51,7 +51,7 @@ async def about(request: Request):
 async def privacy(request: Request):
     context = {
         "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "support@example.com"),
+        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
     }
     return templates.TemplateResponse("privacy.html", context)
 
@@ -69,7 +69,7 @@ async def terms(request: Request):
 async def contact(request: Request):
     context = {
         "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "support@example.com"),
+        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
         "recaptcha_site_key": os.getenv("RECAPTCHA_SITE_KEY", ""),
     }
     return templates.TemplateResponse("contact.html", context)
@@ -108,7 +108,7 @@ async def submit_contact(request: Request):
 async def cookies(request: Request):
     context = {
         "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "support@example.com"),
+        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
     }
     return templates.TemplateResponse("cookies.html", context)
 
