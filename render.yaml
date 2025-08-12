@@ -10,4 +10,6 @@ services:
         value: "true"
       - key: HF_INFERENCE_URL
         sync: false
+      - key: HF_OCR_URL
+        sync: false
 

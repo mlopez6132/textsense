@@ -23,9 +23,7 @@ def get_remote_url() -> str:
 
 
 def get_ocr_url() -> str:
-    remote = HF_OCR_URL_ENV
-    if not remote:
-        remote = os.getenv(HF_OCR_URL_ENV, "").strip()
+    remote = os.getenv(HF_OCR_URL_ENV, "").strip()
     if not remote:
         raise RuntimeError(
             "No OCR URL configured. Set HF_OCR_URL to your Hugging Face Space OCR endpoint (e.g. https://<space>.hf.space/extract)."
