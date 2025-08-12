@@ -9,15 +9,26 @@ from fastapi.templating import Jinja2Templates
 import requests
 
 HF_INFERENCE_URL_ENV = "HF_INFERENCE_URL"
-HF_INFERENCE_URL_DEFAULT = "https://mlopez6132-textsense-inference.hf.space/analyze"
+HF_OCR_URL_ENV = "HF_OCR_URL"
 DEFAULT_TIMEOUT_SECONDS = 120
 
 
 def get_remote_url() -> str:
-    remote = os.getenv(HF_INFERENCE_URL_ENV, HF_INFERENCE_URL_DEFAULT).strip()
+    remote = os.getenv(HF_INFERENCE_URL_ENV, "").strip()
     if not remote:
         raise RuntimeError(
             "No remote inference URL configured. Set HF_INFERENCE_URL to your Hugging Face Space /analyze endpoint."
+        )
+    return remote
+
+
+def get_ocr_url() -> str:
+    remote = HF_OCR_URL_ENV
+    if not remote:
+        remote = os.getenv(HF_OCR_URL_ENV, "").strip()
+    if not remote:
+        raise RuntimeError(
+            "No OCR URL configured. Set HF_OCR_URL to your Hugging Face Space OCR endpoint (e.g. https://<space>.hf.space/extract)."
         )
     return remote
 
@@ -77,6 +88,15 @@ async def contact(request: Request):
         "recaptcha_site_key": os.getenv("RECAPTCHA_SITE_KEY", ""),
     }
     return templates.TemplateResponse("contact.html", context)
+
+
+@app.get("/ocr", response_class=HTMLResponse)
+async def ocr_page(request: Request):
+    context = {
+        "request": request,
+        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
+    }
+    return templates.TemplateResponse("ocr.html", context)
 
 
 @app.post("/contact")
@@ -192,6 +212,52 @@ async def analyze(text: Optional[str] = Form(None), file: Optional[UploadFile] =
         )
         if resp.status_code != 200:
             # Attempt to surface remote error
+            try:
+                payload = resp.json()
+            except Exception:
+                payload = {"error": f"Upstream error (status {resp.status_code})."}
+            raise HTTPException(status_code=resp.status_code, detail=payload.get("error") or payload)
+
+        return JSONResponse(resp.json())
+    except HTTPException:
+        raise
+    except Exception as e:
+        return JSONResponse({"error": f"Relay error: {str(e)}"}, status_code=500)
+
+
+@app.post("/ocr")
+async def ocr(
+    image_url: Optional[str] = Form(None),
+    image: Optional[UploadFile] = File(None),
+):
+    if not image_url and (image is None or not image.filename):
+        return JSONResponse({"error": "No image provided. Provide 'image' file or 'image_url'."}, status_code=400)
+
+    try:
+        remote_url = get_ocr_url()
+        headers = {}
+        api_key = os.getenv("HF_API_KEY", "").strip()
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+
+        files = None
+        data = {}
+        if image is not None and image.filename:
+            content = await image.read()
+            filename = image.filename
+            mime = image.content_type or "application/octet-stream"
+            files = {"file": (filename, content, mime)}
+        elif image_url:
+            data["image_url"] = image_url.strip()
+
+        resp = requests.post(
+            remote_url,
+            data=data if data else None,
+            files=files,
+            headers=headers,
+            timeout=DEFAULT_TIMEOUT_SECONDS,
+        )
+        if resp.status_code != 200:
             try:
                 payload = resp.json()
             except Exception:

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TextSense OCR - Image to Text</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <style>
+    .ocr-container { max-width: 900px; margin: 2rem auto; padding: 1rem; }
+    .dropzone {
+      border: 2px dashed #888; border-radius: 8px; padding: 24px; text-align: center;
+      color: #555; background: #fafafa; cursor: pointer;
+    }
+    .dropzone.dragover { background: #eef7ff; border-color: #2a7ade; color: #2a7ade; }
+    .preview { display: flex; gap: 16px; align-items: flex-start; margin-top: 16px; }
+    .preview img { max-width: 320px; max-height: 240px; border-radius: 6px; border: 1px solid #ddd; }
+    .controls { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+    .controls input[type="url"] { flex: 1; min-width: 260px; }
+    .output { margin-top: 16px; }
+    .output textarea { width: 100%; min-height: 200px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .muted { color: #666; font-size: 0.9rem; }
+    .spinner { display: none; }
+    .spinner.show { display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="ocr-container">
+    <h1>Image to Text (OCR)</h1>
+    <p class="muted">Paste an image, upload a file, or provide an image URL. We'll extract the text for you.</p>
+
+    <div id="dropzone" class="dropzone" tabindex="0">
+      <strong>Paste</strong> an image here (Cmd/Ctrl+V), <strong>drag & drop</strong>, or <strong>click to upload</strong>.
+      <input id="fileInput" type="file" accept="image/*" style="display:none" />
+    </div>
+
+    <div class="controls">
+      <input id="imageUrl" type="url" placeholder="Or paste image URL (https://...)" />
+      <button id="extractBtn">Extract Text</button>
+      <button id="clearBtn" class="secondary">Clear</button>
+      <span id="loading" class="spinner">Extracting…</span>
+    </div>
+
+    <div class="preview">
+      <img id="preview" alt="Preview" style="display:none" />
+    </div>
+
+    <div class="output">
+      <label for="ocrOutput">Extracted Text</label>
+      <textarea id="ocrOutput" readonly placeholder="The extracted text will appear here..."></textarea>
+      <div class="controls">
+        <button id="copyBtn" class="secondary">Copy</button>
+        <button id="downloadBtn" class="secondary">Download .txt</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/ocr.js"></script>
+</body>
+</html>
+
+
