@@ -239,18 +239,32 @@ async def ocr(
             headers["Authorization"] = f"Bearer {api_key}"
 
         files = None
-        data = {}
+
         if image is not None and image.filename:
+            # Forward uploaded file directly to the Space as field name 'image'
             content = await image.read()
             filename = image.filename
             mime = image.content_type or "application/octet-stream"
-            files = {"file": (filename, content, mime)}
+            files = {"image": (filename, content, mime)}
         elif image_url:
-            data["image_url"] = image_url.strip()
+            # Workaround: fetch URL here (Render has egress), then send bytes to Space
+            url = image_url.strip()
+            if not url:
+                return JSONResponse({"error": "image_url is empty"}, status_code=400)
+            try:
+                fetch_headers = {"User-Agent": "TextSense-Relay/1.0"}
+                r = requests.get(url, timeout=30, headers=fetch_headers)
+                r.raise_for_status()
+            except requests.exceptions.RequestException as re:
+                return JSONResponse({"error": f"Failed to fetch image URL: {str(re)}"}, status_code=400)
+
+            mime = r.headers.get("content-type", "application/octet-stream").split(";")[0].strip()
+            # Derive a filename
+            name = url.split("?")[0].rstrip("/").split("/")[-1] or "remote.jpg"
+            files = {"image": (name, r.content, mime)}
 
         resp = requests.post(
             remote_url,
-            data=data if data else None,
             files=files,
             headers=headers,
             timeout=DEFAULT_TIMEOUT_SECONDS,
