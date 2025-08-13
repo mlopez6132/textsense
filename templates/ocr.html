@@ -30,48 +30,82 @@
 </head>
 <body>
   <div class="container-fluid">
-    <!-- Header -->
-    <header class="text-center py-4">
-      <h1 class="display-5 fw-bold text-primary">TextSense</h1>
-      <p class="lead text-muted">AI Text Detection & Image to Text OCR</p>
-      
-      <!-- Navigation -->
-      <nav class="mt-3">
-        <a href="/" class="nav-link">
-          <i class="fas fa-search me-2"></i>AI Detector
-        </a>
-        <a href="/ocr" class="nav-link active">
-          <i class="fas fa-image me-2"></i>Image to Text OCR
-        </a>
-      </nav>
-    </header>
+    <!-- Header / Navbar -->
+    <nav class="navbar navbar-expand-lg bg-light border-bottom mb-4">
+      <div class="container-fluid">
+        <a class="navbar-brand fw-bold text-primary" href="/">TextSense</a>
+        <span class="navbar-text text-muted ms-2">— open ai tools for everyone</span>
+        <div class="navbar-nav ms-auto">
+          <a href="/" class="nav-link">
+            <i class="fas fa-search me-2"></i>AI Detector
+          </a>
+          <a href="/ocr" class="nav-link active">
+            <i class="fas fa-image me-2"></i>Image Text to Text
+          </a>
+        </div>
+      </div>
+    </nav>
 
-    <div class="ocr-container">
-      <h2 class="h3 mb-3">Image to Text (OCR)</h2>
-      <p class="muted">Paste an image, upload a file, or provide an image URL. We'll extract the text for you.</p>
+  <div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+      <!-- OCR Card -->
+      <div class="card shadow-lg mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="fas fa-image me-2"></i>Image to Text (OCR)</h5>
+        </div>
+        <div class="card-body">
+          <p class="text-muted">Paste an image, upload a file, or provide an image URL. We'll extract the text for you.</p>
 
-    <div id="dropzone" class="dropzone" tabindex="0">
-      <strong>Paste</strong> an image here (Cmd/Ctrl+V), <strong>drag & drop</strong>, or <strong>click to upload</strong>.
-      <input id="fileInput" type="file" accept="image/*" style="display:none" />
-    </div>
+          <div id="dropzone" class="dropzone" tabindex="0">
+            <strong>Paste</strong> an image here (Cmd/Ctrl+V), <strong>drag & drop</strong>, or <strong>click to upload</strong>.
+            <input id="fileInput" type="file" accept="image/*" style="display:none" />
+          </div>
 
-    <div class="controls">
-      <input id="imageUrl" type="url" placeholder="Or paste image URL (https://...)" />
-      <button id="extractBtn">Extract Text</button>
-      <button id="clearBtn" class="secondary">Clear</button>
-      <span id="loading" class="spinner">Extracting…</span>
-    </div>
+          <div class="controls align-items-center">
+            <input id="imageUrl" class="form-control" type="url" placeholder="Or paste image URL (https://...)" />
+            <button id="extractBtn" class="btn btn-primary">Extract Text</button>
+            <button id="clearBtn" class="btn btn-outline-secondary">Clear</button>
+            <span id="loading" class="spinner">
+              <span class="spinner-border spinner-border-sm text-primary me-2" role="status" aria-hidden="true"></span>
+              Extracting…
+            </span>
+          </div>
 
-    <div class="preview">
-      <img id="preview" alt="Preview" style="display:none" />
-    </div>
+          <div class="preview">
+            <img id="preview" alt="Preview" style="display:none" />
+          </div>
 
-    <div class="output">
-      <label for="ocrOutput">Extracted Text</label>
-      <textarea id="ocrOutput" readonly placeholder="The extracted text will appear here..."></textarea>
-      <div class="controls">
-        <button id="copyBtn" class="secondary">Copy</button>
-        <button id="downloadBtn" class="secondary">Download .txt</button>
+          <div class="output">
+            <label for="ocrOutput" class="form-label">Extracted Text</label>
+            <textarea id="ocrOutput" class="form-control" readonly placeholder="The extracted text will appear here..."></textarea>
+            <div class="controls">
+              <button id="copyBtn" class="btn btn-outline-secondary">Copy</button>
+              <button id="downloadBtn" class="btn btn-outline-primary">Download .txt</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Technology Section -->
+      <div class="card shadow-lg mt-5 mb-5">
+        <div class="card-header text-white">
+          <h5 class="mb-0"><i class="fas fa-microchip me-2"></i>Technology</h5>
+        </div>
+        <div class="card-body">
+          <p class="mb-3">
+            Image-to-text extraction is powered by <strong>PaddleOCR</strong> running on the server. It performs
+            text detection and recognition with angle classification for robust results.
+          </p>
+          <ul class="mb-3">
+            <li>Pipeline: angle classification → text detection → text recognition</li>
+            <li>Optimized for CPU inference; starts quickly and is lightweight</li>
+            <li>Outputs are combined in natural reading order</li>
+          </ul>
+          <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-primary btn-sm" href="https://huggingface.co/spaces/cxeep/PaddleOCR" target="_blank" rel="noopener noreferrer">View PaddleOCR Space</a>
+            <a class="btn btn-outline-secondary btn-sm" href="https://github.com/PaddlePaddle/PaddleOCR" target="_blank" rel="noopener noreferrer">PaddleOCR GitHub</a>
+          </div>
+        </div>
       </div>
     </div>
   </div>
