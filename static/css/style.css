@@ -14,10 +14,14 @@ body {
 
 /* Navbar improvements */
 .navbar {
-    padding: 0.6rem 0; /* reduced header height */
+    padding: 0.45rem 0; /* tighter header height */
     background: #ffffff !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
+
+/* Header: remove top/side margins and tighten padding */
+.site-header { margin: 0 !important; }
+.site-header > .container-fluid { padding-left: 0; padding-right: 0; }
 
 .navbar-brand {
     margin-right: 0;
@@ -40,7 +44,7 @@ body {
 }
 
 .navbar-nav {
-    margin-left: 1rem !important; /* place links next to brand */
+    margin-left: 0.75rem !important; /* snug spacing next to brand */
     gap: 0.5rem;
     align-items: center;
 }
