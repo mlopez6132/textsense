@@ -14,7 +14,7 @@ body {
 
 /* Navbar improvements */
 .navbar {
-    padding: 1rem 0;
+    padding: 0.6rem 0; /* reduced header height */
     background: #ffffff !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -25,15 +25,15 @@ body {
 }
 
 .brand-logo-text {
-    color: #0d6efd !important; /* Bootstrap primary blue like before */
-    font-size: 1.75rem !important;
+    color: #0d6efd !important; /* Bootstrap primary blue */
+    font-size: 1.55rem !important; /* slightly smaller to reduce header size */
     line-height: 1.2;
-    margin-bottom: 0.125rem;
+    margin-bottom: 0.05rem;
 }
 
 .brand-tagline {
     color: #6c757d !important;
-    font-size: 0.8rem !important;
+    font-size: 0.75rem !important;
     font-weight: 400;
     line-height: 1.2;
     margin: 0;
@@ -52,8 +52,8 @@ body {
     margin: 0;
     color: #212529 !important;
     font-weight: 600;
-    letter-spacing: 0.2px;
-    font-size: 0.95rem;
+    letter-spacing: 0.1px;
+    font-size: 0.9rem;
 }
 
 .navbar-nav .nav-link:hover {
