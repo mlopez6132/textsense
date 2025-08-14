@@ -12,6 +12,42 @@ body {
     padding: 20px;
 }
 
+/* Navbar improvements */
+.navbar {
+    padding: 1rem 0;
+}
+
+.navbar-brand {
+    margin-right: 0.5rem;
+}
+
+.navbar-text {
+    margin-right: 0;
+}
+
+.navbar-nav {
+    margin-left: auto !important;
+    gap: 0.25rem;
+}
+
+.navbar-nav .nav-link {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    margin: 0 0.125rem;
+}
+
+.navbar-nav .nav-link:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    transform: translateY(-1px);
+}
+
+.navbar-nav .nav-link.active {
+    background-color: #e7f1ff;
+    color: #0d6efd;
+    font-weight: 600;
+}
+
 /* Header styling */
 header h1 {
     color: #0d47a1 !important; /* deep blue */
@@ -389,4 +425,36 @@ textarea.form-control {
 
 .form-control[type="file"]::-webkit-file-upload-button:hover {
     background-color: #0b5ed7;
+}
+
+/* Footer styling */
+footer {
+    margin-top: 3rem !important;
+    padding-top: 1.5rem !important;
+    border-top: 1px solid #e9ecef !important;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+footer a {
+    color: #6c757d;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+footer a:hover {
+    color: #0d6efd;
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    footer {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+    
+    footer .ms-auto {
+        margin-left: 0 !important;
+    }
 } 
