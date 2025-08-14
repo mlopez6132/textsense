@@ -23,9 +23,7 @@
     .muted { color: #666; font-size: 0.9rem; }
     .spinner { display: none; }
     .spinner.show { display: inline-block; }
-    .nav-link { color: #6c757d; text-decoration: none; padding: 0.5rem 1rem; border-radius: 0.375rem; transition: all 0.2s; }
-    .nav-link:hover { color: #0d6efd; background-color: #f8f9fa; }
-    .nav-link.active { color: #0d6efd; background-color: #e7f1ff; font-weight: 500; }
+    /* Nav styles are globally defined in static/css/style.css to keep pages consistent */
   </style>
 </head>
 <body>
@@ -49,10 +47,10 @@
       <!-- OCR Card -->
       <div class="card shadow-lg mb-4">
         <div class="card-header bg-primary text-white">
-          <h5 class="mb-0"><i class="fas fa-image me-2"></i>Image to Text (OCR)</h5>
+          <h5 class="mb-0">Image to Text (OCR)</h5>
         </div>
         <div class="card-body">
-          <p class="text-muted">Paste an image, upload a file, or provide an image URL. We'll extract the text for you.</p>
+          <p class="text-muted small mb-3">Fast image-to-text extractor. Paste an image, upload a file, or provide a URL—we'll extract the text for you.</p>
 
           <div id="dropzone" class="dropzone" tabindex="0">
             <strong>Paste</strong> an image here (Cmd/Ctrl+V), <strong>drag & drop</strong>, or <strong>click to upload</strong>.
