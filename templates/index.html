@@ -6,9 +6,12 @@
     <title>TextSense — Sentence-level AI Detector</title>
     <!-- Google AdSense verification -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2409576003450898" crossorigin="anonymous"></script>
-    <link rel="icon" href="/static/favicon.ico">
+    <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='favicon.ico') }}">
     <link rel="shortcut icon" href="{{ url_for('static', path='favicon.ico') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', path='favicon.ico') }}">
+    <meta name="msapplication-TileColor" content="#0d6efd">
+    <meta name="theme-color" content="#ffffff">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', path='css/style.css') }}" rel="stylesheet">
@@ -16,7 +19,7 @@
 <body>
     <div class="container-fluid">
         <!-- Header / Navbar -->
-        <nav class="navbar navbar-expand-lg bg-white border-bottom mb-2 site-header">
+        <nav class="navbar navbar-expand-lg bg-white border-bottom site-header">
             <div class="container-fluid">
                 <div class="navbar-brand d-flex flex-column align-items-start">
                     <a href="/" class="brand-logo-text fw-bold fs-3 text-decoration-none">TextSense</a>
@@ -29,16 +32,49 @@
             </div>
         </nav>
 
-        <!-- Main Content -->
+        <!-- Page Header -->
         <div class="row justify-content-center">
             <div class="col-lg-9 col-xl-8">
+                <header class="text-center mb-4">
+                    <h1 class="display-5 fw-bold text-primary mb-3">
+                        <i class="fas fa-search me-2"></i>AI Text Detector
+                    </h1>
+                    <p class="lead text-muted mb-4">
+                        Detect AI-generated content with sentence-level analysis. Get detailed probability scores 
+                        and visual highlighting to understand exactly which parts of your text appear AI-generated.
+                    </p>
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <i class="fas fa-brain text-primary fs-1"></i>
+                                <h6 class="mt-2">Advanced AI Detection</h6>
+                                <small class="text-muted">Sentence-level analysis</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <i class="fas fa-highlighter text-primary fs-1"></i>
+                                <h6 class="mt-2">Visual Highlighting</h6>
+                                <small class="text-muted">Color-coded probability</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <i class="fas fa-file-pdf text-primary fs-1"></i>
+                                <h6 class="mt-2">Export Reports</h6>
+                                <small class="text-muted">PDF download available</small>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
                 <!-- Input Section -->
                 <div class="card shadow-lg mb-4">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Analyze Your Text</h5>
+                        <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Analyze Your Text</h5>
                     </div>
                     <div class="card-body">
-                        <p class="text-muted small mb-3">Fast sentence-level AI detector. Paste text or upload a file to analyze probabilities per sentence.</p>
+
                         <!-- Tab Navigation -->
                         <ul class="nav nav-tabs" id="inputTabs" role="tablist">
                             <li class="nav-item" role="presentation">
@@ -92,6 +128,48 @@
                                         <i class="fas fa-upload me-2"></i>Upload & Analyze
                                     </button>
                                 </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage Guide -->
+                <div class="card shadow-lg mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>How to Use</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary">Input Methods</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-check text-success me-2"></i><strong>Direct Text:</strong> Paste or type text directly into the analyzer</li>
+                                    <li><i class="fas fa-check text-success me-2"></i><strong>File Upload:</strong> Upload .txt, .md, .doc, or .docx files</li>
+                                    <li><i class="fas fa-check text-success me-2"></i><strong>Large Documents:</strong> Support for up to 50,000 characters</li>
+                                </ul>
+                                
+                                <h6 class="text-primary mt-4">Understanding Results</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-info-circle text-info me-2"></i><strong>Color Coding:</strong> Green = Human-like, Red = AI-like</li>
+                                    <li><i class="fas fa-info-circle text-info me-2"></i><strong>Percentages:</strong> Show probability for each sentence</li>
+                                    <li><i class="fas fa-info-circle text-info me-2"></i><strong>Overall Score:</strong> Average AI probability across all text</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-primary">Best Practices</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-star text-warning me-2"></i>Analyze complete sentences or paragraphs</li>
+                                    <li><i class="fas fa-star text-warning me-2"></i>Consider context and content type</li>
+                                    <li><i class="fas fa-star text-warning me-2"></i>Use results as guidance, not absolute truth</li>
+                                    <li><i class="fas fa-star text-warning me-2"></i>Review highlighted sections carefully</li>
+                                </ul>
+                                
+                                <h6 class="text-primary mt-4">Export Options</h6>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-download text-primary me-2"></i>Copy analyzed text to clipboard</li>
+                                    <li><i class="fas fa-download text-primary me-2"></i>Download PDF report with highlights</li>
+                                    <li><i class="fas fa-download text-primary me-2"></i>Keep detailed analysis for records</li>
+                                </ul>
                             </div>
                         </div>
                     </div>

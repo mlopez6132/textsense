@@ -9,19 +9,30 @@ body {
 }
 
 .container-fluid {
-    padding: 20px;
+    padding: 0 20px 20px 20px; /* no top padding to give header proper space */
+    max-width: 1200px; /* professional content width */
+    margin: 0 auto; /* center the content */
 }
 
 /* Navbar improvements */
 .navbar {
-    padding: 0.45rem 0; /* tighter header height */
+    padding: 1rem 0; /* professional header height */
     background: #ffffff !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem; /* professional spacing below header */
 }
 
-/* Header: remove top/side margins and tighten padding */
-.site-header { margin: 0 !important; }
-.site-header > .container-fluid { padding-left: 0; padding-right: 0; }
+/* Header: professional margins and padding */
+.site-header { 
+    margin: 0 !important; 
+    padding: 0.75rem 0; /* consistent vertical padding */
+}
+.site-header > .container-fluid { 
+    padding-left: 20px; 
+    padding-right: 20px; 
+    max-width: 1200px; /* professional content width */
+    margin: 0 auto; /* center the header content */
+}
 
 .navbar-brand {
     margin-right: 0;
@@ -377,11 +388,17 @@ textarea.form-control {
 /* Responsive design */
 @media (max-width: 768px) {
     .container-fluid {
-        padding: 10px;
+        padding: 0 15px 15px 15px; /* consistent mobile padding */
     }
     
     .navbar {
-        padding: 0.75rem 0;
+        padding: 0.75rem 0; /* appropriate mobile header height */
+        margin-bottom: 1.5rem; /* reduced mobile spacing */
+    }
+    
+    .site-header > .container-fluid {
+        padding-left: 15px;
+        padding-right: 15px;
     }
     
     .brand-logo-text {
@@ -480,12 +497,15 @@ textarea.form-control {
 
 /* Footer styling */
 footer {
-    margin-top: 3rem !important;
-    padding-top: 1.5rem !important;
+    margin-top: 4rem !important; /* professional top margin */
+    padding: 2rem 20px 2rem 20px !important; /* professional padding all around */
     border-top: 1px solid #e9ecef !important;
     background: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    max-width: 1200px; /* match header width */
+    margin-left: auto !important;
+    margin-right: auto !important;
 }
 
 footer a {
@@ -503,6 +523,8 @@ footer a:hover {
     footer {
         flex-direction: column;
         gap: 0.5rem !important;
+        padding: 1.5rem 15px 1.5rem 15px !important; /* consistent mobile footer padding */
+        margin-top: 3rem !important; /* reduced mobile top margin */
     }
     
     footer .ms-auto {

@@ -31,8 +31,13 @@
   }
 
   function setLoading(isLoading) {
-    if (isLoading) loading.classList.add('show');
-    else loading.classList.remove('show');
+    if (isLoading) {
+      loading.style.display = 'inline-block';
+      loading.classList.add('show');
+    } else {
+      loading.style.display = 'none';
+      loading.classList.remove('show');
+    }
     extractBtn.disabled = isLoading;
   }
 
