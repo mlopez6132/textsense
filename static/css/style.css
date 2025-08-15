@@ -9,7 +9,7 @@ body {
     margin: 0;
     padding: 0;
     padding-top: 90px; /* Space for fixed header */
-    padding-bottom: 0; /* footer is not fixed; no extra bottom padding needed */
+    padding-bottom: 100px; /* Space for fixed footer */
 }
 
 .container-fluid {
@@ -409,7 +409,7 @@ textarea.form-control {
 @media (max-width: 768px) {
     body {
         padding-top: 80px; /* Space for mobile header */
-        padding-bottom: 0; /* footer is not fixed on mobile */
+        padding-bottom: 100px; /* Space for mobile footer */
     }
     
     .container-fluid {
@@ -534,16 +534,24 @@ textarea.form-control {
 /* Fixed Footer */
 /* Fixed Footer - Full Width & Larger Size */
 footer {
-    position: static; /* not fixed; stays in normal document flow */
-    width: 100vw; /* full width spanning */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    z-index: 1020;
     margin: 0 !important;
-    padding: 2.5rem 3rem !important; /* slightly larger footer */
+    padding: 1.5rem 2rem !important;
     border-top: 1px solid #e9ecef !important;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
-    min-height: 120px;
+    min-height: 80px;
+    display: flex !important;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
 }
 
 footer a {
@@ -561,9 +569,10 @@ footer a:hover {
     footer {
         flex-direction: column;
         gap: 0.75rem !important;
-        padding: 2rem 1.5rem !important;
+        padding: 1.25rem 1rem !important;
         text-align: center;
-        min-height: 100px;
+        min-height: 80px;
+        justify-content: center;
     }
     
     footer .ms-auto {
