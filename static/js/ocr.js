@@ -6,6 +6,9 @@
   const extractBtn = document.getElementById('extractBtn');
   const clearBtn = document.getElementById('clearBtn');
   const loading = document.getElementById('loading');
+  const analyzing = document.getElementById('analyzing');
+  const analysisSection = document.getElementById('analysisSection');
+  const outputControls = document.getElementById('outputControls');
   const output = document.getElementById('ocrOutput');
   const copyBtn = document.getElementById('copyBtn');
   const downloadBtn = document.getElementById('downloadBtn');
@@ -16,9 +19,24 @@
     const reader = new FileReader();
     reader.onload = (e) => {
       previewImg.src = e.target.result;
-      previewImg.style.display = 'block';
+      analysisSection.style.display = 'block';
+      
+      // Smooth scroll to analysis section
+      setTimeout(() => {
+        analysisSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
     };
     reader.readAsDataURL(file);
+  }
+
+  function showPreviewFromUrl(url) {
+    previewImg.src = url;
+    analysisSection.style.display = 'block';
+    
+    // Smooth scroll to analysis section
+    setTimeout(() => {
+      analysisSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 100);
   }
 
   function clearAll() {
@@ -26,8 +44,10 @@
     fileInput.value = '';
     imageUrlInput.value = '';
     previewImg.src = '';
-    previewImg.style.display = 'none';
+    analysisSection.style.display = 'none';
     output.value = '';
+    outputControls.style.display = 'none';
+    analyzing.style.display = 'none';
   }
 
   function setLoading(isLoading) {
@@ -39,6 +59,18 @@
       loading.classList.remove('show');
     }
     extractBtn.disabled = isLoading;
+  }
+
+  function setAnalyzing(isAnalyzing) {
+    if (isAnalyzing) {
+      analyzing.style.display = 'flex';
+      extractBtn.disabled = true;
+      clearBtn.disabled = true;
+    } else {
+      analyzing.style.display = 'none';
+      extractBtn.disabled = false;
+      clearBtn.disabled = false;
+    }
   }
 
   dropzone.addEventListener('click', () => fileInput.click());
@@ -103,8 +135,19 @@
     URL.revokeObjectURL(url);
   });
 
+  // Handle URL input
+  imageUrlInput.addEventListener('input', () => {
+    const urlVal = imageUrlInput.value.trim();
+    if (urlVal && urlVal.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+      currentFile = null; // Clear file if URL is provided
+      showPreviewFromUrl(urlVal);
+    }
+  });
+
   extractBtn.addEventListener('click', async () => {
     output.value = '';
+    outputControls.style.display = 'none';
+    
     const hasFile = !!currentFile;
     const urlVal = imageUrlInput.value.trim();
     if (!hasFile && !urlVal) {
@@ -112,7 +155,7 @@
       return;
     }
 
-    setLoading(true);
+    setAnalyzing(true);
     try {
       const form = new FormData();
       if (hasFile) {
@@ -127,11 +170,18 @@
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'OCR failed');
+      
       output.value = data.text || '';
+      
+      // Show output controls if text was extracted
+      if (data.text && data.text.trim()) {
+        outputControls.style.display = 'flex';
+      }
+      
     } catch (err) {
       output.value = `Error: ${err.message || err}`;
     } finally {
-      setLoading(false);
+      setAnalyzing(false);
     }
   });
 })();

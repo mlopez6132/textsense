@@ -572,19 +572,191 @@ footer a:hover {
     }
 } 
 
-/* OCR page styles (moved from inline to global for consistency) */
+/* Enhanced OCR Styles */
 .ocr-container { max-width: 900px; margin: 2rem auto; padding: 1rem; }
-.dropzone {
-    border: 2px dashed #888; border-radius: 8px; padding: 24px; text-align: center;
-    color: #555; background: #fafafa; cursor: pointer;
+
+/* Enhanced Dropzone */
+.dropzone-enhanced {
+    border: 3px dashed #dee2e6;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
 }
-.dropzone.dragover { background: #eef7ff; border-color: #2a7ade; color: #2a7ade; }
-.preview { display: flex; gap: 16px; align-items: flex-start; margin-top: 16px; }
-.preview img { max-width: 320px; max-height: 240px; border-radius: 6px; border: 1px solid #ddd; }
-.controls { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
-.controls input[type="url"] { flex: 1; min-width: 260px; }
-.output { margin-top: 16px; }
-.output textarea { width: 100%; min-height: 200px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+.dropzone-enhanced:hover {
+    border-color: #0d6efd;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+}
+
+.dropzone-enhanced.dragover {
+    border-color: #0d6efd;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    color: #0d6efd;
+}
+
+.dropzone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: #6c757d;
+    transition: color 0.3s ease;
+}
+
+.dropzone-enhanced:hover .upload-icon {
+    color: #0d6efd;
+}
+
+.upload-text h6 {
+    color: #495057;
+    font-weight: 600;
+}
+
+.supported-formats {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 20px;
+    border: 1px solid #e9ecef;
+}
+
+/* Image Preview */
+.preview-container {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+.image-preview {
+    position: relative;
+    background: #fff;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    overflow: hidden;
+    max-height: 200px;
+}
+
+.image-preview img {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    object-fit: contain;
+    display: block;
+}
+
+/* Analysis Section */
+.analysis-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid #e9ecef;
+    margin-top: 1rem;
+}
+
+.controls-section {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Analyzing Spinner */
+.analyzing-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: rgba(13, 110, 253, 0.05);
+    border-radius: 8px;
+    border: 2px dashed #0d6efd;
+}
+
+.spinner-container {
+    text-align: center;
+}
+
+.analyzing-text {
+    color: #0d6efd;
+}
+
+/* Results Section */
+.results-section {
+    margin-top: 1.5rem;
+}
+
+.output-header {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 8px 8px 0 0;
+    border: 1px solid #e9ecef;
+    border-bottom: none;
+}
+
+.output-container {
+    position: relative;
+}
+
+.output-container textarea {
+    min-height: 200px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    border-radius: 0 0 8px 8px;
+    border-top: none;
+    resize: vertical;
+    max-height: 400px;
+}
+
+/* Responsive Design for OCR */
+@media (max-width: 768px) {
+    .dropzone-enhanced {
+        padding: 1.5rem;
+    }
+    
+    .upload-icon {
+        font-size: 2.5rem;
+    }
+    
+    .analysis-section .row {
+        flex-direction: column;
+    }
+    
+    .analysis-section .col-md-4,
+    .analysis-section .col-md-8 {
+        max-width: 100%;
+        flex: 0 0 100%;
+    }
+    
+    .preview-container {
+        margin-bottom: 1rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .action-buttons button {
+        width: 100%;
+        margin: 0.25rem 0;
+    }
+}
+
+/* Legacy OCR styles for backward compatibility */
 .muted { color: #666; font-size: 0.9rem; }
 .spinner { display: none; }
 .spinner.show { display: inline-block; }
