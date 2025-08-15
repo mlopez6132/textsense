@@ -6,37 +6,53 @@ body {
     min-height: 100vh;
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #0f172a; /* near-slate */
+    margin: 0;
+    padding: 0;
+    padding-top: 80px; /* Space for fixed header */
+    padding-bottom: 120px; /* Space for fixed footer */
 }
 
 .container-fluid {
-    padding: 0 20px 20px 20px; /* no top padding to give header proper space */
-    max-width: 1200px; /* professional content width */
-    margin: 0 auto; /* center the content */
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-/* Navbar improvements */
+/* Fixed Header */
 .navbar {
-    padding: 1rem 0; /* professional header height */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1030;
+    padding: 0;
+    margin: 0;
     background: #ffffff !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem; /* professional spacing below header */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Header: professional margins and padding */
-.site-header { 
-    margin: 0 !important; 
-    padding: 0.75rem 0; /* consistent vertical padding */
+/* Header Layout */
+.site-header {
+    margin: 0 !important;
+    padding: 1rem 0;
+    width: 100%;
 }
-.site-header > .container-fluid { 
-    padding-left: 20px; 
-    padding-right: 20px; 
-    max-width: 1200px; /* professional content width */
-    margin: 0 auto; /* center the header content */
+
+.site-header > .container-fluid {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 2rem;
+    max-width: none;
+    margin: 0;
+    width: 100%;
 }
 
 .navbar-brand {
-    margin-right: 0;
+    margin-right: 2rem;
     padding: 0;
+    flex-shrink: 0;
 }
 
 .brand-logo-text {
@@ -55,9 +71,13 @@ body {
 }
 
 .navbar-nav {
-    margin-left: 0.75rem !important; /* snug spacing next to brand */
-    gap: 0.5rem;
+    display: flex;
+    flex-direction: row;
     align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
 .navbar-nav .nav-link {
@@ -387,18 +407,34 @@ textarea.form-control {
 
 /* Responsive design */
 @media (max-width: 768px) {
-    .container-fluid {
-        padding: 0 15px 15px 15px; /* consistent mobile padding */
+    body {
+        padding-top: 70px; /* Reduced space for smaller mobile header */
+        padding-bottom: 100px; /* Reduced space for mobile footer */
     }
     
-    .navbar {
-        padding: 0.75rem 0; /* appropriate mobile header height */
-        margin-bottom: 1.5rem; /* reduced mobile spacing */
+    .container-fluid {
+        padding: 15px;
+    }
+    
+    .site-header {
+        padding: 0.75rem 0;
     }
     
     .site-header > .container-fluid {
-        padding-left: 15px;
-        padding-right: 15px;
+        padding: 0 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .navbar-brand {
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+    }
+    
+    .navbar-nav {
+        flex-direction: row;
+        gap: 0.25rem;
     }
     
     .brand-logo-text {
@@ -495,17 +531,21 @@ textarea.form-control {
     background-color: #0b5ed7;
 }
 
-/* Footer styling */
+/* Fixed Footer */
 footer {
-    margin-top: 4rem !important; /* professional top margin */
-    padding: 2rem 20px 2rem 20px !important; /* professional padding all around */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 1020;
+    margin: 0 !important;
+    padding: 1.5rem 2rem !important;
     border-top: 1px solid #e9ecef !important;
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    max-width: 1200px; /* match header width */
-    margin-left: auto !important;
-    margin-right: auto !important;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
 }
 
 footer a {
@@ -523,8 +563,8 @@ footer a:hover {
     footer {
         flex-direction: column;
         gap: 0.5rem !important;
-        padding: 1.5rem 15px 1.5rem 15px !important; /* consistent mobile footer padding */
-        margin-top: 3rem !important; /* reduced mobile top margin */
+        padding: 1rem !important;
+        text-align: center;
     }
     
     footer .ms-auto {
