@@ -98,16 +98,24 @@ header p {
     vertical-align: middle;
     max-width: none;
     object-fit: contain;
-    /* Debug styling - remove after confirming logo works */
-    border: 2px solid red !important;
-    background-color: rgba(255, 0, 0, 0.3) !important;
-    opacity: 1 !important;
-    visibility: visible !important;
 }
 
 @media (max-width: 768px) {
     .brand-logo {
         height: 36px;
+    }
+}
+
+/* Shared page container utility for content pages */
+.page-container {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+@media (max-width: 768px) {
+    .page-container {
+        padding: 16px;
     }
 }
 
@@ -501,3 +509,20 @@ footer a:hover {
         margin-left: 0 !important;
     }
 } 
+
+/* OCR page styles (moved from inline to global for consistency) */
+.ocr-container { max-width: 900px; margin: 2rem auto; padding: 1rem; }
+.dropzone {
+    border: 2px dashed #888; border-radius: 8px; padding: 24px; text-align: center;
+    color: #555; background: #fafafa; cursor: pointer;
+}
+.dropzone.dragover { background: #eef7ff; border-color: #2a7ade; color: #2a7ade; }
+.preview { display: flex; gap: 16px; align-items: flex-start; margin-top: 16px; }
+.preview img { max-width: 320px; max-height: 240px; border-radius: 6px; border: 1px solid #ddd; }
+.controls { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+.controls input[type="url"] { flex: 1; min-width: 260px; }
+.output { margin-top: 16px; }
+.output textarea { width: 100%; min-height: 200px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+.muted { color: #666; font-size: 0.9rem; }
+.spinner { display: none; }
+.spinner.show { display: inline-block; }
