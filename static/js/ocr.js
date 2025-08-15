@@ -100,16 +100,20 @@
 
   extractBtn.addEventListener('click', async () => {
     output.value = '';
+    const hasFile = !!currentFile;
+    const urlVal = imageUrlInput.value.trim();
+    if (!hasFile && !urlVal) {
+      alert('Please upload/paste an image or enter an image URL.');
+      return;
+    }
+
     setLoading(true);
     try {
       const form = new FormData();
-      if (currentFile) {
+      if (hasFile) {
         form.append('image', currentFile);
-      } else if (imageUrlInput.value.trim()) {
-        form.append('image_url', imageUrlInput.value.trim());
       } else {
-        alert('Please upload/paste an image or enter an image URL.');
-        return;
+        form.append('image_url', urlVal);
       }
 
       const resp = await fetch('/ocr', {
