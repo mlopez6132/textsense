@@ -9,7 +9,7 @@ body {
     margin: 0;
     padding: 0;
     padding-top: 90px; /* Space for fixed header */
-    padding-bottom: 150px; /* Space for larger fixed footer */
+    padding-bottom: 0; /* footer is not fixed; no extra bottom padding needed */
 }
 
 .container-fluid {
@@ -409,7 +409,7 @@ textarea.form-control {
 @media (max-width: 768px) {
     body {
         padding-top: 80px; /* Space for mobile header */
-        padding-bottom: 130px; /* Space for larger mobile footer */
+        padding-bottom: 0; /* footer is not fixed on mobile */
     }
     
     .container-fluid {
@@ -534,14 +534,10 @@ textarea.form-control {
 /* Fixed Footer */
 /* Fixed Footer - Full Width & Larger Size */
 footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100vw;
-    z-index: 1020;
+    position: static; /* not fixed; stays in normal document flow */
+    width: 100vw; /* full width spanning */
     margin: 0 !important;
-    padding: 2.5rem 3rem !important;
+    padding: 2.5rem 3rem !important; /* slightly larger footer */
     border-top: 1px solid #e9ecef !important;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
