@@ -10,6 +10,7 @@ import requests
 
 HF_INFERENCE_URL_ENV = "HF_INFERENCE_URL"
 HF_OCR_URL_ENV = "HF_OCR_URL"
+HF_AUDIO_TEXT_URL_ENV = "HF_AUDIO_TEXT_URL"
 DEFAULT_TIMEOUT_SECONDS = 120
 
 
@@ -27,6 +28,15 @@ def get_ocr_url() -> str:
     if not remote:
         raise RuntimeError(
             "No OCR URL configured. Set HF_OCR_URL to your Hugging Face Space OCR endpoint (e.g. https://<space>.hf.space/extract)."
+        )
+    return remote
+
+
+def get_audio_text_url() -> str:
+    remote = os.getenv(HF_AUDIO_TEXT_URL_ENV, "").strip()
+    if not remote:
+        raise RuntimeError(
+            "No AUDIO URL configured. Set HF_AUDIO_TEXT_URL to your Hugging Face Space AUDIO endpoint (e.g. https://<space>.hf.space/extract)."
         )
     return remote
 
@@ -95,6 +105,15 @@ async def ocr_page(request: Request):
         "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
     }
     return templates.TemplateResponse("ocr.html", context)
+
+
+@app.get("/audio-text", response_class=HTMLResponse)
+async def audio_text_page(request: Request):
+    context = {
+        "request": request,
+        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
+    }
+    return templates.TemplateResponse("audio-text.html", context)
 
 
 @app.post("/contact")
@@ -265,6 +284,57 @@ async def ocr(
 
         resp = requests.post(
             remote_url,
+            files=files,
+            headers=headers,
+            timeout=DEFAULT_TIMEOUT_SECONDS,
+        )
+        if resp.status_code != 200:
+            try:
+                payload = resp.json()
+            except Exception:
+                payload = {"error": f"Upstream error (status {resp.status_code})."}
+            raise HTTPException(status_code=resp.status_code, detail=payload.get("error") or payload)
+
+        return JSONResponse(resp.json())
+    except HTTPException:
+        raise
+    except Exception as e:
+        return JSONResponse({"error": f"Relay error: {str(e)}"}, status_code=500)
+
+
+@app.post("/audio-transcribe")
+async def audio_transcribe(
+    audio: Optional[UploadFile] = File(None),
+    audio_url: Optional[str] = Form(None),
+    return_timestamps: bool = Form(False),
+):
+    if not audio_url and (audio is None or not audio.filename):
+        return JSONResponse({"error": "No audio provided. Provide 'audio' file or 'audio_url'."}, status_code=400)
+
+    try:
+        remote_url = get_audio_text_url()
+        headers = {}
+        api_key = os.getenv("HF_API_KEY", "").strip()
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+
+        # Prepare the request
+        data = {"return_timestamps": str(return_timestamps).lower()}
+        files = None
+
+        if audio is not None and audio.filename:
+            # Forward uploaded audio file
+            content = await audio.read()
+            filename = audio.filename
+            mime = audio.content_type or "audio/mpeg"
+            files = {"audio": (filename, content, mime)}
+        elif audio_url:
+            # Forward audio URL
+            data["audio_url"] = audio_url.strip()
+
+        resp = requests.post(
+            remote_url,
+            data=data,
             files=files,
             headers=headers,
             timeout=DEFAULT_TIMEOUT_SECONDS,

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TextSense OCR - Image to Text</title>
+  <title>TextSense Audio-to-Text - Speech Transcription</title>
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='favicon.ico') }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='favicon-32x32.png') }}">
@@ -26,8 +26,8 @@
         </div>
         <div class="navbar-nav">
           <a href="/" class="nav-link fw-bold">AI Detector</a>
-          <a href="/ocr" class="nav-link fw-bold active">Image-Text to Text</a>
-          <a href="/audio-text" class="nav-link fw-bold">Audio to Text</a>
+          <a href="/ocr" class="nav-link fw-bold">Image-Text to Text</a>
+          <a href="/audio-text" class="nav-link fw-bold active">Audio to Text</a>
         </div>
       </div>
     </nav>
@@ -37,80 +37,100 @@
     <div class="col-lg-9 col-xl-8">
       <header class="text-center mb-4">
         <h1 class="display-5 fw-bold text-primary mb-3">
-          <i class="fas fa-image me-2"></i>Image to Text Converter
+          <i class="fas fa-microphone me-2"></i>Audio to Text Converter
         </h1>
         <p class="lead text-muted mb-4">
-          Extract text from images instantly with our advanced OCR technology. 
-          Perfect for digitizing documents, screenshots, and handwritten notes.
+          Convert speech to text with our advanced AI transcription service. 
+          Perfect for transcribing meetings, podcasts, interviews, and voice memos.
         </p>
         <div class="row text-center">
           <div class="col-md-4">
             <div class="mb-3">
               <i class="fas fa-upload text-primary fs-1"></i>
-              <h6 class="mt-2">Upload Any Image</h6>
-              <small class="text-muted">JPG, PNG, GIF, WebP</small>
+              <h6 class="mt-2">Upload Audio File</h6>
+              <small class="text-muted">MP3, WAV, M4A, OGG</small>
             </div>
           </div>
           <div class="col-md-4">
             <div class="mb-3">
-              <i class="fas fa-magic text-primary fs-1"></i>
-              <h6 class="mt-2">AI-Powered OCR</h6>
-              <small class="text-muted">High accuracy recognition</small>
+              <i class="fas fa-brain text-primary fs-1"></i>
+              <h6 class="mt-2">AI-Powered Whisper</h6>
+              <small class="text-muted">OpenAI's Whisper model</small>
             </div>
           </div>
           <div class="col-md-4">
             <div class="mb-3">
-              <i class="fas fa-download text-primary fs-1"></i>
-              <h6 class="mt-2">Export Results</h6>
-              <small class="text-muted">Copy or download as .txt</small>
+              <i class="fas fa-clock text-primary fs-1"></i>
+              <h6 class="mt-2">Timestamps Available</h6>
+              <small class="text-muted">Segment-level timing</small>
             </div>
           </div>
         </div>
       </header>
 
-      <!-- OCR Card -->
+      <!-- Audio Transcription Card -->
       <div class="card shadow-lg mb-4">
         <div class="card-header bg-primary text-white">
-          <h5 class="mb-0"><i class="fas fa-image me-2"></i>Image to Text Extractor</h5>
+          <h5 class="mb-0"><i class="fas fa-microphone me-2"></i>Audio to Text Transcriber</h5>
         </div>
         <div class="card-body">
           <!-- Upload Section -->
           <div class="upload-section mb-4">
-            <div id="dropzone" class="dropzone-enhanced" tabindex="0">
+            <div id="audioDropzone" class="dropzone-enhanced" tabindex="0">
               <div class="dropzone-content">
                 <div class="upload-icon">
-                  <i class="fas fa-cloud-upload-alt"></i>
+                  <i class="fas fa-volume-up"></i>
                 </div>
                 <div class="upload-text">
-                  <h6 class="mb-2">Upload Your Image</h6>
+                  <h6 class="mb-2">Upload Your Audio File</h6>
                   <p class="text-muted small mb-3">
-                    <strong>Click to browse</strong>, drag & drop, or paste from clipboard
+                    <strong>Click to browse</strong> or drag & drop your audio file
                   </p>
                   <div class="supported-formats">
-                    <small class="text-muted">Supports: JPG, PNG, GIF, WebP</small>
+                    <small class="text-muted">Supports: MP3, WAV, M4A, OGG, WebM</small>
                   </div>
                 </div>
               </div>
-              <input id="fileInput" type="file" accept="image/*" style="display:none" />
+              <input id="audioFileInput" type="file" accept="audio/*" style="display:none" />
             </div>
             
             <!-- URL Input -->
             <div class="url-input mt-3">
               <div class="input-group">
                 <span class="input-group-text"><i class="fas fa-link"></i></span>
-                <input id="imageUrl" class="form-control" type="url" placeholder="Or paste image URL (https://...)" />
+                <input id="audioUrl" class="form-control" type="url" placeholder="Or paste audio URL (https://...)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Options Section -->
+          <div class="options-section mb-4">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="includeTimestamps" checked>
+                  <label class="form-check-label" for="includeTimestamps">
+                    <i class="fas fa-clock me-1"></i>Include timestamps
+                  </label>
+                  <small class="text-muted d-block">Get segment-level timing information</small>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Preview and Analysis Section -->
-          <div class="analysis-section" id="analysisSection" style="display: none;">
+          <div class="analysis-section" id="audioAnalysisSection" style="display: none;">
             <div class="row">
               <div class="col-md-4">
                 <div class="preview-container">
-                  <h6 class="mb-2">Image Preview</h6>
-                  <div class="image-preview">
-                    <img id="preview" alt="Preview" />
+                  <h6 class="mb-2">Audio Preview</h6>
+                  <div class="audio-preview">
+                    <audio id="audioPreview" controls style="width: 100%;">
+                      Your browser does not support the audio element.
+                    </audio>
+                    <div class="audio-info mt-2">
+                      <small class="text-muted" id="audioInfo">No audio loaded</small>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -119,22 +139,22 @@
                   <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="mb-0">Actions</h6>
                     <div class="action-buttons">
-                      <button id="extractBtn" class="btn btn-primary">
-                        <i class="fas fa-magic me-2"></i>Extract Text
+                      <button id="transcribeBtn" class="btn btn-primary">
+                        <i class="fas fa-microphone me-2"></i>Transcribe Audio
                       </button>
-                      <button id="clearBtn" class="btn btn-outline-secondary ms-2">
+                      <button id="clearAudioBtn" class="btn btn-outline-secondary ms-2">
                         <i class="fas fa-times me-2"></i>Clear
                       </button>
                     </div>
                   </div>
                   
-                  <!-- Loading Spinner for Analysis -->
-                  <div id="analyzing" class="analyzing-spinner" style="display: none;">
+                  <!-- Loading Spinner for Transcription -->
+                  <div id="transcribing" class="analyzing-spinner" style="display: none;">
                     <div class="spinner-container">
                       <div class="spinner-border text-primary" role="status"></div>
                       <div class="analyzing-text mt-2">
-                        <strong>Analyzing Image...</strong>
-                        <div class="small text-muted">Extracting text using AI</div>
+                        <strong>Transcribing Audio...</strong>
+                        <div class="small text-muted">Converting speech to text using AI</div>
                       </div>
                     </div>
                   </div>
@@ -146,20 +166,35 @@
           <!-- Results Section -->
           <div class="results-section mt-4">
             <div class="output-header d-flex justify-content-between align-items-center mb-3">
-              <label for="ocrOutput" class="form-label mb-0">
-                <i class="fas fa-file-text me-2"></i>Extracted Text
+              <label for="transcriptionOutput" class="form-label mb-0">
+                <i class="fas fa-file-text me-2"></i>Transcription
               </label>
-              <div class="output-controls" style="display: none;" id="outputControls">
-                <button id="copyBtn" class="btn btn-outline-secondary btn-sm">
+              <div class="output-controls" style="display: none;" id="transcriptionControls">
+                <button id="copyTranscriptionBtn" class="btn btn-outline-secondary btn-sm">
                   <i class="fas fa-copy me-1"></i>Copy
                 </button>
-                <button id="downloadBtn" class="btn btn-outline-primary btn-sm ms-2">
+                <button id="downloadTranscriptionBtn" class="btn btn-outline-primary btn-sm ms-2">
                   <i class="fas fa-download me-1"></i>Download .txt
                 </button>
               </div>
             </div>
             <div class="output-container">
-              <textarea id="ocrOutput" class="form-control" readonly placeholder="Upload an image and click 'Extract Text' to see the results here..."></textarea>
+              <textarea id="transcriptionOutput" class="form-control" readonly placeholder="Upload an audio file and click 'Transcribe Audio' to see the results here..."></textarea>
+            </div>
+            
+            <!-- Timestamps Section -->
+            <div id="timestampsSection" style="display: none;" class="mt-3">
+              <div class="output-header d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label mb-0">
+                  <i class="fas fa-clock me-2"></i>Timestamps
+                </label>
+                <button id="downloadTimestampsBtn" class="btn btn-outline-info btn-sm">
+                  <i class="fas fa-download me-1"></i>Download JSON
+                </button>
+              </div>
+              <div class="timestamps-container">
+                <div id="timestampsOutput" class="timestamps-list"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -175,19 +210,18 @@
             <div class="col-md-6">
               <h6 class="text-primary">Upload Methods</h6>
               <ul class="list-unstyled">
-                <li><i class="fas fa-check text-success me-2"></i><strong>Drag & Drop:</strong> Simply drag your image into the upload area</li>
+                <li><i class="fas fa-check text-success me-2"></i><strong>Drag & Drop:</strong> Simply drag your audio file into the upload area</li>
                 <li><i class="fas fa-check text-success me-2"></i><strong>Click to Browse:</strong> Click the upload area to select files</li>
-                <li><i class="fas fa-check text-success me-2"></i><strong>Paste from Clipboard:</strong> Use Ctrl+V (Cmd+V on Mac)</li>
-                <li><i class="fas fa-check text-success me-2"></i><strong>Image URL:</strong> Paste a direct link to an online image</li>
+                <li><i class="fas fa-check text-success me-2"></i><strong>Audio URL:</strong> Paste a direct link to an online audio file</li>
               </ul>
             </div>
             <div class="col-md-6">
               <h6 class="text-primary">Best Results Tips</h6>
               <ul class="list-unstyled">
-                <li><i class="fas fa-star text-warning me-2"></i>Use high-resolution images</li>
-                <li><i class="fas fa-star text-warning me-2"></i>Ensure good contrast between text and background</li>
-                <li><i class="fas fa-star text-warning me-2"></i>Avoid blurry or tilted images</li>
-                <li><i class="fas fa-star text-warning me-2"></i>Works best with printed text</li>
+                <li><i class="fas fa-star text-warning me-2"></i>Use clear, high-quality audio recordings</li>
+                <li><i class="fas fa-star text-warning me-2"></i>Minimize background noise</li>
+                <li><i class="fas fa-star text-warning me-2"></i>Single speaker works better than multiple speakers</li>
+                <li><i class="fas fa-star text-warning me-2"></i>English content typically has higher accuracy</li>
               </ul>
             </div>
           </div>
@@ -201,17 +235,19 @@
         </div>
         <div class="card-body">
           <p class="mb-3">
-            Image-to-text extraction is powered by <strong>PaddleOCR</strong> running on the server. It performs
-            text detection and recognition with angle classification for robust results.
+            Audio-to-text transcription is powered by <strong>OpenAI's Whisper distil-small.en</strong> model running via 
+            sherpa-onnx with INT8 quantization for efficient processing. The model automatically handles chunking for 
+            long audio files and provides segment-level timestamps.
           </p>
           <ul class="mb-3">
-            <li>Pipeline: angle classification → text detection → text recognition</li>
-            <li>Optimized for CPU inference; starts quickly and is lightweight</li>
-            <li>Outputs are combined in natural reading order</li>
+            <li>Model: Whisper distil-small.en (244M parameters, quantized to INT8)</li>
+            <li>Framework: sherpa-onnx for efficient ONNX runtime inference</li>
+            <li>Audio processing: Automatic conversion to 16kHz mono WAV</li>
+            <li>Chunking: Automatic handling of long audio with overlap</li>
           </ul>
           <div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-outline-primary btn-sm" href="https://huggingface.co/spaces/cxeep/PaddleOCR" target="_blank" rel="noopener noreferrer">View PaddleOCR Space</a>
-            <a class="btn btn-outline-secondary btn-sm" href="https://github.com/PaddlePaddle/PaddleOCR" target="_blank" rel="noopener noreferrer">PaddleOCR GitHub</a>
+            <a class="btn btn-outline-primary btn-sm" href="https://huggingface.co/spaces/mlopez6132/textsense-audio-text" target="_blank" rel="noopener noreferrer">View Audio-Text Space</a>
+            <a class="btn btn-outline-secondary btn-sm" href="https://huggingface.co/openai/whisper-small" target="_blank" rel="noopener noreferrer">Whisper Model</a>
           </div>
         </div>
       </div>
@@ -229,8 +265,6 @@
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', path='js/site.js') }}"></script>
-  <script src="{{ url_for('static', path='js/ocr.js') }}"></script>
+  <script src="{{ url_for('static', path='js/audio-text.js') }}"></script>
 </body>
 </html>
-
-
