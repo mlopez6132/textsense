@@ -441,41 +441,123 @@ async def generate_image(
                 error_msg = f"Upstream error (status {resp.status_code})"
             raise HTTPException(status_code=resp.status_code, detail=error_msg)
 
-        # Extract the event ID from the response
+        # Parse the initial response to extract event ID
         try:
-            event_id = resp.json().get("data", [{}])[0].get("event_id")
+            response_data = resp.json()
+            print(f"DEBUG: Initial response: {response_data}")  # Debug logging
+            
+            # Try different possible response formats
+            event_id = None
+            
+            # Format 1: {"event_id": "..."}
+            if isinstance(response_data, dict) and "event_id" in response_data:
+                event_id = response_data["event_id"]
+            
+            # Format 2: {"data": [{"event_id": "..."}]}
+            elif isinstance(response_data, dict) and "data" in response_data:
+                data = response_data["data"]
+                if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
+                    event_id = data[0].get("event_id")
+            
+            # Format 3: Direct string response
+            elif isinstance(response_data, str):
+                event_id = response_data
+            
+            # Format 4: List with event ID
+            elif isinstance(response_data, list) and len(response_data) > 0:
+                if isinstance(response_data[0], dict):
+                    event_id = response_data[0].get("event_id")
+                elif isinstance(response_data[0], str):
+                    event_id = response_data[0]
+            
             if not event_id:
-                return JSONResponse({"error": "No event ID received from Qwen Image API"}, status_code=500)
-        except (KeyError, IndexError, TypeError):
-            return JSONResponse({"error": "Invalid response format from Qwen Image API"}, status_code=500)
-
-        # Second request to get the generated images
-        result_url = f"{remote_url}/{event_id}"
-        result_resp = requests.get(
-            result_url,
-            headers=headers,
-            timeout=DEFAULT_TIMEOUT_SECONDS,
-        )
-        
-        if result_resp.status_code != 200:
-            try:
-                error_data = result_resp.json()
-                error_msg = error_data.get("error", f"Failed to fetch results (status {result_resp.status_code})")
-            except Exception:
-                error_msg = f"Failed to fetch results (status {result_resp.status_code})"
-            raise HTTPException(status_code=result_resp.status_code, detail=error_msg)
-
-        # Return the results
-        try:
-            result_data = result_resp.json()
-            return JSONResponse(result_data)
+                return JSONResponse({
+                    "error": "No event ID received from Qwen Image API", 
+                    "response": response_data,
+                    "debug": "Check the API response format"
+                }, status_code=500)
+                
         except Exception as e:
-            return JSONResponse({"error": f"Failed to parse result response: {str(e)}"}, status_code=500)
+            return JSONResponse({
+                "error": f"Failed to parse initial response: {str(e)}",
+                "raw_response": resp.text[:1000] if hasattr(resp, 'text') else "No text available"
+            }, status_code=500)
+
+        # Second request to get the generated images using event ID
+        try:
+            # Build the streaming URL for the result
+            base_url = remote_url.replace('/call/infer', '')
+            result_url = f"{base_url}/call/infer/{event_id}"
+            
+            print(f"DEBUG: Polling URL: {result_url}")  # Debug logging
+            
+            result_resp = requests.get(
+                result_url,
+                headers=headers,
+                timeout=DEFAULT_TIMEOUT_SECONDS,
+            )
+            
+            if result_resp.status_code != 200:
+                return JSONResponse({
+                    "error": f"Failed to fetch results (status {result_resp.status_code})",
+                    "event_id": event_id,
+                    "polling_url": result_url
+                }, status_code=result_resp.status_code)
+
+            # Parse the final result
+            try:
+                result_data = result_resp.json()
+                print(f"DEBUG: Final response: {result_data}")  # Debug logging
+                return JSONResponse(result_data)
+            except Exception as e:
+                return JSONResponse({
+                    "error": f"Failed to parse result response: {str(e)}",
+                    "raw_response": result_resp.text[:1000] if hasattr(result_resp, 'text') else "No text available"
+                }, status_code=500)
+                
+        except Exception as e:
+            return JSONResponse({
+                "error": f"Failed to poll results: {str(e)}",
+                "event_id": event_id
+            }, status_code=500)
 
     except HTTPException:
         raise
     except Exception as e:
         return JSONResponse({"error": f"Image generation error: {str(e)}"}, status_code=500)
+
+
+@app.post("/test-qwen-api")
+async def test_qwen_api():
+    """Test endpoint to debug Qwen Image API response format."""
+    try:
+        remote_url = get_qwen_image_url()
+        headers = {"Content-Type": "application/json"}
+        
+        # Simple test payload
+        payload = {
+            "data": [
+                "test image",  # prompt
+                "",            # negative_prompt
+                True,          # enable_safety_checker
+                "1:1",         # aspect_ratio
+                1,             # num_images
+                4,             # num_inference_steps
+                True           # additional parameter
+            ]
+        }
+        
+        resp = requests.post(remote_url, json=payload, headers=headers, timeout=30)
+        
+        return JSONResponse({
+            "status_code": resp.status_code,
+            "headers": dict(resp.headers),
+            "response": resp.json() if resp.status_code == 200 else resp.text,
+            "url": remote_url
+        })
+        
+    except Exception as e:
+        return JSONResponse({"error": f"Test failed: {str(e)}"}, status_code=500)
 
 
 @app.get("/healthz")
