@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TextSense Image Generator - AI-Powered Text-to-Image</title>
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='favicon.ico') }}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='favicon-32x32.png') }}">
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='favicon-16x16.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', path='apple-touch-icon.png') }}">
+  <meta name="msapplication-TileColor" content="#0d6efd">
+  <meta name="theme-color" content="#ffffff">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', path='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+  <div class="container-fluid">
+    <!-- Header / Navbar -->
+    <nav class="navbar site-header">
+      <div class="container-fluid">
+        <div class="navbar-brand">
+          <a href="/" class="brand-logo-text fw-bold fs-3 text-decoration-none">TextSense</a>
+          <span class="brand-tagline text-muted small d-block">open ai tools for everyone</span>
+        </div>
+        <div class="navbar-nav">
+          <a href="/" class="nav-link fw-bold">AI Detector</a>
+          <a href="/ocr" class="nav-link fw-bold">Image-Text to Text</a>
+          <a href="/audio-text" class="nav-link fw-bold">Audio to Text</a>
+          <a href="/generate-image-page" class="nav-link fw-bold active">Text to Image</a>
+        </div>
+      </div>
+    </nav>
+
+  <!-- Page Header -->
+  <div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+      <header class="text-center mb-4">
+        <h1 class="display-5 fw-bold text-primary mb-3">
+          <i class="fas fa-image me-2"></i>AI Image Generator
+        </h1>
+        <p class="lead text-muted mb-4">
+          Create stunning images from text descriptions with our advanced AI image generation service. 
+          Perfect for artwork, concepts, illustrations, and creative projects.
+        </p>
+        <div class="row text-center">
+          <div class="col-md-4">
+            <div class="mb-3">
+              <i class="fas fa-pen text-primary fs-1"></i>
+              <h6 class="mt-2">Text Prompt</h6>
+              <small class="text-muted">Describe your vision</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="mb-3">
+              <i class="fas fa-magic text-primary fs-1"></i>
+              <h6 class="mt-2">AI-Powered Qwen</h6>
+              <small class="text-muted">Advanced image generation</small>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="mb-3">
+              <i class="fas fa-palette text-primary fs-1"></i>
+              <h6 class="mt-2">Multiple Styles</h6>
+              <small class="text-muted">Various aspect ratios</small>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Image Generation Card -->
+      <div class="card shadow-lg mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="fas fa-image me-2"></i>Text-to-Image Generator</h5>
+        </div>
+        <div class="card-body">
+          <!-- Prompt Section -->
+          <div class="prompt-section mb-4">
+            <div class="mb-3">
+              <label for="promptInput" class="form-label">
+                <i class="fas fa-pen me-2"></i>Image Description
+              </label>
+              <textarea id="promptInput" class="form-control" rows="3" placeholder="Describe the image you want to generate... e.g., 'a beautiful sunset over mountains, digital art style'"></textarea>
+              <div class="form-text">Be descriptive! Include style, mood, colors, and composition details for better results.</div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="negativePromptInput" class="form-label">
+                <i class="fas fa-ban me-2"></i>Negative Prompt (Optional)
+              </label>
+              <input id="negativePromptInput" class="form-control" type="text" placeholder="What to avoid... e.g., 'blurry, low quality, distorted'" />
+              <div class="form-text">Specify what you don't want in the image.</div>
+            </div>
+          </div>
+
+          <!-- Options Section -->
+          <div class="options-section mb-4">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="aspectRatio" class="form-label">
+                    <i class="fas fa-expand-arrows-alt me-2"></i>Aspect Ratio
+                  </label>
+                  <select id="aspectRatio" class="form-select">
+                    <option value="1:1">Square (1:1)</option>
+                    <option value="16:9">Landscape (16:9)</option>
+                    <option value="9:16">Portrait (9:16)</option>
+                    <option value="4:3">Standard (4:3)</option>
+                    <option value="3:4">Portrait (3:4)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="numImages" class="form-label">
+                    <i class="fas fa-copy me-2"></i>Number of Images
+                  </label>
+                  <select id="numImages" class="form-select">
+                    <option value="1">1 Image</option>
+                    <option value="2">2 Images</option>
+                    <option value="3">3 Images</option>
+                    <option value="4">4 Images</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="inferenceSteps" class="form-label">
+                    <i class="fas fa-sliders-h me-2"></i>Quality Steps: <span id="stepsValue">20</span>
+                  </label>
+                  <input id="inferenceSteps" type="range" class="form-range" min="4" max="50" value="20" />
+                  <div class="form-text">Higher values = better quality but slower generation</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <div class="form-check form-switch mt-4">
+                    <input class="form-check-input" type="checkbox" id="safetyChecker" checked>
+                    <label class="form-check-label" for="safetyChecker">
+                      <i class="fas fa-shield-alt me-1"></i>Enable safety filter
+                    </label>
+                    <small class="text-muted d-block">Filter inappropriate content</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Generation Controls -->
+          <div class="controls-section mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <button id="generateBtn" class="btn btn-primary btn-lg">
+                  <i class="fas fa-magic me-2"></i>Generate Images
+                </button>
+                <button id="clearBtn" class="btn btn-outline-secondary ms-2">
+                  <i class="fas fa-times me-2"></i>Clear
+                </button>
+              </div>
+              <div id="generationProgress" class="text-muted" style="display: none;">
+                <small>Estimated time: 15-30 seconds</small>
+              </div>
+            </div>
+            
+            <!-- Loading Spinner for Generation -->
+            <div id="generating" class="analyzing-spinner mt-3" style="display: none;">
+              <div class="spinner-container">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div class="analyzing-text mt-2">
+                  <strong>Generating Images...</strong>
+                  <div class="small text-muted">Creating your artwork with AI</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Results Section -->
+          <div class="results-section mt-4">
+            <div class="output-header d-flex justify-content-between align-items-center mb-3" id="resultsHeader" style="display: none;">
+              <label class="form-label mb-0">
+                <i class="fas fa-images me-2"></i>Generated Images
+              </label>
+              <div class="output-controls">
+                <button id="downloadAllBtn" class="btn btn-outline-primary btn-sm">
+                  <i class="fas fa-download me-1"></i>Download All
+                </button>
+              </div>
+            </div>
+            <div id="imageResults" class="image-gallery row"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Usage Guide -->
+      <div class="card shadow-lg mb-4">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>How to Use</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6 class="text-primary">Creating Great Prompts</h6>
+              <ul class="list-unstyled">
+                <li><i class="fas fa-check text-success me-2"></i><strong>Be Descriptive:</strong> Include details about style, colors, mood</li>
+                <li><i class="fas fa-check text-success me-2"></i><strong>Add Style Tags:</strong> "digital art", "oil painting", "photorealistic"</li>
+                <li><i class="fas fa-check text-success me-2"></i><strong>Specify Composition:</strong> "close-up", "wide shot", "bird's eye view"</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h6 class="text-primary">Best Results Tips</h6>
+              <ul class="list-unstyled">
+                <li><i class="fas fa-star text-warning me-2"></i>Use negative prompts to avoid unwanted elements</li>
+                <li><i class="fas fa-star text-warning me-2"></i>Higher steps = better quality but slower generation</li>
+                <li><i class="fas fa-star text-warning me-2"></i>Try different aspect ratios for varied compositions</li>
+                <li><i class="fas fa-star text-warning me-2"></i>Be specific about lighting and atmosphere</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Technology Section -->
+      <div class="card shadow-lg mt-5 mb-5">
+        <div class="card-header text-white">
+          <h5 class="mb-0"><i class="fas fa-microchip me-2"></i>Technology</h5>
+        </div>
+        <div class="card-body">
+          <p class="mb-3">
+            Image generation is powered by <strong>Qwen-Image</strong> model running on Hugging Face Spaces. 
+            The model uses advanced diffusion techniques to create high-quality images from text descriptions 
+            with support for various aspect ratios and style controls.
+          </p>
+          <ul class="mb-3">
+            <li>Model: Qwen-Image (Advanced text-to-image generation)</li>
+            <li>Framework: Gradio API via Hugging Face Spaces</li>
+            <li>Features: Multiple aspect ratios, safety filtering, batch generation</li>
+            <li>Output: High-resolution PNG images</li>
+          </ul>
+          <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-primary btn-sm" href="https://huggingface.co/spaces/multimodalart/Qwen-Image-Fast" target="_blank" rel="noopener noreferrer">View Qwen-Image Space</a>
+            <a class="btn btn-outline-secondary btn-sm" href="https://huggingface.co/Qwen/Qwen-Image" target="_blank" rel="noopener noreferrer">Qwen-Image Model</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <footer class="mt-5 border-top pt-3 small text-muted d-flex flex-wrap gap-3">
+      <span>&copy; textsense.org 2025 &mdash; your trusted AI text detector</span>
+      <a href="/about">About</a>
+      <a href="/privacy">Privacy</a>
+      <a href="/terms">Terms</a>
+      <a href="/cookies">Cookies</a>
+      <a href="/contact">Contact</a>
+      <span class="ms-auto">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
+    </footer>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', path='js/site.js') }}"></script>
+  <script src="{{ url_for('static', path='js/generate-image.js') }}"></script>
+</body>
+</html>

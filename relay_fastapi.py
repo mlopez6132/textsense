@@ -11,6 +11,7 @@ import requests
 HF_INFERENCE_URL_ENV = "HF_INFERENCE_URL"
 HF_OCR_URL_ENV = "HF_OCR_URL"
 HF_AUDIO_TEXT_URL_ENV = "HF_AUDIO_TEXT_URL"
+HF_QWEN_IMAGE_URL_ENV = "HF_QWEN_IMAGE_URL"
 DEFAULT_TIMEOUT_SECONDS = 120
 
 
@@ -37,6 +38,15 @@ def get_audio_text_url() -> str:
     if not remote:
         raise RuntimeError(
             "No AUDIO URL configured. Set HF_AUDIO_TEXT_URL to your Hugging Face Space AUDIO endpoint (e.g. https://<space>.hf.space/extract)."
+        )
+    return remote
+
+
+def get_qwen_image_url() -> str:
+    remote = os.getenv(HF_QWEN_IMAGE_URL_ENV, "").strip()
+    if not remote:
+        raise RuntimeError(
+            "No Qwen Image URL configured. Set HF_QWEN_IMAGE_URL to your Hugging Face Space Qwen Image endpoint (e.g. https://<space>.hf.space/gradio_api/call/infer)."
         )
     return remote
 
@@ -114,6 +124,15 @@ async def audio_text_page(request: Request):
         "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
     }
     return templates.TemplateResponse("audio-text.html", context)
+
+
+@app.get("/generate-image-page", response_class=HTMLResponse)
+async def generate_image_page(request: Request):
+    context = {
+        "request": request,
+        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
+    }
+    return templates.TemplateResponse("generate-image.html", context)
 
 
 @app.post("/contact")
@@ -351,6 +370,112 @@ async def audio_transcribe(
         raise
     except Exception as e:
         return JSONResponse({"error": f"Relay error: {str(e)}"}, status_code=500)
+
+
+@app.post("/generate-image")
+async def generate_image(
+    prompt: str = Form(...),
+    negative_prompt: Optional[str] = Form(""),
+    aspect_ratio: str = Form("1:1"),
+    num_images: int = Form(1),
+    num_inference_steps: int = Form(4),
+    enable_safety_checker: bool = Form(True),
+):
+    """Generate images using Qwen Image API via Hugging Face Space.
+    
+    Parameters:
+    - prompt: Text description of the image to generate
+    - negative_prompt: What to avoid in the image
+    - aspect_ratio: Image aspect ratio (e.g., "1:1", "16:9", "4:3")
+    - num_images: Number of images to generate (1-4)
+    - num_inference_steps: Number of denoising steps (1-50)
+    - enable_safety_checker: Whether to enable safety filtering
+    """
+    if not prompt or not prompt.strip():
+        return JSONResponse({"error": "prompt is required"}, status_code=400)
+    
+    # Validate parameters
+    if num_images < 1 or num_images > 4:
+        return JSONResponse({"error": "num_images must be between 1 and 4"}, status_code=400)
+    
+    if num_inference_steps < 1 or num_inference_steps > 50:
+        return JSONResponse({"error": "num_inference_steps must be between 1 and 50"}, status_code=400)
+    
+    try:
+        remote_url = get_qwen_image_url()
+        headers = {
+            "Content-Type": "application/json",
+        }
+        
+        # Optional: support private endpoints via HF_API_KEY
+        api_key = os.getenv("HF_API_KEY", "").strip()
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+
+        # Prepare the request payload based on the Qwen Image API format
+        payload = {
+            "data": [
+                prompt.strip(),
+                negative_prompt.strip() if negative_prompt else "",
+                enable_safety_checker,
+                aspect_ratio,
+                num_images,
+                num_inference_steps,
+                True  # Additional parameter for the API
+            ]
+        }
+
+        # First request to initiate generation
+        resp = requests.post(
+            remote_url,
+            json=payload,
+            headers=headers,
+            timeout=DEFAULT_TIMEOUT_SECONDS,
+        )
+        
+        if resp.status_code != 200:
+            try:
+                error_data = resp.json()
+                error_msg = error_data.get("error", f"Upstream error (status {resp.status_code})")
+            except Exception:
+                error_msg = f"Upstream error (status {resp.status_code})"
+            raise HTTPException(status_code=resp.status_code, detail=error_msg)
+
+        # Extract the event ID from the response
+        try:
+            event_id = resp.json().get("data", [{}])[0].get("event_id")
+            if not event_id:
+                return JSONResponse({"error": "No event ID received from Qwen Image API"}, status_code=500)
+        except (KeyError, IndexError, TypeError):
+            return JSONResponse({"error": "Invalid response format from Qwen Image API"}, status_code=500)
+
+        # Second request to get the generated images
+        result_url = f"{remote_url}/{event_id}"
+        result_resp = requests.get(
+            result_url,
+            headers=headers,
+            timeout=DEFAULT_TIMEOUT_SECONDS,
+        )
+        
+        if result_resp.status_code != 200:
+            try:
+                error_data = result_resp.json()
+                error_msg = error_data.get("error", f"Failed to fetch results (status {result_resp.status_code})")
+            except Exception:
+                error_msg = f"Failed to fetch results (status {result_resp.status_code})"
+            raise HTTPException(status_code=result_resp.status_code, detail=error_msg)
+
+        # Return the results
+        try:
+            result_data = result_resp.json()
+            return JSONResponse(result_data)
+        except Exception as e:
+            return JSONResponse({"error": f"Failed to parse result response: {str(e)}"}, status_code=500)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        return JSONResponse({"error": f"Image generation error: {str(e)}"}, status_code=500)
 
 
 @app.get("/healthz")
