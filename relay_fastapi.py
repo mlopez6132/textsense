@@ -458,45 +458,67 @@ async def generate_image(
             attempt = 0
             while attempt < max_attempts:
                 try:
-                    result_resp = requests.get(result_url, headers=sse_headers, timeout=10, stream=True)
+                    result_resp = requests.get(
+                        result_url,
+                        headers={"Accept": "text/event-stream"},
+                        timeout=(10, 60),
+                        stream=True
+                    )
+                    
+                    print(f"DEBUG: Attempt {attempt + 1}, Status: {result_resp.status_code}")
+                    
                     if result_resp.status_code == 200:
+                        # Handle streaming response
                         response_text = ""
+                        current_event = None
                         for raw_line in result_resp.iter_lines(decode_unicode=True):
                             if not raw_line:
                                 continue
                             line = raw_line.strip()
                             response_text += line + "\n"
-                            # Look for complete events carrying final data
+
+                            # Track event type (e.g., heartbeat, complete, error)
+                            if line.startswith("event: "):
+                                current_event = line.split(": ", 1)[1].strip()
+                                print(f"DEBUG: Received event: {current_event}")
+                                continue
+
+                            # Look for data lines in Server-Sent Events format
                             if line.startswith("data: "):
                                 data_part = line[6:]
-                                # data_part may be a JSON string, list, or simple string
                                 try:
                                     parsed = json.loads(data_part)
                                 except json.JSONDecodeError:
-                                    # It might be a quoted string like "404: Not Found"
                                     if data_part.startswith('"') and data_part.endswith('"'):
                                         parsed = data_part.strip('"')
                                     else:
                                         continue
 
-                                # If error string from SSE
+                                # If server indicates an error via SSE
                                 if isinstance(parsed, str) and parsed.startswith("404"):
                                     return JSONResponse({"error": parsed, "polling_url": result_url}, status_code=502)
 
-                                # Final complete payload from Qwen is typically a list: [ {file}, timestamp ]
-                                if isinstance(parsed, list):
-                                    image_urls = []
-                                    files_meta = []
-                                    for item in parsed:
-                                        if isinstance(item, dict) and item.get("url"):
-                                            image_urls.append(item["url"])
-                                            files_meta.append(item)
-                                    if image_urls:
-                                        return JSONResponse({"images": image_urls, "files": files_meta})
-                                elif isinstance(parsed, dict):
-                                    # Some spaces might return dict with data/images
-                                    if parsed.get("data") or parsed.get("images"):
-                                        return JSONResponse(parsed)
+                                # On complete event, treat this as final payload
+                                if current_event == "complete":
+                                    if isinstance(parsed, list):
+                                        image_urls = []
+                                        files_meta = []
+                                        for item in parsed:
+                                            if isinstance(item, dict) and item.get("url"):
+                                                image_urls.append(item["url"])
+                                                files_meta.append(item)
+                                        if image_urls:
+                                            return JSONResponse({"images": image_urls, "files": files_meta})
+                                    elif isinstance(parsed, dict):
+                                        if parsed.get("data") or parsed.get("images"):
+                                            return JSONResponse(parsed)
+                                    # If complete without recognizable payload, keep listening briefly
+                                    continue
+
+                                # Non-complete data that already contains useful payload
+                                if isinstance(parsed, dict) and (parsed.get("data") or parsed.get("images")):
+                                    return JSONResponse(parsed)
+
                         # If stream ended without data, retry briefly
                         attempt += 1
                         time.sleep(1)
