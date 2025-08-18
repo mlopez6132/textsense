@@ -1,5 +1,7 @@
 import os
 import io
+import json
+import time
 from typing import Optional
 
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
@@ -491,29 +493,101 @@ async def generate_image(
             
             print(f"DEBUG: Polling URL: {result_url}")  # Debug logging
             
-            result_resp = requests.get(
-                result_url,
-                headers=headers,
-                timeout=DEFAULT_TIMEOUT_SECONDS,
-            )
+            # Poll for results with streaming response handling
+            max_attempts = 30  # 30 seconds max
+            attempt = 0
             
-            if result_resp.status_code != 200:
-                return JSONResponse({
-                    "error": f"Failed to fetch results (status {result_resp.status_code})",
-                    "event_id": event_id,
-                    "polling_url": result_url
-                }, status_code=result_resp.status_code)
-
-            # Parse the final result
-            try:
-                result_data = result_resp.json()
-                print(f"DEBUG: Final response: {result_data}")  # Debug logging
-                return JSONResponse(result_data)
-            except Exception as e:
-                return JSONResponse({
-                    "error": f"Failed to parse result response: {str(e)}",
-                    "raw_response": result_resp.text[:1000] if hasattr(result_resp, 'text') else "No text available"
-                }, status_code=500)
+            while attempt < max_attempts:
+                try:
+                    result_resp = requests.get(
+                        result_url,
+                        headers={"Accept": "text/event-stream"},
+                        timeout=10,
+                        stream=True
+                    )
+                    
+                    print(f"DEBUG: Attempt {attempt + 1}, Status: {result_resp.status_code}")
+                    
+                    if result_resp.status_code == 200:
+                        # Handle streaming response
+                        response_text = ""
+                        for line in result_resp.iter_lines(decode_unicode=True):
+                            if line:
+                                print(f"DEBUG: Received line: {line[:200]}...")  # First 200 chars
+                                response_text += line + "\n"
+                                
+                                # Look for data lines in Server-Sent Events format
+                                if line.startswith("data: "):
+                                    data_part = line[6:]  # Remove "data: " prefix
+                                    if data_part and data_part != "[DONE]":
+                                        try:
+                                            data_json = json.loads(data_part)
+                                            print(f"DEBUG: Parsed data: {data_json}")
+                                            
+                                            # Check if this contains the final result
+                                            if isinstance(data_json, dict):
+                                                # Look for image data in various formats
+                                                if "data" in data_json and data_json["data"]:
+                                                    return JSONResponse(data_json)
+                                                elif "images" in data_json:
+                                                    return JSONResponse(data_json)
+                                                elif "url" in data_json or "image" in data_json:
+                                                    return JSONResponse(data_json)
+                                                    
+                                        except json.JSONDecodeError:
+                                            continue
+                        
+                        # If no valid data found in stream, try parsing the entire response
+                        if response_text.strip():
+                            try:
+                                # Try to find JSON in the response
+                                lines = response_text.split('\n')
+                                for line in lines:
+                                    if line.startswith("data: ") and not line.endswith("[DONE]"):
+                                        data_part = line[6:]
+                                        try:
+                                            result_data = json.loads(data_part)
+                                            if isinstance(result_data, dict) and ("data" in result_data or "images" in result_data):
+                                                return JSONResponse(result_data)
+                                        except json.JSONDecodeError:
+                                            continue
+                            except Exception as parse_error:
+                                print(f"DEBUG: Parse error: {parse_error}")
+                    
+                    elif result_resp.status_code == 202:
+                        # Still processing, wait and retry
+                        print(f"DEBUG: Still processing, waiting...")
+                        time.sleep(1)
+                        attempt += 1
+                        continue
+                        
+                    else:
+                        return JSONResponse({
+                            "error": f"Failed to fetch results (status {result_resp.status_code})",
+                            "event_id": event_id,
+                            "polling_url": result_url,
+                            "response_text": result_resp.text[:500]
+                        }, status_code=result_resp.status_code)
+                        
+                except requests.exceptions.Timeout:
+                    print(f"DEBUG: Timeout on attempt {attempt + 1}")
+                    attempt += 1
+                    time.sleep(1)
+                    continue
+                    
+                except Exception as poll_error:
+                    print(f"DEBUG: Poll error: {poll_error}")
+                    attempt += 1
+                    time.sleep(1)
+                    continue
+            
+            # If we get here, we've exhausted all attempts
+            return JSONResponse({
+                "error": "Timeout waiting for image generation results",
+                "event_id": event_id,
+                "attempts": max_attempts,
+                "polling_url": result_url
+            }, status_code=408)
                 
         except Exception as e:
             return JSONResponse({
