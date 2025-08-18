@@ -377,64 +377,46 @@ async def audio_transcribe(
 @app.post("/generate-image")
 async def generate_image(
     prompt: str = Form(...),
-    negative_prompt: Optional[str] = Form(""),
+    style_index: int = Form(0),
     aspect_ratio: str = Form("1:1"),
     num_images: int = Form(1),
     num_inference_steps: int = Form(4),
     enable_safety_checker: bool = Form(True),
+    negative_prompt: Optional[str] = Form("")
 ):
     """Generate images using Qwen Image API via Hugging Face Space.
-    
-    Parameters:
-    - prompt: Text description of the image to generate
-    - negative_prompt: What to avoid in the image
-    - aspect_ratio: Image aspect ratio (e.g., "1:1", "16:9", "4:3")
-    - num_images: Number of images to generate (1-4)
-    - num_inference_steps: Number of denoising steps (1-50)
-    - enable_safety_checker: Whether to enable safety filtering
+    Matches Qwen-Image-Fast input schema.
     """
     if not prompt or not prompt.strip():
         return JSONResponse({"error": "prompt is required"}, status_code=400)
     
-    # Validate parameters
     if num_images < 1 or num_images > 4:
         return JSONResponse({"error": "num_images must be between 1 and 4"}, status_code=400)
-    
     if num_inference_steps < 1 or num_inference_steps > 50:
         return JSONResponse({"error": "num_inference_steps must be between 1 and 50"}, status_code=400)
-    
+
     try:
         remote_url = get_qwen_image_url()
-        headers = {
-            "Content-Type": "application/json",
-        }
-        
-        # Optional: support private endpoints via HF_API_KEY
+        headers = {"Content-Type": "application/json"}
         api_key = os.getenv("HF_API_KEY", "").strip()
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
 
-        # Prepare the request payload based on the Qwen Image API format
+        # Qwen-Image-Fast payload format:
+        # [prompt: str, style_index: int, enable_safety_checker: bool, aspect_ratio: str, num_images: int, num_steps: int, extra_flag: bool]
         payload = {
             "data": [
                 prompt.strip(),
-                negative_prompt.strip() if negative_prompt else "",
-                enable_safety_checker,
+                int(style_index),
+                bool(enable_safety_checker),
                 aspect_ratio,
-                num_images,
-                num_inference_steps,
-                True  # Additional parameter for the API
+                int(num_images),
+                int(num_inference_steps),
+                True
             ]
         }
 
-        # First request to initiate generation
-        resp = requests.post(
-            remote_url,
-            json=payload,
-            headers=headers,
-            timeout=DEFAULT_TIMEOUT_SECONDS,
-        )
-        
+        resp = requests.post(remote_url, json=payload, headers=headers, timeout=DEFAULT_TIMEOUT_SECONDS)
         if resp.status_code != 200:
             try:
                 error_data = resp.json()
@@ -443,157 +425,95 @@ async def generate_image(
                 error_msg = f"Upstream error (status {resp.status_code})"
             raise HTTPException(status_code=resp.status_code, detail=error_msg)
 
-        # Parse the initial response to extract event ID
+        # Extract event_id
         try:
             response_data = resp.json()
-            print(f"DEBUG: Initial response: {response_data}")  # Debug logging
-            
-            # Try different possible response formats
             event_id = None
-            
-            # Format 1: {"event_id": "..."}
             if isinstance(response_data, dict) and "event_id" in response_data:
                 event_id = response_data["event_id"]
-            
-            # Format 2: {"data": [{"event_id": "..."}]}
             elif isinstance(response_data, dict) and "data" in response_data:
                 data = response_data["data"]
-                if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
+                if isinstance(data, list) and data and isinstance(data[0], dict):
                     event_id = data[0].get("event_id")
-            
-            # Format 3: Direct string response
             elif isinstance(response_data, str):
                 event_id = response_data
-            
-            # Format 4: List with event ID
-            elif isinstance(response_data, list) and len(response_data) > 0:
-                if isinstance(response_data[0], dict):
-                    event_id = response_data[0].get("event_id")
-                elif isinstance(response_data[0], str):
-                    event_id = response_data[0]
-            
+            elif isinstance(response_data, list) and response_data:
+                first = response_data[0]
+                if isinstance(first, dict):
+                    event_id = first.get("event_id")
+                elif isinstance(first, str):
+                    event_id = first
             if not event_id:
-                return JSONResponse({
-                    "error": "No event ID received from Qwen Image API", 
-                    "response": response_data,
-                    "debug": "Check the API response format"
-                }, status_code=500)
-                
+                return JSONResponse({"error": "No event ID received", "response": response_data}, status_code=500)
         except Exception as e:
-            return JSONResponse({
-                "error": f"Failed to parse initial response: {str(e)}",
-                "raw_response": resp.text[:1000] if hasattr(resp, 'text') else "No text available"
-            }, status_code=500)
+            return JSONResponse({"error": f"Failed to parse initial response: {str(e)}", "raw": resp.text[:1000]}, status_code=500)
 
-        # Second request to get the generated images using event ID
+        # Poll SSE at .../gradio_api/call/infer/{event_id}
         try:
-            # Build the streaming URL for the result
-            base_url = remote_url.replace('/call/infer', '')
-            result_url = f"{base_url}/call/infer/{event_id}"
-            
-            print(f"DEBUG: Polling URL: {result_url}")  # Debug logging
-            
-            # Poll for results with streaming response handling
-            max_attempts = 30  # 30 seconds max
+            result_url = f"{remote_url.rstrip('/')}/{event_id}"
+            sse_headers = dict(headers)
+            sse_headers["Accept"] = "text/event-stream"
+
+            max_attempts = 30
             attempt = 0
-            
             while attempt < max_attempts:
                 try:
-                    result_resp = requests.get(
-                        result_url,
-                        headers={"Accept": "text/event-stream"},
-                        timeout=10,
-                        stream=True
-                    )
-                    
-                    print(f"DEBUG: Attempt {attempt + 1}, Status: {result_resp.status_code}")
-                    
+                    result_resp = requests.get(result_url, headers=sse_headers, timeout=10, stream=True)
                     if result_resp.status_code == 200:
-                        # Handle streaming response
                         response_text = ""
-                        for line in result_resp.iter_lines(decode_unicode=True):
-                            if line:
-                                print(f"DEBUG: Received line: {line[:200]}...")  # First 200 chars
-                                response_text += line + "\n"
-                                
-                                # Look for data lines in Server-Sent Events format
-                                if line.startswith("data: "):
-                                    data_part = line[6:]  # Remove "data: " prefix
-                                    if data_part and data_part != "[DONE]":
-                                        try:
-                                            data_json = json.loads(data_part)
-                                            print(f"DEBUG: Parsed data: {data_json}")
-                                            
-                                            # Check if this contains the final result
-                                            if isinstance(data_json, dict):
-                                                # Look for image data in various formats
-                                                if "data" in data_json and data_json["data"]:
-                                                    return JSONResponse(data_json)
-                                                elif "images" in data_json:
-                                                    return JSONResponse(data_json)
-                                                elif "url" in data_json or "image" in data_json:
-                                                    return JSONResponse(data_json)
-                                                    
-                                        except json.JSONDecodeError:
-                                            continue
-                        
-                        # If no valid data found in stream, try parsing the entire response
-                        if response_text.strip():
-                            try:
-                                # Try to find JSON in the response
-                                lines = response_text.split('\n')
-                                for line in lines:
-                                    if line.startswith("data: ") and not line.endswith("[DONE]"):
-                                        data_part = line[6:]
-                                        try:
-                                            result_data = json.loads(data_part)
-                                            if isinstance(result_data, dict) and ("data" in result_data or "images" in result_data):
-                                                return JSONResponse(result_data)
-                                        except json.JSONDecodeError:
-                                            continue
-                            except Exception as parse_error:
-                                print(f"DEBUG: Parse error: {parse_error}")
-                    
-                    elif result_resp.status_code == 202:
-                        # Still processing, wait and retry
-                        print(f"DEBUG: Still processing, waiting...")
-                        time.sleep(1)
+                        for raw_line in result_resp.iter_lines(decode_unicode=True):
+                            if not raw_line:
+                                continue
+                            line = raw_line.strip()
+                            response_text += line + "\n"
+                            # Look for complete events carrying final data
+                            if line.startswith("data: "):
+                                data_part = line[6:]
+                                # data_part may be a JSON string, list, or simple string
+                                try:
+                                    parsed = json.loads(data_part)
+                                except json.JSONDecodeError:
+                                    # It might be a quoted string like "404: Not Found"
+                                    if data_part.startswith('"') and data_part.endswith('"'):
+                                        parsed = data_part.strip('"')
+                                    else:
+                                        continue
+
+                                # If error string from SSE
+                                if isinstance(parsed, str) and parsed.startswith("404"):
+                                    return JSONResponse({"error": parsed, "polling_url": result_url}, status_code=502)
+
+                                # Final complete payload from Qwen is typically a list: [ {file}, timestamp ]
+                                if isinstance(parsed, list):
+                                    image_urls = []
+                                    files_meta = []
+                                    for item in parsed:
+                                        if isinstance(item, dict) and item.get("url"):
+                                            image_urls.append(item["url"])
+                                            files_meta.append(item)
+                                    if image_urls:
+                                        return JSONResponse({"images": image_urls, "files": files_meta})
+                                elif isinstance(parsed, dict):
+                                    # Some spaces might return dict with data/images
+                                    if parsed.get("data") or parsed.get("images"):
+                                        return JSONResponse(parsed)
+                        # If stream ended without data, retry briefly
                         attempt += 1
+                        time.sleep(1)
                         continue
-                        
+                    elif result_resp.status_code == 202:
+                        attempt += 1
+                        time.sleep(1)
+                        continue
                     else:
-                        return JSONResponse({
-                            "error": f"Failed to fetch results (status {result_resp.status_code})",
-                            "event_id": event_id,
-                            "polling_url": result_url,
-                            "response_text": result_resp.text[:500]
-                        }, status_code=result_resp.status_code)
-                        
+                        return JSONResponse({"error": f"Fetch results failed: {result_resp.status_code}", "text": result_resp.text[:500]}, status_code=result_resp.status_code)
                 except requests.exceptions.Timeout:
-                    print(f"DEBUG: Timeout on attempt {attempt + 1}")
                     attempt += 1
                     time.sleep(1)
                     continue
-                    
-                except Exception as poll_error:
-                    print(f"DEBUG: Poll error: {poll_error}")
-                    attempt += 1
-                    time.sleep(1)
-                    continue
-            
-            # If we get here, we've exhausted all attempts
-            return JSONResponse({
-                "error": "Timeout waiting for image generation results",
-                "event_id": event_id,
-                "attempts": max_attempts,
-                "polling_url": result_url
-            }, status_code=408)
-                
+            return JSONResponse({"error": "Timeout waiting for results", "event_id": event_id}, status_code=408)
         except Exception as e:
-            return JSONResponse({
-                "error": f"Failed to poll results: {str(e)}",
-                "event_id": event_id
-            }, status_code=500)
+            return JSONResponse({"error": f"Failed to poll results: {str(e)}", "event_id": event_id}, status_code=500)
 
     except HTTPException:
         raise
