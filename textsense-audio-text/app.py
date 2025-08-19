@@ -10,13 +10,6 @@ from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from concurrent.futures import ThreadPoolExecutor
 
-# Load environment variables from .env file if it exists (for local development)
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass  # dotenv not installed, skip
-
 # -------------------
 # Config
 # -------------------
