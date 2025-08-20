@@ -93,11 +93,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Download all button click handler
-    downloadAllBtn.addEventListener('click', function() {
+    downloadAllBtn.addEventListener('click', async function() {
         const images = imageResults.querySelectorAll('img');
-        images.forEach((img, index) => {
-            downloadImage(img.src, `generated_image_${index + 1}.png`);
-        });
+        
+        // Download images with a small delay to avoid overwhelming the browser
+        for (let i = 0; i < images.length; i++) {
+            const img = images[i];
+            await downloadImage(img.src, `generated_image_${i + 1}.png`);
+            // Small delay between downloads
+            if (i < images.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+        }
     });
 
     // Function to display generated images
@@ -224,11 +231,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add click handlers for download buttons
             const downloadBtns = imageCard.querySelectorAll('.download-btn, .download-single-btn');
             downloadBtns.forEach(btn => {
-                btn.addEventListener('click', (e) => {
+                btn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const imageUrl = btn.getAttribute('data-image-url');
                     const filename = btn.getAttribute('data-filename');
-                    downloadImage(imageUrl, filename);
+                    await downloadImage(imageUrl, filename);
                 });
             });
 
@@ -249,14 +256,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to download image
-    function downloadImage(imageUrl, filename) {
+    async function downloadImage(imageUrl, filename) {
         try {
+            // Fetch the image as a blob
+            const response = await fetch(imageUrl);
+            if (!response.ok) throw new Error('Failed to fetch image');
+            
+            const blob = await response.blob();
+            
+            // Create a download link
             const link = document.createElement('a');
-            link.href = imageUrl;
+            const url = window.URL.createObjectURL(blob);
+            link.href = url;
             link.download = filename;
             document.body.appendChild(link);
             link.click();
+            
+            // Clean up
             document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
         } catch (error) {
             console.error('Download failed:', error);
             alert('Download failed. Please try right-clicking the image and selecting "Save As".');

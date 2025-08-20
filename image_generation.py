@@ -164,7 +164,7 @@ Avoid glamor bias unless explicitly requested.
         height: int = 1024,
         model: str = "flux"
     ) -> List[str]:
-        """Generate image URLs using Pollinations API without watermarks."""
+        """Generate image URLs using Flux model without watermarks."""
         encoded_prompt = urllib.parse.quote(prompt)
         images = []
         
@@ -248,7 +248,7 @@ Avoid glamor bias unless explicitly requested.
             "original_prompt": prompt.strip(),
             "prompt_enhanced": enhance_prompt,
             "safety_enabled": enable_safety_checker,
-            "provider": "pollinations",
+            "provider": "flux",
             "model": model,
             "width": width,
             "height": height,

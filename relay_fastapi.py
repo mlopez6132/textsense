@@ -388,10 +388,10 @@ async def generate_image(
     enable_prompt_optimizer: bool = Form(True),
     negative_prompt: Optional[str] = Form("")
 ):
-    """Generate images using Pollinations Flux with AI prompt enhancement.
+    """Generate images using Flux with prompt enhancement.
     
     The endpoint maintains the same form fields for compatibility with existing frontend,
-    but maps them to Pollinations parameters. Generated images have no watermarks.
+    but maps them to Flux parameters. Generated images have no watermarks.
     """
     try:
         # Use the image generation module
