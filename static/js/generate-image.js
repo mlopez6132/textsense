@@ -258,26 +258,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to download image
     async function downloadImage(imageUrl, filename) {
         try {
-            // Fetch the image as a blob
-            const response = await fetch(imageUrl);
-            if (!response.ok) throw new Error('Failed to fetch image');
+            console.log('Starting download for:', filename);
             
-            const blob = await response.blob();
+            // Use our proxy endpoint to download the image
+            const proxyUrl = `/download-image?url=${encodeURIComponent(imageUrl)}&filename=${encodeURIComponent(filename)}`;
             
-            // Create a download link
+            // Create a download link that uses our proxy
             const link = document.createElement('a');
-            const url = window.URL.createObjectURL(blob);
-            link.href = url;
+            link.href = proxyUrl;
             link.download = filename;
+            link.style.display = 'none';
+            
+            // Add to DOM, click, and remove
             document.body.appendChild(link);
             link.click();
             
-            // Clean up
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+            // Clean up after a short delay
+            setTimeout(() => {
+                document.body.removeChild(link);
+            }, 100);
+            
+            console.log('Download initiated for:', filename);
+            
         } catch (error) {
             console.error('Download failed:', error);
-            alert('Download failed. Please try right-clicking the image and selecting "Save As".');
+            alert('Download failed. Please try right-clicking the image and selecting "Save As" to download manually.');
         }
     }
 

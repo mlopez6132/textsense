@@ -446,6 +446,51 @@ async def test_qwen_api():
         return JSONResponse({"error": f"Test failed: {str(e)}"}, status_code=500)
 
 
+@app.get("/download-image")
+async def download_image(url: str, filename: str = "generated_image.png"):
+    """Proxy endpoint to download images from external URLs."""
+    try:
+        # Validate the URL is from a trusted source
+        if not url.startswith("https://image.pollinations.ai/"):
+            return JSONResponse({"error": "Invalid image URL"}, status_code=400)
+        
+        # Fetch the image
+        response = requests.get(url, timeout=30, stream=True)
+        response.raise_for_status()
+        
+        # Get content type and determine file extension
+        content_type = response.headers.get('content-type', 'image/png')
+        
+        # Ensure filename has correct extension
+        if not filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+            if 'jpeg' in content_type:
+                filename += '.jpg'
+            elif 'webp' in content_type:
+                filename += '.webp'
+            else:
+                filename += '.png'
+        
+        # Return the image as a streaming response
+        from fastapi.responses import StreamingResponse
+        
+        def generate():
+            for chunk in response.iter_content(chunk_size=8192):
+                yield chunk
+        
+        return StreamingResponse(
+            generate(),
+            media_type=content_type,
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}",
+                "Access-Control-Allow-Origin": "*",
+                "Cache-Control": "no-cache"
+            }
+        )
+        
+    except Exception as e:
+        return JSONResponse({"error": f"Failed to download image: {str(e)}"}, status_code=500)
+
+
 @app.get("/healthz")
 async def healthz():
     return {"ok": True}
