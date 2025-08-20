@@ -385,6 +385,7 @@ async def generate_image(
     num_images: int = Form(1),
     num_inference_steps: int = Form(4),
     enable_safety_checker: bool = Form(True),
+    enable_prompt_optimizer: bool = Form(True),
     negative_prompt: Optional[str] = Form("")
 ):
     """Generate images using Pollinations Flux with AI prompt enhancement.
@@ -399,7 +400,8 @@ async def generate_image(
             negative_prompt=negative_prompt,
             aspect_ratio=aspect_ratio,
             num_images=num_images,
-            enhance_prompt=True,  # Always enhance prompts for better results
+            enhance_prompt=enable_prompt_optimizer,
+            enable_safety_checker=enable_safety_checker,
             model="flux"
         )
         

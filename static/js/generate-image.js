@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const inferenceSteps = document.getElementById('inferenceSteps');
     const stepsValue = document.getElementById('stepsValue');
     const safetyChecker = document.getElementById('safetyChecker');
+    const promptOptimizer = document.getElementById('promptOptimizer');
     const generateBtn = document.getElementById('generateBtn');
     const clearBtn = document.getElementById('clearBtn');
     const generating = document.getElementById('generating');
@@ -47,6 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('num_images', numImages.value);
             formData.append('num_inference_steps', inferenceSteps.value);
             formData.append('enable_safety_checker', safetyChecker.checked);
+            formData.append('enable_prompt_optimizer', promptOptimizer.checked);
 
             // Make API call
             const response = await fetch('/generate-image', {
@@ -62,10 +64,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Display results
             displayImages(result);
-            // If backend returned enhanced_prompt, update prompt field for copy convenience
-            if (result && result.enhanced_prompt) {
-                promptInput.value = result.enhanced_prompt;
-            }
             resultsHeader.style.display = 'flex';
 
         } catch (error) {
@@ -88,6 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
         inferenceSteps.value = '20';
         stepsValue.textContent = '20';
         safetyChecker.checked = true;
+        promptOptimizer.checked = true;
         imageResults.innerHTML = '';
         resultsHeader.style.display = 'none';
         promptInput.focus();
@@ -104,6 +103,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to display generated images
     function displayImages(result) {
         imageResults.innerHTML = '';
+
+        // Add prompt information section if enhancement was used
+        if (result.enhanced_prompt && result.prompt_enhanced) {
+            const promptInfoCard = document.createElement('div');
+            promptInfoCard.className = 'col-12 mb-3';
+            promptInfoCard.innerHTML = `
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title mb-2">
+                            <i class="fas fa-magic text-primary me-2"></i>Prompt Enhancement Applied
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted"><strong>Original:</strong></small>
+                                <p class="small mb-2">${result.original_prompt}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted"><strong>Enhanced:</strong></small>
+                                <p class="small mb-0">${result.enhanced_prompt}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            imageResults.appendChild(promptInfoCard);
+        }
 
         // Handle different response formats
         let images = [];
@@ -210,7 +235,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add click handler for copy prompt button
             const copyPromptBtn = imageCard.querySelector('.copy-prompt-btn');
             copyPromptBtn.addEventListener('click', () => {
-                copyToClipboard(promptInput.value);
+                // Copy the original prompt, not the enhanced one
+                const promptToCopy = result.original_prompt || promptInput.value;
+                copyToClipboard(promptToCopy);
                 // Visual feedback
                 const originalText = copyPromptBtn.innerHTML;
                 copyPromptBtn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
