@@ -4,7 +4,7 @@ import subprocess
 import requests
 from typing import Optional, List, Dict
 import asyncio
-import aiohttp
+from openai import OpenAI
 
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
@@ -13,12 +13,14 @@ from concurrent.futures import ThreadPoolExecutor
 # -------------------
 # Config
 # -------------------
-# ElevenLabs API configuration
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
-ELEVENLABS_API_URL = "https://api.elevenlabs.io/v1/speech-to-text"
+# OpenAI API configuration
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-if not ELEVENLABS_API_KEY:
-    print("Warning: ELEVENLABS_API_KEY environment variable not set")
+if not OPENAI_API_KEY:
+    print("Warning: OPENAI_API_KEY environment variable not set")
+
+# Initialize OpenAI client
+client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 # Thread pool for processing so FastAPI loop is not blocked
 executor = ThreadPoolExecutor(max_workers=int(os.getenv("DECODE_THREADS", "2")))
@@ -47,16 +49,16 @@ def _ffmpeg_convert_to_wav_16k_mono(src_path: str) -> str:
     return dst_path
 
 
-app = FastAPI(title="TextSense Audio-to-Text (ElevenLabs)")
+app = FastAPI(title="TextSense Audio-to-Text (OpenAI Whisper)")
 
 @app.on_event("startup")
 async def startup_event():
-    """Check ElevenLabs API configuration on startup."""
-    print("Checking ElevenLabs API configuration...")
-    if not ELEVENLABS_API_KEY:
-        print("Warning: ELEVENLABS_API_KEY not configured. API calls will fail.")
+    """Check OpenAI API configuration on startup."""
+    print("Checking OpenAI API configuration...")
+    if not OPENAI_API_KEY:
+        print("Warning: OPENAI_API_KEY not configured. API calls will fail.")
     else:
-        print("ElevenLabs API key configured successfully")
+        print("OpenAI API key configured successfully")
 
 
 async def _write_upload_to_file(upload: UploadFile) -> str:
@@ -79,162 +81,120 @@ def _download_audio_to_file(url: str) -> str:
 
 
 # -------------------
-# ElevenLabs Speech-to-Text helpers
+# OpenAI Whisper Speech-to-Text helpers
 # -------------------
 
-async def _transcribe_with_elevenlabs(audio_path: str, include_words: bool) -> Dict:
+async def _transcribe_with_whisper(audio_path: str, include_words: bool) -> Dict:
     """
-    Transcribe audio using ElevenLabs Speech-to-Text API
+    Transcribe audio using OpenAI Whisper API
     """
-    if not ELEVENLABS_API_KEY:
-        raise RuntimeError("ELEVENLABS_API_KEY not configured")
+    if not client:
+        raise RuntimeError("OPENAI_API_KEY not configured")
     
     try:
-        print(f"Starting ElevenLabs transcription for: {audio_path}")
+        print(f"Starting OpenAI Whisper transcription for: {audio_path}")
         print(f"Include word timestamps: {include_words}")
         
-        # Prepare the file for upload
-        headers = {
-            'xi-api-key': ELEVENLABS_API_KEY
-        }
-        
-        print("Sending request to ElevenLabs API...")
-        
-        async with aiohttp.ClientSession() as session:
-            # Create form data
-            data = aiohttp.FormData()
-            data.add_field('model_id', 'eleven_scribe_v1')
-            data.add_field('output_format', 'json')
+        # Read the audio file
+        with open(audio_path, 'rb') as audio_file:
+            print("Sending request to OpenAI Whisper API...")
             
-            # Add the audio file
-            with open(audio_path, 'rb') as audio_file:
-                data.add_field('audio', audio_file, 
-                             filename=os.path.basename(audio_path),
-                             content_type='audio/wav')
-                
-                async with session.post(
-                    ELEVENLABS_API_URL,
-                    data=data,
-                    headers=headers,
-                    timeout=aiohttp.ClientTimeout(total=TRANSCRIPTION_TIMEOUT)
-                ) as response:
-                    if response.status != 200:
-                        error_text = await response.text()
-                        raise RuntimeError(f"ElevenLabs API error ({response.status}): {error_text}")
+            # Set up transcription parameters
+            transcription_params = {
+                "model": "whisper-1",
+                "response_format": "verbose_json"
+            }
+            
+            # Add timestamp granularities if word timestamps are requested
+            if include_words:
+                transcription_params["timestamp_granularities"] = ["word"]
+            
+            # Make the API call
+            result = await asyncio.get_event_loop().run_in_executor(
+                executor, 
+                lambda: client.audio.transcriptions.create(
+                    file=audio_file,
+                    **transcription_params
+                )
+            )
                     
-                    result = await response.json()
-                    
-        print("ElevenLabs transcription completed successfully")
-        return _process_elevenlabs_response(result, include_words)
+        print("OpenAI Whisper transcription completed successfully")
+        return _process_whisper_response(result, include_words)
         
     except Exception as e:
-        print(f"Error in _transcribe_with_elevenlabs: {str(e)}")
+        print(f"Error in _transcribe_with_whisper: {str(e)}")
         import traceback
         print(f"Full traceback: {traceback.format_exc()}")
-        raise RuntimeError(f"ElevenLabs transcription failed: {str(e)}")
+        raise RuntimeError(f"OpenAI Whisper transcription failed: {str(e)}")
 
 
-def _process_elevenlabs_response(elevenlabs_result: Dict, include_words: bool) -> Dict:
+def _process_whisper_response(whisper_result, include_words: bool) -> Dict:
     """
-    Process ElevenLabs API response and convert to our standard format
+    Process OpenAI Whisper API response and convert to our standard format
     """
-    print("Processing ElevenLabs response...")
+    print("Processing OpenAI Whisper response...")
     
     # Extract main text and language
-    full_text = elevenlabs_result.get("text", "").strip()
-    language_code = elevenlabs_result.get("language_code", "en")
+    full_text = whisper_result.text.strip() if hasattr(whisper_result, 'text') else ""
+    language_code = whisper_result.language if hasattr(whisper_result, 'language') else "en"
     
     print(f"Detected language: {language_code}")
     print(f"Full text length: {len(full_text)} characters")
     
-    # Process words into segments and word-level timestamps
-    words = elevenlabs_result.get("words", [])
     segments = []
     
-    if not words:
-        # If no words, create a single segment with the full text
-        if full_text:
-            segments.append({
-                "text": full_text,
-                "timestamp": [0.0, 0.0]
-            })
-    else:
-        # Group words into sentences/segments based on punctuation or speaker changes
-        current_segment_words = []
-        current_speaker = None
+    # Check if we have segments (verbose_json format)
+    if hasattr(whisper_result, 'segments') and whisper_result.segments:
+        print(f"Processing {len(whisper_result.segments)} segments")
         
-        for word_data in words:
-            if word_data.get("type") != "word":
-                continue
-                
-            word_text = word_data.get("text", "").strip()
-            if not word_text:
-                continue
-                
-            word_start = float(word_data.get("start", 0))
-            word_end = float(word_data.get("end", 0))
-            speaker_id = word_data.get("speaker_id", "speaker_0")
-            
-            # Start new segment if speaker changes or we hit sentence-ending punctuation
-            if (current_speaker and current_speaker != speaker_id) or \
-               (current_segment_words and word_text.endswith(('.', '!', '?'))):
-                
-                if current_segment_words:
-                    # Create segment from accumulated words
-                    segment_text = "".join(w["text"] for w in current_segment_words).strip()
-                    segment_start = current_segment_words[0]["start"]
-                    segment_end = current_segment_words[-1]["end"]
-                    
-                    segment = {
-                        "text": segment_text,
-                        "timestamp": [round(segment_start, 3), round(segment_end, 3)]
-                    }
-                    
-                    if include_words:
-                        segment["words"] = [{
-                            "text": w["text"],
-                            "timestamp": [round(w["start"], 3), round(w["end"], 3)]
-                        } for w in current_segment_words]
-                    
-                    segments.append(segment)
-                    print(f"Created segment: '{segment_text}' [{segment_start:.3f} - {segment_end:.3f}]")
-                
-                current_segment_words = []
-            
-            current_segment_words.append({
-                "text": word_text,
-                "start": word_start,
-                "end": word_end
-            })
-            current_speaker = speaker_id
-        
-        # Don't forget the last segment
-        if current_segment_words:
-            segment_text = "".join(w["text"] for w in current_segment_words).strip()
-            segment_start = current_segment_words[0]["start"]
-            segment_end = current_segment_words[-1]["end"]
-            
-            segment = {
-                "text": segment_text,
-                "timestamp": [round(segment_start, 3), round(segment_end, 3)]
+        for segment in whisper_result.segments:
+            segment_data = {
+                "text": segment.text.strip(),
+                "timestamp": [round(segment.start, 3), round(segment.end, 3)]
             }
             
-            if include_words:
-                segment["words"] = [{
-                    "text": w["text"],
-                    "timestamp": [round(w["start"], 3), round(w["end"], 3)]
-                } for w in current_segment_words]
+            # Add word-level timestamps if available and requested
+            if include_words and hasattr(whisper_result, 'words') and whisper_result.words:
+                # Filter words that belong to this segment
+                segment_words = []
+                for word in whisper_result.words:
+                    if segment.start <= word.start <= segment.end:
+                        segment_words.append({
+                            "text": word.word,
+                            "timestamp": [round(word.start, 3), round(word.end, 3)]
+                        })
+                
+                if segment_words:
+                    segment_data["words"] = segment_words
             
-            segments.append(segment)
-            print(f"Created final segment: '{segment_text}' [{segment_start:.3f} - {segment_end:.3f}]")
+            segments.append(segment_data)
+            print(f"Created segment: '{segment_data['text']}' [{segment.start:.3f} - {segment.end:.3f}]")
+    
+    else:
+        # Fallback: create a single segment with the full text
+        if full_text:
+            segment_data = {
+                "text": full_text,
+                "timestamp": [0.0, 0.0]
+            }
+            
+            # Add word-level timestamps if available and requested
+            if include_words and hasattr(whisper_result, 'words') and whisper_result.words:
+                segment_data["words"] = [{
+                    "text": word.word,
+                    "timestamp": [round(word.start, 3), round(word.end, 3)]
+                } for word in whisper_result.words]
+            
+            segments.append(segment_data)
+            print(f"Created single segment with full text")
     
     print(f"Final result: {len(segments)} segments")
     
     return {
         "text": full_text,
         "chunks": segments,
-        "engine": "elevenlabs",
-        "model": "eleven_scribe_v1",
+        "engine": "openai_whisper",
+        "model": "whisper-1",
         "language": language_code
     }
 
@@ -273,11 +233,11 @@ async def transcribe(
         wav_path = _ffmpeg_convert_to_wav_16k_mono(tmp_path)
         print(f"Converted WAV path: {wav_path}")
 
-        # Use ElevenLabs Speech-to-Text API
-        print("Starting ElevenLabs transcription...")
+        # Use OpenAI Whisper Speech-to-Text API
+        print("Starting OpenAI Whisper transcription...")
         try:
             result = await asyncio.wait_for(
-                _transcribe_with_elevenlabs(wav_path, include_word_timestamps),
+                _transcribe_with_whisper(wav_path, include_word_timestamps),
                 timeout=TRANSCRIPTION_TIMEOUT
             )
             print("Transcription completed successfully")
@@ -310,9 +270,9 @@ async def transcribe(
 async def healthz():
     return {
         "ok": True,
-        "engine": "elevenlabs",
-        "model": "eleven_scribe_v1",
-        "api_key_configured": bool(ELEVENLABS_API_KEY),
+        "engine": "openai_whisper",
+        "model": "whisper-1",
+        "api_key_configured": bool(OPENAI_API_KEY),
     }
 
 
