@@ -62,6 +62,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Display results
             displayImages(result);
+            // If backend returned enhanced_prompt, update prompt field for copy convenience
+            if (result && result.enhanced_prompt) {
+                promptInput.value = result.enhanced_prompt;
+            }
             resultsHeader.style.display = 'flex';
 
         } catch (error) {
