@@ -1,24 +1,36 @@
-# TextSense Audio-to-Text (ElevenLabs)
+---
+title: TextSense Audio-to-Text
+emoji: 🎙️
+colorFrom: blue
+colorTo: purple
+sdk: docker
+sdk_version: "4.26.0"
+app_file: app.py
+pinned: false
+license: mit
+---
 
-This service provides audio-to-text transcription using ElevenLabs Speech-to-Text API with their state-of-the-art Scribe v1 model.
+# TextSense Audio-to-Text (OpenAI Whisper)
+
+This service provides audio-to-text transcription using OpenAI's Whisper API with their state-of-the-art speech recognition model.
 
 ## Features
 
-- **High Accuracy**: Uses ElevenLabs Scribe v1 model with state-of-the-art accuracy
-- **99 Languages**: Supports transcription in 99 languages with automatic language detection
+- **High Accuracy**: Uses OpenAI Whisper-1 model with state-of-the-art accuracy
+- **Multilingual Support**: Supports transcription in 99+ languages with automatic language detection
 - **Word-level Timestamps**: Optional word-level timestamps for precise timing
-- **Speaker Diarization**: Identifies different speakers in the audio
 - **Multiple Formats**: Supports various audio and video formats
-- **Large Files**: Handles files up to 3GB and 10 hours duration
+- **Large Files**: Handles files up to 25MB with OpenAI API
+- **Real-time Processing**: Fast and efficient transcription processing
 
 ## Setup
 
 ### Environment Variables
 
-Set your ElevenLabs API key:
+Set your OpenAI API key:
 
 ```bash
-export ELEVENLABS_API_KEY="your_api_key_here"
+export OPENAI_API_KEY="your_api_key_here"
 ```
 
 ### Install Dependencies
@@ -60,8 +72,8 @@ uvicorn app:app --host 0.0.0.0 --port 8000
       ]
     }
   ],
-  "engine": "elevenlabs",
-  "model": "eleven_scribe_v1",
+  "engine": "openai_whisper",
+  "model": "whisper-1",
   "language": "en"
 }
 ```
@@ -75,21 +87,24 @@ Returns service status and configuration.
 ## Supported Formats
 
 ### Audio Formats:
-- AAC, AIFF, OGG, MP3, OPUS, WAV, WebM, FLAC, M4A
+- MP3, MP4, M4A, M2A, MP2, AAC, WAV, FLAC, OGG, WMA, FLV, AVI, MOV, MPEG, MPG, 3GP, WMV, ASF, FLV, F4V, F4P, F4A, F4B
 
-### Video Formats:
-- MP4, AVI, MKV, MOV, WMV, FLV, WebM, MPEG, 3GP
+### File Size Limit:
+- **Maximum**: 25MB per file (OpenAI API limitation)
+- **Recommended**: Under 10MB for optimal performance
 
-## ElevenLabs Pricing
+**Note**: For larger files, consider splitting them into smaller segments before uploading.
 
-Based on the [ElevenLabs pricing](https://elevenlabs.io/docs/capabilities/speech-to-text#pricing):
+## OpenAI Pricing
 
-- **Free**: Not available for Speech-to-Text
-- **Starter ($5/month)**: 12.5 hours included, $0.40/hour
-- **Creator ($22/month)**: 62.8 hours included, $0.35/hour, $0.48/additional hour
-- **Pro ($99/month)**: 300 hours included, $0.33/hour, $0.40/additional hour
-- **Scale ($330/month)**: 1,100 hours included, $0.30/hour, $0.33/additional hour
-- **Business ($1,320/month)**: 6,000 hours included, $0.22/hour
+Based on the [OpenAI pricing](https://openai.com/pricing):
+
+- **Whisper API**: $0.006 per minute (approximately $0.36 per hour)
+- **Pay-as-you-go**: No monthly fees, only pay for what you use
+- **Free Tier**: Not available for Whisper API
+- **Volume Discounts**: Available for high-volume usage
+
+**Note**: OpenAI Whisper API has a 25MB file size limit per request.
 
 ## Docker
 
