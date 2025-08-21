@@ -1,64 +1,197 @@
 import os
+import io
 import tempfile
 import subprocess
-import requests
-from typing import Optional, List, Dict
-import asyncio
-from openai import OpenAI
+from typing import Optional, Tuple, List, Dict
 
+import requests
+import numpy as np
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
-from concurrent.futures import ThreadPoolExecutor
+from huggingface_hub import hf_hub_download
+import sherpa_onnx
 
-# -------------------
-# Config
-# -------------------
-# OpenAI API configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# Model and runtime configuration (sherpa-onnx Whisper distil-small.en INT8)
+WHISPER_VARIANT = os.getenv("WHISPER_VARIANT", "tiny.en")
+MAX_CHUNK_SECONDS = float(os.getenv("MAX_CHUNK_SECONDS", "29.0"))
+CHUNK_OVERLAP_SECONDS = float(os.getenv("CHUNK_OVERLAP_SECONDS", "1.0"))  # No overlap
+HF_CACHE_DIR = "/tmp/hf"
+os.makedirs(HF_CACHE_DIR, exist_ok=True)
+os.environ.setdefault("HF_HOME", HF_CACHE_DIR)
+os.environ.setdefault("HUGGINGFACE_HUB_CACHE", HF_CACHE_DIR)
 
-if not OPENAI_API_KEY:
-    print("Warning: OPENAI_API_KEY environment variable not set")
-
-# Initialize OpenAI client
-client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
-
-# Thread pool for processing so FastAPI loop is not blocked
-executor = ThreadPoolExecutor(max_workers=int(os.getenv("DECODE_THREADS", "2")))
-
-# Timeout settings
-TRANSCRIPTION_TIMEOUT = int(os.getenv("TRANSCRIPTION_TIMEOUT", "300"))  # 5 minutes for transcription
-
-
-# -------------------
-# Helpers
-# -------------------
 def _ffmpeg_convert_to_wav_16k_mono(src_path: str) -> str:
     dst_fd, dst_path = tempfile.mkstemp(suffix=".wav")
     os.close(dst_fd)
     cmd = [
-        "ffmpeg", "-y", "-i", src_path,
-        "-ac", "1", "-ar", "16000", "-acodec", "pcm_s16le",
+        "ffmpeg",
+        "-y",
+        "-i",
+        src_path,
+        "-ac",
+        "1",
+        "-ar",
+        "16000",
+        "-acodec",
+        "pcm_s16le",
         dst_path,
     ]
     try:
         subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except subprocess.CalledProcessError as e:
-        if os.path.exists(dst_path):
-            os.unlink(dst_path)
+        try:
+            if os.path.exists(dst_path):
+                os.unlink(dst_path)
+        except Exception:
+            pass
         raise RuntimeError(f"ffmpeg conversion failed: {e.stderr.decode(errors='ignore')}")
     return dst_path
 
 
-app = FastAPI(title="TextSense Audio-to-Text (OpenAI Whisper)")
+def _get_nn_model_filename(repo_id: str, filename: str, subfolder: str = ".") -> str:
+    return hf_hub_download(repo_id=repo_id, filename=filename, subfolder=subfolder)
 
-@app.on_event("startup")
-async def startup_event():
-    """Check OpenAI API configuration on startup."""
-    print("Checking OpenAI API configuration...")
-    if not OPENAI_API_KEY:
-        print("Warning: OPENAI_API_KEY not configured. API calls will fail.")
-    else:
-        print("OpenAI API key configured successfully")
+
+def _get_token_filename(repo_id: str, filename: str, subfolder: str = ".") -> str:
+    return hf_hub_download(repo_id=repo_id, filename=filename, subfolder=subfolder)
+
+def format_timestamp_srt(seconds: float) -> str:
+    """Format timestamp in SRT format (HH:MM:SS,mmm)"""
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    secs = seconds % 60
+    return f"{hours:02d}:{minutes:02d}:{secs:06.3f}".replace('.', ',')
+
+
+def load_recognizer(name: str) -> sherpa_onnx.OfflineRecognizer:
+    supported = {
+        "tiny.en",
+        "base.en",
+        "small.en",
+        "medium.en",
+        "tiny",
+        "base",
+        "small",
+        "medium",
+        "medium-aishell",
+        "distil-small.en",
+        "distil-medium.en",
+    }
+    if name not in supported:
+        raise ValueError(f"Unsupported Whisper variant: {name}")
+    full_repo_id = f"csukuangfj/sherpa-onnx-whisper-{name}"
+    encoder = _get_nn_model_filename(repo_id=full_repo_id, filename=f"{name}-encoder.int8.onnx")
+    decoder = _get_nn_model_filename(repo_id=full_repo_id, filename=f"{name}-decoder.int8.onnx")
+    tokens = _get_token_filename(repo_id=full_repo_id, filename=f"{name}-tokens.txt")
+    recognizer = sherpa_onnx.OfflineRecognizer.from_whisper(
+        encoder=encoder,
+        decoder=decoder,
+        tokens=tokens,
+        num_threads=int(os.getenv("SHERPA_NUM_THREADS", "2")),
+    )
+    return recognizer
+
+
+def process_audio_chunks(samples: np.ndarray, sample_rate: int = 16000) -> List[Dict]:
+    """
+    Process audio in chunks with proper overlap handling and segment-level timestamps
+    """
+    max_chunk_samples = int(MAX_CHUNK_SECONDS * sample_rate)
+    overlap_samples = int(CHUNK_OVERLAP_SECONDS * sample_rate)
+    
+    segments = []
+    start = 0
+    segment_index = 1
+    
+    # For short audio (under max chunk size), process as single chunk
+    if len(samples) <= max_chunk_samples:
+        s = recognizer.create_stream()
+        s.accept_waveform(sample_rate, samples)
+        recognizer.decode_stream(s)
+        text = s.result.text.strip()
+        
+        if text:
+            segments.append({
+                "index": segment_index,
+                "text": text,
+                "start_time": 0.0,
+                "end_time": round(len(samples) / sample_rate, 3),
+                "timestamp": [0.0, round(len(samples) / sample_rate, 3)],
+                "srt_timestamp": f"{format_timestamp_srt(0.0)} --> {format_timestamp_srt(len(samples) / sample_rate)}"
+            })
+        
+        return segments
+    
+    # Process longer audio in chunks with overlap
+    while start < len(samples):
+        # Calculate chunk boundaries
+        end = min(start + max_chunk_samples, len(samples))
+        chunk = samples[start:end]
+        
+        # Ensure we have audio to process
+        if len(chunk) == 0:
+            break
+            
+        # Process chunk
+        s = recognizer.create_stream()
+        s.accept_waveform(sample_rate, chunk)
+        recognizer.decode_stream(s)
+        chunk_text = s.result.text.strip()
+        
+        if chunk_text:
+            # Calculate actual timestamps
+            chunk_start_s = start / sample_rate
+            chunk_end_s = end / sample_rate
+            
+            # Handle overlap by trimming text from previous chunks if needed
+            # This is a simple approach - for more sophisticated handling,
+            # you might want to use word-level alignment
+            if segments and start > 0:
+                # Check if this chunk starts with similar content to previous chunk end
+                # This helps avoid duplicate text due to overlap
+                prev_text = segments[-1]["text"]
+                if len(prev_text) > 50:  # Only check for longer texts
+                    prev_words = prev_text.split()[-10:]  # Last 10 words
+                    chunk_words = chunk_text.split()[:10]  # First 10 words
+                    
+                    # Simple overlap detection
+                    common_words = set(prev_words) & set(chunk_words)
+                    if len(common_words) > 3:  # If significant overlap
+                        # Trim the overlapping part from current chunk
+                        words = chunk_text.split()
+                        if len(words) > 10:
+                            chunk_text = " ".join(words[5:])  # Skip first 5 words
+                            # Adjust start time accordingly (rough estimation)
+                            chunk_start_s += (5 * (chunk_end_s - chunk_start_s) / len(words))
+            
+            if chunk_text:  # Only add if we still have text after overlap handling
+                segments.append({
+                    "index": segment_index,
+                    "text": chunk_text,
+                    "start_time": round(chunk_start_s, 3),
+                    "end_time": round(chunk_end_s, 3),
+                    "timestamp": [round(chunk_start_s, 3), round(chunk_end_s, 3)],
+                    "srt_timestamp": f"{format_timestamp_srt(chunk_start_s)} --> {format_timestamp_srt(chunk_end_s)}"
+                })
+                segment_index += 1
+        
+        # Move to next chunk with proper overlap
+        if end >= len(samples):  # Last chunk
+            break
+        
+        # For next iteration, start at (current_end - overlap)
+        start = end - overlap_samples
+        
+        # Ensure we don't go backwards
+        if start < 0:
+            start = 0
+    
+    return segments
+
+
+recognizer = load_recognizer(WHISPER_VARIANT)
+
+app = FastAPI(title="TextSense Audio-to-Text (Whisper ONNX, INT8)")
 
 
 async def _write_upload_to_file(upload: UploadFile) -> str:
@@ -67,212 +200,106 @@ async def _write_upload_to_file(upload: UploadFile) -> str:
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         content = await upload.read()
         tmp.write(content)
-    return tmp.name
+        return tmp.name
 
 
 def _download_audio_to_file(url: str) -> str:
     headers = {"User-Agent": "TextSense-AudioText/1.0"}
     r = requests.get(url, timeout=30, headers=headers)
     r.raise_for_status()
+    # Try to infer extension from URL
     suffix = os.path.splitext(url.split("?")[0].split("#")[0])[1] or ".wav"
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
         tmp.write(r.content)
-    return tmp.name
+        return tmp.name
 
 
-# -------------------
-# OpenAI Whisper Speech-to-Text helpers
-# -------------------
-
-async def _transcribe_with_whisper(audio_path: str, include_words: bool) -> Dict:
-    """
-    Transcribe audio using OpenAI Whisper API
-    """
-    if not client:
-        raise RuntimeError("OPENAI_API_KEY not configured")
-    
-    try:
-        print(f"Starting OpenAI Whisper transcription for: {audio_path}")
-        print(f"Include word timestamps: {include_words}")
-        
-        # Read the audio file
-        with open(audio_path, 'rb') as audio_file:
-            print("Sending request to OpenAI Whisper API...")
-            
-            # Set up transcription parameters
-            transcription_params = {
-                "model": "whisper-1",
-                "response_format": "verbose_json"
-            }
-            
-            # Add timestamp granularities if word timestamps are requested
-            if include_words:
-                transcription_params["timestamp_granularities"] = ["word"]
-            
-            # Make the API call
-            result = await asyncio.get_event_loop().run_in_executor(
-                executor, 
-                lambda: client.audio.transcriptions.create(
-                    file=audio_file,
-                    **transcription_params
-                )
-            )
-                    
-        print("OpenAI Whisper transcription completed successfully")
-        return _process_whisper_response(result, include_words)
-        
-    except Exception as e:
-        print(f"Error in _transcribe_with_whisper: {str(e)}")
-        import traceback
-        print(f"Full traceback: {traceback.format_exc()}")
-        raise RuntimeError(f"OpenAI Whisper transcription failed: {str(e)}")
-
-
-def _process_whisper_response(whisper_result, include_words: bool) -> Dict:
-    """
-    Process OpenAI Whisper API response and convert to our standard format
-    """
-    print("Processing OpenAI Whisper response...")
-    
-    # Extract main text and language
-    full_text = whisper_result.text.strip() if hasattr(whisper_result, 'text') else ""
-    language_code = whisper_result.language if hasattr(whisper_result, 'language') else "en"
-    
-    print(f"Detected language: {language_code}")
-    print(f"Full text length: {len(full_text)} characters")
-    
-    segments = []
-    
-    # Check if we have segments (verbose_json format)
-    if hasattr(whisper_result, 'segments') and whisper_result.segments:
-        print(f"Processing {len(whisper_result.segments)} segments")
-        
-        for segment in whisper_result.segments:
-            segment_data = {
-                "text": segment.text.strip(),
-                "timestamp": [round(segment.start, 3), round(segment.end, 3)]
-            }
-            
-            # Add word-level timestamps if available and requested
-            if include_words and hasattr(whisper_result, 'words') and whisper_result.words:
-                # Filter words that belong to this segment
-                segment_words = []
-                for word in whisper_result.words:
-                    if segment.start <= word.start <= segment.end:
-                        segment_words.append({
-                            "text": word.word,
-                            "timestamp": [round(word.start, 3), round(word.end, 3)]
-                        })
-                
-                if segment_words:
-                    segment_data["words"] = segment_words
-            
-            segments.append(segment_data)
-            print(f"Created segment: '{segment_data['text']}' [{segment.start:.3f} - {segment.end:.3f}]")
-    
-    else:
-        # Fallback: create a single segment with the full text
-        if full_text:
-            segment_data = {
-                "text": full_text,
-                "timestamp": [0.0, 0.0]
-            }
-            
-            # Add word-level timestamps if available and requested
-            if include_words and hasattr(whisper_result, 'words') and whisper_result.words:
-                segment_data["words"] = [{
-                    "text": word.word,
-                    "timestamp": [round(word.start, 3), round(word.end, 3)]
-                } for word in whisper_result.words]
-            
-            segments.append(segment_data)
-            print(f"Created single segment with full text")
-    
-    print(f"Final result: {len(segments)} segments")
-    
-    return {
-        "text": full_text,
-        "chunks": segments,
-        "engine": "openai_whisper",
-        "model": "whisper-1",
-        "language": language_code
-    }
-
-
-# -------------------
-# FastAPI route
-# -------------------
 @app.post("/transcribe")
 async def transcribe(
     audio: Optional[UploadFile] = File(None),
     audio_url: Optional[str] = Form(None),
-    include_word_timestamps: bool = Form(False),
+    return_timestamps: bool = Form(False),
 ):
-    tmp_path: Optional[str] = None
-    wav_path: Optional[str] = None
-
     try:
-        print("=== New transcription request ===")
-        # Input handling
+        tmp_path: Optional[str] = None
         if audio is not None and audio.filename:
-            print(f"Processing uploaded file: {audio.filename}")
             tmp_path = await _write_upload_to_file(audio)
-            print(f"Saved to temp path: {tmp_path}")
         elif audio_url:
             url = audio_url.strip()
             if not url:
                 return JSONResponse({"error": "audio_url is empty"}, status_code=400)
-            print(f"Downloading audio from URL: {url}")
-            tmp_path = _download_audio_to_file(url)
-            print(f"Downloaded to temp path: {tmp_path}")
+            try:
+                tmp_path = _download_audio_to_file(url)
+            except requests.exceptions.ConnectionError as ce:
+                return JSONResponse({
+                    "error": f"Network connection failed: {str(ce)}. The Space may have limited network access."
+                }, status_code=400)
+            except requests.exceptions.Timeout:
+                return JSONResponse({"error": "Request timed out while fetching audio"}, status_code=400)
         else:
-            return JSONResponse({"error": "No audio provided"}, status_code=400)
+            return JSONResponse({"error": "No audio provided. Provide 'audio' file or 'audio_url'."}, status_code=400)
 
-        # Convert to WAV
-        print("Converting audio to WAV format...")
+        # Ensure correct audio format for sherpa-onnx whisper (mono, 16kHz, s16le WAV)
         wav_path = _ffmpeg_convert_to_wav_16k_mono(tmp_path)
-        print(f"Converted WAV path: {wav_path}")
-
-        # Use OpenAI Whisper Speech-to-Text API
-        print("Starting OpenAI Whisper transcription...")
         try:
-            result = await asyncio.wait_for(
-                _transcribe_with_whisper(wav_path, include_word_timestamps),
-                timeout=TRANSCRIPTION_TIMEOUT
-            )
-            print("Transcription completed successfully")
-            return JSONResponse(result)
-        except asyncio.TimeoutError:
-            print(f"Transcription timed out after {TRANSCRIPTION_TIMEOUT} seconds")
-            return JSONResponse({"error": f"Transcription timed out after {TRANSCRIPTION_TIMEOUT} seconds. Try a shorter audio file."}, status_code=408)
+            # Read wav as int16 PCM and normalize to float32 in [-1,1]
+            import wave as _wave
+            with _wave.open(wav_path) as f:
+                assert f.getnchannels() == 1, f.getnchannels()
+                assert f.getsampwidth() == 2, f.getsampwidth()
+                sample_rate = f.getframerate()
+                assert sample_rate == 16000, sample_rate
+                num_frames = f.getnframes()
+                pcm_bytes = f.readframes(num_frames)
+            samples = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
 
+            # Calculate audio duration
+            duration_seconds = len(samples) / 16000.0
+            
+            # Process audio with proper chunking
+            segments = process_audio_chunks(samples, sample_rate=16000)
+            
+            # Combine all segment texts
+            full_text = " ".join(seg["text"] for seg in segments).strip()
+            
+            # Add metadata
+            response_data = {
+                "text": full_text,
+                "duration": round(duration_seconds, 3),
+                "total_segments": len(segments)
+            }
+            
+            if return_timestamps:
+                response_data["chunks"] = segments
+                
+        finally:
+            try:
+                if os.path.exists(wav_path):
+                    os.unlink(wav_path)
+            except Exception:
+                pass
+
+        return JSONResponse(response_data)
+        
     except requests.HTTPError as he:
         return JSONResponse({"error": f"Failed to fetch audio: {str(he)}"}, status_code=400)
-    except RuntimeError as re:
-        # Specific handling for model loading and transcription errors
-        return JSONResponse({"error": f"Transcription error: {str(re)}"}, status_code=500)
     except Exception as e:
-        # General error with more details
-        import traceback
-        error_details = traceback.format_exc()
-        print(f"Unexpected error: {error_details}")
         return JSONResponse({"error": f"ASR error: {str(e)}"}, status_code=500)
     finally:
-        for p in [tmp_path, wav_path]:
-            if p and os.path.exists(p):
-                try:
-                    os.unlink(p)
-                except Exception:
-                    pass
+        try:
+            if 'tmp_path' in locals() and tmp_path and os.path.exists(tmp_path):
+                os.unlink(tmp_path)
+        except Exception:
+            pass
 
 
 @app.get("/healthz")
 async def healthz():
     return {
         "ok": True,
-        "engine": "openai_whisper",
-        "model": "whisper-1",
-        "api_key_configured": bool(OPENAI_API_KEY),
+        "engine": "sherpa-onnx",
+        "variant": WHISPER_VARIANT,
+        "max_chunk_seconds": MAX_CHUNK_SECONDS,
+        "chunk_overlap_seconds": CHUNK_OVERLAP_SECONDS,
+        "supports_long_audio": True,
     }
-
-

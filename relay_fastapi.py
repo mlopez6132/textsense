@@ -1,7 +1,4 @@
 import os
-import io
-import json
-import time
 from typing import Optional
 
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
@@ -16,9 +13,7 @@ from image_generation import image_generator
 HF_INFERENCE_URL_ENV = "HF_INFERENCE_URL"
 HF_OCR_URL_ENV = "HF_OCR_URL"
 HF_AUDIO_TEXT_URL_ENV = "HF_AUDIO_TEXT_URL"
-HF_QWEN_IMAGE_URL_ENV = "HF_QWEN_IMAGE_URL"
 DEFAULT_TIMEOUT_SECONDS = 120
-
 
 def get_remote_url() -> str:
     remote = os.getenv(HF_INFERENCE_URL_ENV, "").strip()
@@ -37,7 +32,6 @@ def get_ocr_url() -> str:
         )
     return remote
 
-
 def get_audio_text_url() -> str:
     remote = os.getenv(HF_AUDIO_TEXT_URL_ENV, "").strip()
     if not remote:
@@ -45,16 +39,6 @@ def get_audio_text_url() -> str:
             "No AUDIO URL configured. Set HF_AUDIO_TEXT_URL to your Hugging Face Space AUDIO endpoint (e.g. https://<space>.hf.space/extract)."
         )
     return remote
-
-
-def get_qwen_image_url() -> str:
-    remote = os.getenv(HF_QWEN_IMAGE_URL_ENV, "").strip()
-    if not remote:
-        raise RuntimeError(
-            "No Qwen Image URL configured. Set HF_QWEN_IMAGE_URL to your Hugging Face Space Qwen Image endpoint (e.g. https://<space>.hf.space/gradio_api/call/infer)."
-        )
-    return remote
-
 
 app = FastAPI(title="TextSense Relay (FastAPI)")
 
@@ -411,40 +395,6 @@ async def generate_image(
         return JSONResponse({"error": str(e)}, status_code=400)
     except Exception as e:
         return JSONResponse({"error": f"Image generation failed: {str(e)}"}, status_code=500)
-
-
-@app.post("/test-qwen-api")
-async def test_qwen_api():
-    """Test endpoint to debug Qwen Image API response format."""
-    try:
-        remote_url = get_qwen_image_url()
-        headers = {"Content-Type": "application/json"}
-        
-        # Simple test payload
-        payload = {
-            "data": [
-                "test image",  # prompt
-                "",            # negative_prompt
-                True,          # enable_safety_checker
-                "1:1",         # aspect_ratio
-                1,             # num_images
-                4,             # num_inference_steps
-                True           # additional parameter
-            ]
-        }
-        
-        resp = requests.post(remote_url, json=payload, headers=headers, timeout=30)
-        
-        return JSONResponse({
-            "status_code": resp.status_code,
-            "headers": dict(resp.headers),
-            "response": resp.json() if resp.status_code == 200 else resp.text,
-            "url": remote_url
-        })
-        
-    except Exception as e:
-        return JSONResponse({"error": f"Test failed: {str(e)}"}, status_code=500)
-
 
 @app.get("/download-image")
 async def download_image(url: str, filename: str = "generated_image.png"):
