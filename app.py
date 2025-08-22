@@ -309,6 +309,42 @@ def extract_text_from_file(file_path):
 def index():
     return render_template('index.html')
 
+@app.route('/ai-detector')
+def ai_detector():
+    return render_template('ai-detector.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+@app.route('/cookies')
+def cookies():
+    return render_template('cookies.html')
+
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+@app.route('/ocr')
+def ocr():
+    return render_template('ocr.html')
+
+@app.route('/audio-text')
+def audio_text():
+    return render_template('audio-text.html')
+
+@app.route('/generate-image-page')
+def generate_image_page():
+    return render_template('generate-image.html')
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
