@@ -57,9 +57,9 @@ body.index-page {
 }
 
 .site-header > .container-fluid {
-    display: flex !important;
+    display: flex;
     align-items: center;
-    justify-content: flex-start !important;
+    justify-content: space-between;
     padding: 0 3rem;
     max-width: none;
     margin: 0;
@@ -70,6 +70,7 @@ body.index-page {
     margin-right: 2rem;
     padding: 0;
     flex-shrink: 0;
+    text-align: left;
 }
 
 .brand-logo-text {
@@ -93,7 +94,6 @@ body.index-page {
     align-items: center;
     gap: 0.5rem;
     margin: 0;
-    margin-left: auto; /* Push navigation to the right */
     padding: 0;
     list-style: none;
 }
@@ -428,7 +428,7 @@ textarea.form-control {
 @media (max-width: 768px) {
     body {
         padding-top: 80px; /* Space for mobile header */
-        padding-bottom: 120px; /* More space for mobile footer */
+        padding-bottom: 0; /* No extra space to avoid gap below footer */
     }
     
     .container-fluid {
@@ -593,8 +593,8 @@ footer:not(.footer-content) {
     padding-right: 2rem !important;
 }
 
-/* Main content area to push footer down */
-.container-fluid {
+/* Main content area to push footer down (only the top-level wrapper) */
+body > .container-fluid {
     flex: 1 0 auto;
     display: flex;
     flex-direction: column;
