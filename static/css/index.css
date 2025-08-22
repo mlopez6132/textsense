@@ -5,10 +5,11 @@ body {
     background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%) !important;
     min-height: 100vh;
     padding-top: 90px !important; /* Space for fixed header */
-    padding-bottom: 100px !important; /* Space for fixed footer */
     margin: 0;
     position: relative;
     z-index: 1;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 .container-fluid {
@@ -111,9 +112,9 @@ body {
     }
 }
 
-/* Ensure content flows properly with fixed header/footer */
-main, .main-content {
-    min-height: calc(100vh - 170px) !important; /* Account for header and footer height */
+/* Ensure content flows properly with header and sticky footer */
+main, .main-content, .page-container {
+    flex: 1 0 auto !important;
     position: relative !important;
     z-index: 1 !important;
 }

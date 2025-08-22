@@ -1,6 +1,10 @@
 /* Custom styles for AI Text Detector */
 
 /* TextSense — clean, GPTZero-inspired palette */
+html {
+    height: 100%;
+}
+
 body {
     background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%);
     min-height: 100vh;
@@ -9,7 +13,8 @@ body {
     margin: 0;
     padding: 0;
     padding-top: 90px; /* Space for fixed header */
-    padding-bottom: 100px; /* Space for fixed footer */
+    display: flex;
+    flex-direction: column;
     position: relative;
     z-index: 1;
 }
@@ -539,35 +544,53 @@ textarea.form-control {
     background-color: #0b5ed7;
 }
 
-/* Footer - Fixed to bottom */
+/* Universal Sticky Footer - Full Width */
 footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    z-index: 1020;
+    width: 100vw !important;
     margin: 0 !important;
-    padding: 1.5rem 2rem !important;
+    margin-top: auto !important;
+    padding: 1.5rem 0 !important;
     border-top: 1px solid #e9ecef !important;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
-    min-height: 80px;
-    display: flex !important;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw !important;
+    margin-right: -50vw !important;
+    z-index: 1020;
+}
+
+/* Footer content container */
+footer .footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 1rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-/* Inline footer styling for pages that don't use fixed footer */
-footer.mt-5 {
-    position: static !important;
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 1.5rem 2rem !important;
+/* Ensure footer content spans properly on all pages */
+footer:not(.footer-content) {
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    display: flex;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+}
+
+/* Main content area to push footer down */
+.page-container,
+.container-fluid:not(.navbar):not(footer .container-fluid) {
+    flex: 1 0 auto;
 }
 
 footer a {
@@ -583,13 +606,18 @@ footer a:hover {
 
 @media (max-width: 768px) {
     footer {
+        padding: 1.25rem 0 !important;
+    }
+    
+    footer .footer-content,
+    footer:not(.footer-content) {
         flex-direction: column;
         gap: 0.75rem !important;
-        padding: 1.25rem 1rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
         text-align: center;
         min-height: 80px;
         justify-content: center;
-        width: 100%;
     }
     
     footer .ms-auto {
@@ -597,10 +625,12 @@ footer a:hover {
     }
 } 
 
-/* Page container for proper content flow */
-.page-container {
-    flex: 1;
-    width: 100%;
+/* Remove redundant page container styling - handled above */
+/* Main wrapper for flex layout */
+.main-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Enhanced OCR Styles */

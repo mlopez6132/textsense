@@ -169,21 +169,6 @@
             </div>
         </nav>
 
-        <!-- Page Header -->
-        <div class="row justify-content-center">
-            <div class="col-lg-9 col-xl-8">
-                <header class="text-center mb-4">
-                    <h1 class="display-5 fw-bold text-primary mb-3">
-                        <i class="fas fa-home me-2"></i>TextSense
-                    </h1>
-                    <p class="lead text-muted mb-4">
-                        Open Text Tools for Everyone - Professional-grade text analysis tools accessible to everyone. 
-                        No paywalls, no limits, no registration required.
-                    </p>
-                </header>
-            </div>
-        </div>
-
         <!-- Page Content -->
         <div class="page-container">
             <!-- Hero Section -->
@@ -451,14 +436,16 @@
         </div>
 
         <!-- Footer -->
-        <footer class="mt-5 border-top pt-3 small text-muted d-flex flex-wrap gap-3">
-            <span>&copy; textsense.org 2025 &mdash; your trusted AI text detector</span>
-            <a href="/about">About</a>
-            <a href="/privacy">Privacy</a>
-            <a href="/terms">Terms</a>
-            <a href="/cookies">Cookies</a>
-            <a href="/contact">Contact</a>
-            <span class="ms-auto">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
+        <footer class="small text-muted">
+            <div class="footer-content">
+                <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
+                <a href="/about">About</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/terms">Terms</a>
+                <a href="/cookies">Cookies</a>
+                <a href="/contact">Contact</a>
+                <span class="ms-auto">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
+            </div>
         </footer>
     </div>
 
