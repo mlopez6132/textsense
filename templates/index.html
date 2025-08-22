@@ -18,13 +18,12 @@
     <link href="{{ url_for('static', path='css/style.css') }}" rel="stylesheet">
     <style>
         .hero-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
             color: white;
             padding: 100px 0;
             position: relative;
             overflow: hidden;
-            margin: 3rem 2rem;
-            border-radius: 16px;
+            margin-bottom: 3rem;
         }
         .hero-section::before {
             content: '';
@@ -49,7 +48,7 @@
         .feature-icon {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -59,13 +58,11 @@
             margin: 0 auto 1.5rem;
         }
         .stats-section {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             padding: 80px 0;
             margin: 3rem 0;
-            border-radius: 16px;
-            margin: 3rem 2rem;
         }
         .stat-item {
             text-align: center;
@@ -74,13 +71,13 @@
         .stat-number {
             font-size: 3rem;
             font-weight: bold;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
         .creator-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
             color: white;
             padding: 1rem 2rem;
             border-radius: 50px;
@@ -91,17 +88,13 @@
         }
         .creator-badge:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 8px 25px rgba(13, 110, 253, 0.3);
             color: white;
             text-decoration: none;
         }
         .about-section {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             padding: 80px 0;
-            margin: 3rem 2rem;
-            border-radius: 16px;
+            margin: 3rem 0;
         }
         .product-card {
             background: white;
@@ -117,7 +110,7 @@
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
         .btn-primary-gradient {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
             border: none;
             border-radius: 25px;
             padding: 12px 30px;
@@ -126,7 +119,7 @@
         }
         .btn-primary-gradient:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 8px 25px rgba(13, 110, 253, 0.3);
         }
         .hero-feature {
             text-align: center;
@@ -144,17 +137,22 @@
             margin: 0;
         }
         .cta-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
             color: white;
             padding: 80px 0;
-            margin: 3rem 2rem;
-            border-radius: 16px;
+            margin: 3rem 0;
         }
+        /* Full width body with blue gradient background */
+        body {
+            background: linear-gradient(135deg, #f0f7ff 0%, #e3f2fd 50%, #bbdefb 100%) !important;
+            min-height: 100vh;
+        }
+        
         .page-container {
-            width: 100%;
-            max-width: none;
-            margin: 0;
-            padding: 24px;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100vw;
         }
     </style>
 </head>
@@ -185,7 +183,7 @@
         <div class="page-container">
             <!-- Hero Section -->
             <section class="hero-section">
-                <div class="container">
+                <div class="container-fluid px-4">
                     <div class="row align-items-center">
                         <div class="col-lg-6">
                             <div class="d-flex align-items-center mb-4">
@@ -250,7 +248,7 @@
 
             <!-- Stats Section -->
             <section class="stats-section">
-                <div class="container">
+                <div class="container-fluid px-4">
                     <div class="row">
                         <div class="col-lg-3 col-md-6">
                             <div class="stat-item">
@@ -285,8 +283,8 @@
             </section>
 
             <!-- Products Section -->
-            <section id="products" class="py-5" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 16px; margin: 3rem 2rem; padding: 3rem;">
-                <div class="container">
+            <section id="products" class="py-5">
+                <div class="container-fluid px-4">
                     <div class="text-center mb-5">
                         <h2 class="display-5 fw-bold mb-3">Our Text Analysis Tools</h2>
                         <p class="lead text-muted">Professional-grade tools for all your text analysis needs</p>
@@ -389,8 +387,8 @@
             </section>
 
             <!-- About Section -->
-            <section class="about-section bg-light">
-                <div class="container">
+            <section class="about-section" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                <div class="container-fluid px-4">
                     <div class="row align-items-center">
                         <div class="col-lg-6 mb-5 mb-lg-0">
                             <h2 class="display-5 fw-bold mb-4">About TextSense</h2>
@@ -447,7 +445,7 @@
 
             <!-- CTA Section -->
             <section class="cta-section">
-                <div class="container text-center">
+                <div class="container-fluid px-4 text-center">
                     <h2 class="display-6 fw-bold mb-3">Ready to Analyze Your Text?</h2>
                     <p class="lead mb-4">Choose from our powerful, free text analysis tools</p>
                     <div class="d-flex flex-wrap justify-content-center gap-3">
