@@ -6,7 +6,7 @@ html {
 }
 
 body {
-    background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%);
+    background: #f8f9fa; /* Light grey background for all pages */
     min-height: 100vh;
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #0f172a; /* near-slate */
@@ -17,6 +17,11 @@ body {
     flex-direction: column;
     position: relative;
     z-index: 1;
+}
+
+/* Keep gradient background only for index page */
+body.index-page {
+    background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%);
 }
 
 .container-fluid {
@@ -588,10 +593,20 @@ footer:not(.footer-content) {
 }
 
 /* Main content area to push footer down */
+.container-fluid {
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+}
+
 .main-content,
 .page-container {
     flex: 1 0 auto;
-    min-height: calc(100vh - 170px); /* Account for header and footer */
+}
+
+/* Ensure body content takes full height */
+body > .container-fluid {
+    min-height: calc(100vh - 90px); /* Account for header */
 }
 
 footer a {

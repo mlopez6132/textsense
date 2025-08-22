@@ -2,7 +2,6 @@
 
 /* Full width body and container for index page */
 body {
-    background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%) !important;
     min-height: 100vh;
     padding-top: 90px !important; /* Space for fixed header */
     margin: 0;
