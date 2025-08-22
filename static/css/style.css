@@ -59,7 +59,7 @@ body.index-page {
 .site-header > .container-fluid {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding: 0 3rem;
     max-width: none;
     margin: 0;
@@ -94,6 +94,7 @@ body.index-page {
     align-items: center;
     gap: 0.5rem;
     margin: 0;
+    margin-left: auto;
     padding: 0;
     list-style: none;
 }
