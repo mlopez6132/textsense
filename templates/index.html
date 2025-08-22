@@ -23,8 +23,13 @@
         <nav class="navbar site-header">
             <div class="container-fluid">
                 <div class="navbar-brand">
-                    <a href="/" class="brand-logo-text fw-bold fs-3 text-decoration-none">TextSense</a>
-                    <span class="brand-tagline text-muted small d-block">open ai tools for everyone</span>
+                    <a href="/" class="d-flex align-items-center text-decoration-none">
+                        <img src="{{ url_for('static', path='textsense_logo.png') }}" alt="TextSense Logo" height="40" class="me-2">
+                        <div>
+                            <span class="brand-logo-text fw-bold fs-3">TextSense</span>
+                            <span class="brand-tagline text-muted small d-block">open ai tools for everyone</span>
+                        </div>
+                    </a>
                 </div>
                 <div class="navbar-nav">
                     <a href="/" class="nav-link fw-bold active">AI Text Detector</a>
