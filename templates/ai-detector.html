@@ -18,10 +18,10 @@
     <link href="{{ url_for('static', path='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
-    <!-- Header / Navbar -->
-    <header>
+    <div class="container-fluid">
+        <!-- Header / Navbar -->
         <nav class="navbar site-header">
-            <div class="main-container">
+            <div class="container-fluid">
                 <div class="navbar-brand">
                     <a href="/" class="d-flex align-items-center text-decoration-none">
                         <img src="{{ url_for('static', path='textsense_logo.png') }}" alt="TextSense Logo" height="40" class="me-2">
@@ -39,13 +39,9 @@
                 </div>
             </div>
         </nav>
-    </header>
 
-    <!-- Main Content -->
-    <main>
-        <div class="tool-container">
-            <!-- Page Header -->
-            <div class="row justify-content-center">
+        <!-- Page Header -->
+        <div class="row justify-content-center">
             <div class="col-lg-9 col-xl-8">
                 <header class="text-center mb-4">
                     <h1 class="display-5 fw-bold text-primary mb-3">
@@ -339,8 +335,7 @@
                 </div>
             </div>
         </div>
-        </div>
-    </main>
+    </div>
 
     <!-- Footer -->
     <footer class="small text-muted">

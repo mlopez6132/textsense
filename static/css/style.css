@@ -1,9 +1,7 @@
 /* Custom styles for AI Text Detector */
 
-/* TextSense — Modern Flexbox Layout */
-html, body {
-    margin: 0;
-    padding: 0;
+/* TextSense — clean, GPTZero-inspired palette */
+html {
     height: 100%;
 }
 
@@ -12,6 +10,9 @@ body {
     min-height: 100vh;
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #0f172a; /* near-slate */
+    margin: 0;
+    padding: 0;
+    padding-top: 90px; /* Space for fixed header */
     display: flex;
     flex-direction: column;
     position: relative;
@@ -19,15 +20,6 @@ body {
 }
 
 .container-fluid {
-    padding: 0;
-    margin: 0;
-    width: 100%;
-    position: relative;
-    z-index: 1;
-}
-
-/* Main content container */
-.main-container {
     padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
@@ -36,9 +28,13 @@ body {
     z-index: 1;
 }
 
-/* Header - Full Width */
+/* Fixed Header - Full Width */
 .navbar {
-    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
     z-index: 1030;
     padding: 0;
     margin: 0;
@@ -46,7 +42,6 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    flex-shrink: 0;
 }
 
 /* Header Layout */
@@ -551,17 +546,21 @@ textarea.form-control {
 
 /* Universal Sticky Footer - Full Width */
 footer {
-    width: 100%;
-    margin: 0;
-    margin-top: auto;
-    padding: 1.5rem 0;
-    border-top: 1px solid #e9ecef;
+    width: 100vw !important;
+    margin: 0 !important;
+    margin-top: auto !important;
+    padding: 1.5rem 0 !important;
+    border-top: 1px solid #e9ecef !important;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw !important;
+    margin-right: -50vw !important;
     z-index: 1020;
-    flex-shrink: 0;
 }
 
 /* Footer content container */
@@ -577,31 +576,22 @@ footer .footer-content {
     box-sizing: border-box;
 }
 
-/* Main content area */
-main {
-    flex: 1;
-    width: 100%;
-    overflow-y: auto;
-}
-
-/* Page containers */
-.page-container {
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-    width: 100%;
-    min-height: 100%;
+/* Ensure footer content spans properly on all pages */
+footer:not(.footer-content) {
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
     display: flex;
-    flex-direction: column;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
 }
 
-/* Tool pages container */
-.tool-container {
-    padding: 20px;
-    max-width: 920px;
-    margin: 0 auto;
-    width: 100%;
-    min-height: 100%;
+/* Main content area to push footer down */
+.main-content,
+.page-container {
+    flex: 1 0 auto;
+    min-height: calc(100vh - 170px); /* Account for header and footer */
 }
 
 footer a {

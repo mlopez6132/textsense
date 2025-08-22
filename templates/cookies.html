@@ -18,36 +18,36 @@
   <link href="{{ url_for('static', path='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
-  <!-- Header / Navbar -->
-  <header>
-    <nav class="navbar site-header">
-      <div class="main-container">
-        <div class="navbar-brand">
-          <a href="/" class="d-flex align-items-center text-decoration-none">
-            <img src="{{ url_for('static', path='textsense_logo.png') }}" alt="TextSense Logo" height="40" class="me-2">
-            <div>
-              <span class="brand-logo-text fw-bold fs-3">TextSense</span>
-              <span class="brand-tagline text-muted small d-block">open text tools for everyone</span>
-            </div>
-          </a>
-        </div>
-        <div class="navbar-nav">
+  <div class="container-fluid">
+      <nav class="navbar site-header">
+    <div class="container-fluid">
+      <div class="navbar-brand">
+        <a href="/" class="d-flex align-items-center text-decoration-none">
+          <img src="{{ url_for('static', path='textsense_logo.png') }}" alt="TextSense Logo" height="40" class="me-2">
+          <div>
+            <span class="brand-logo-text fw-bold fs-3">TextSense</span>
+            <span class="brand-tagline text-muted small d-block">open text tools for everyone</span>
+          </div>
+        </a>
+      </div>
+              <div class="navbar-nav">
           <a href="/ai-detector" class="nav-link fw-bold">AI Text Detector</a>
           <a href="/ocr" class="nav-link fw-bold">Image-Text to Text</a>
           <a href="/audio-text" class="nav-link fw-bold">Audio to Text</a>
           <a href="/generate-image-page" class="nav-link fw-bold">Text to Image</a>
         </div>
-      </div>
-    </nav>
-  </header>
+    </div>
+  </nav>
 
-  <!-- Main Content -->
-  <main>
-    <div class="page-container">
-      <header class="py-4">
-        <h1 class="fw-bold">Cookies</h1>
-        <p class="text-muted">How and why we use cookies</p>
-      </header>
+    <!-- Page Header -->
+    <div class="row justify-content-center">
+      <div class="col-lg-9 col-xl-8">
+        <header class="text-center py-4">
+          <h1 class="fw-bold">Cookies</h1>
+          <p class="text-muted">How and why we use cookies</p>
+        </header>
+      </div>
+    </div>
 
     <section class="card shadow-sm p-4 mb-4">
       <h2 class="h5">What are cookies?</h2>
@@ -58,21 +58,23 @@
       <h2 class="h5">Managing Cookies</h2>
       <p>You can control cookie usage via your browser settings. Some features may not work properly if cookies are disabled.</p>
     </section>
-
+        </div>
+      </div>
     </div>
-  </main>
 
-  <footer class="small text-muted">
-    <div class="footer-content">
-      <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
-      <a href="/about">About</a>
-      <a href="/privacy">Privacy</a>
-      <a href="/terms">Terms</a>
-      <a href="/cookies">Cookies</a>
-      <a href="/contact">Contact</a>
-      <span class="ms-auto">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
+        <!-- Footer -->
+        <footer class="small text-muted">
+            <div class="footer-content">
+                <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
+                <a href="/about">About</a>
+                <a href="/privacy">Privacy</a>
+                <a href="/terms">Terms</a>
+                <a href="/cookies">Cookies</a>
+                <a href="/contact">Contact</a>
+                <span class="ms-auto">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
+            </div>
+        </footer>
     </div>
-  </footer>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', path='js/site.js') }}"></script>
 </body>
