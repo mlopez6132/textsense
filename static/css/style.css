@@ -6,7 +6,7 @@ html {
 }
 
 body {
-    background: #f8f9fa; /* Light grey background for all pages */
+    background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%);
     min-height: 100vh;
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #0f172a; /* near-slate */
@@ -597,16 +597,20 @@ footer:not(.footer-content) {
     flex: 1 0 auto;
     display: flex;
     flex-direction: column;
+    min-height: calc(100vh - 90px); /* Account for header */
 }
 
 .main-content,
 .page-container {
     flex: 1 0 auto;
+    margin-bottom: 0 !important;
 }
 
-/* Ensure body content takes full height */
-body > .container-fluid {
-    min-height: calc(100vh - 90px); /* Account for header */
+/* Ensure footer sticks to bottom */
+footer {
+    margin-top: auto !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
 }
 
 footer a {
