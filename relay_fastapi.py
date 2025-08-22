@@ -244,8 +244,9 @@ async def analyze(text: Optional[str] = Form(None), file: Optional[UploadFile] =
 
     if not submit_text:
         return JSONResponse({"error": "No text or file provided."}, status_code=400)
-    if len(submit_text) > 50000:
-        return JSONResponse({"error": "Text exceeds the 50,000 character limit."}, status_code=400)
+    # Note: Character limit only applies to text input, not file uploads
+    if text and len(submit_text) > 50000:
+        return JSONResponse({"error": "Text input exceeds the 50,000 character limit."}, status_code=400)
 
     # Proxy to HF Space
     try:
@@ -284,6 +285,7 @@ async def analyze(text: Optional[str] = Form(None), file: Optional[UploadFile] =
 async def ocr(
     image_url: Optional[str] = Form(None),
     image: Optional[UploadFile] = File(None),
+    language: str = Form("en"),
 ):
     if not image_url and (image is None or not image.filename):
         return JSONResponse({"error": "No image provided. Provide 'image' file or 'image_url'."}, status_code=400)
@@ -320,9 +322,13 @@ async def ocr(
             name = url.split("?")[0].rstrip("/").split("/")[-1] or "remote.jpg"
             files = {"image": (name, r.content, mime)}
 
+        # Include language parameter in the request
+        data = {"language": language}
+        
         resp = requests.post(
             remote_url,
             files=files,
+            data=data,
             headers=headers,
             timeout=DEFAULT_TIMEOUT_SECONDS,
         )

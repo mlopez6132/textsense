@@ -163,6 +163,10 @@
       } else {
         form.append('image_url', urlVal);
       }
+      
+      // Add selected language
+      const languageSelect = document.getElementById('languageSelect');
+      form.append('language', languageSelect.value);
 
       const resp = await fetch('/ocr', {
         method: 'POST',
