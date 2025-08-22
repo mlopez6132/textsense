@@ -1,8 +1,8 @@
 /* Custom styles for AI Text Detector */
 
-/* TextSense — clean, GPTZero-inspired palette */
+/* TextSense — blue gradient palette */
 body {
-    background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #0f172a; /* near-slate */
@@ -13,12 +13,14 @@ body {
 
 .container-fluid {
     padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: none;
+    margin: 0;
     /* Ensure proper footer positioning */
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    position: relative;
 }
 
 /* Fixed Header - Full Width */
@@ -142,8 +144,9 @@ header p {
 
 /* Shared page container utility for content pages */
 .page-container {
-    max-width: 920px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: none;
+    margin: 0;
     padding: 24px;
 }
 
@@ -552,6 +555,7 @@ footer {
     gap: 1rem;
     /* Ensure footer stays at bottom of content */
     margin-top: auto !important;
+    flex-shrink: 0;
 }
 
 footer a {
@@ -585,6 +589,7 @@ footer a:hover {
 .page-container {
     flex: 1;
     width: 100%;
+    flex-grow: 1;
 }
 
 /* Enhanced OCR Styles */

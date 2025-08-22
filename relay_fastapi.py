@@ -153,6 +153,14 @@ async def generate_image_page(request: Request):
     }
     return templates.TemplateResponse("generate-image.html", context)
 
+@app.get("/ai-detector", response_class=HTMLResponse)
+async def ai_detector(request: Request):
+    context = {
+        "request": request,
+        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
+    }
+    return templates.TemplateResponse("ai-detector.html", context)
+
 
 @app.post("/contact")
 async def submit_contact(request: Request):

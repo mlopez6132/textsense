@@ -23,7 +23,8 @@
             padding: 100px 0;
             position: relative;
             overflow: hidden;
-            margin-bottom: 3rem;
+            margin: 3rem 2rem;
+            border-radius: 16px;
         }
         .hero-section::before {
             content: '';
@@ -58,9 +59,13 @@
             margin: 0 auto 1.5rem;
         }
         .stats-section {
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             padding: 80px 0;
             margin: 3rem 0;
+            border-radius: 16px;
+            margin: 3rem 2rem;
         }
         .stat-item {
             text-align: center;
@@ -91,8 +96,12 @@
             text-decoration: none;
         }
         .about-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             padding: 80px 0;
-            margin: 3rem 0;
+            margin: 3rem 2rem;
+            border-radius: 16px;
         }
         .product-card {
             background: white;
@@ -138,12 +147,14 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 80px 0;
-            margin: 3rem 0;
+            margin: 3rem 2rem;
+            border-radius: 16px;
         }
         .page-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            padding: 24px;
         }
     </style>
 </head>
@@ -274,7 +285,7 @@
             </section>
 
             <!-- Products Section -->
-            <section id="products" class="py-5">
+            <section id="products" class="py-5" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-radius: 16px; margin: 3rem 2rem; padding: 3rem;">
                 <div class="container">
                     <div class="text-center mb-5">
                         <h2 class="display-5 fw-bold mb-3">Our Text Analysis Tools</h2>
