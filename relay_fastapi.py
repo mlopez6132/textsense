@@ -51,6 +51,36 @@ templates = Jinja2Templates(directory="templates")
 async def favicon():
     return FileResponse("static/favicon.ico")
 
+@app.get("/site.webmanifest")
+async def site_webmanifest():
+    """Serve the site.webmanifest file from static folder"""
+    return FileResponse("static/site.webmanifest", media_type="application/manifest+json")
+
+@app.get("/apple-touch-icon.png")
+async def apple_touch_icon():
+    """Serve the apple-touch-icon.png file from static folder"""
+    return FileResponse("static/apple-touch-icon.png")
+
+@app.get("/favicon-32x32.png")
+async def favicon_32x32():
+    """Serve the favicon-32x32.png file from static folder"""
+    return FileResponse("static/favicon-32x32.png")
+
+@app.get("/favicon-16x16.png")
+async def favicon_16x16():
+    """Serve the favicon-16x16.png file from static folder"""
+    return FileResponse("static/favicon-16x16.png")
+
+@app.get("/android-chrome-192x192.png")
+async def android_chrome_192():
+    """Serve the android-chrome-192x192.png file from static folder"""
+    return FileResponse("static/android-chrome-192x192.png")
+
+@app.get("/android-chrome-512x512.png")
+async def android_chrome_512():
+    """Serve the android-chrome-512x512.png file from static folder"""
+    return FileResponse("static/android-chrome-512x512.png")
+
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     context = {
