@@ -20,24 +20,24 @@
 <body>
   <div class="container-fluid">
       <nav class="navbar site-header">
-    <div class="container-fluid">
-      <div class="navbar-brand">
-        <a href="/" class="d-flex align-items-center text-decoration-none">
-          <img src="{{ url_for('static', path='textsense_logo.png') }}" alt="TextSense Logo" height="40" class="me-2">
-          <div>
-            <span class="brand-logo-text fw-bold fs-3">TextSense</span>
-            <span class="brand-tagline text-muted small d-block">open text tools for everyone</span>
+        <div class="container">
+          <div class="navbar-brand">
+            <a href="/" class="d-flex align-items-center text-decoration-none">
+              <img src="{{ url_for('static', path='textsense_logo.png') }}" alt="TextSense Logo" height="40" class="me-2">
+              <div>
+                <span class="brand-logo-text fw-bold fs-3">TextSense</span>
+                <span class="brand-tagline text-muted small d-block">open text tools for everyone</span>
+              </div>
+            </a>
           </div>
-        </a>
-      </div>
-              <div class="navbar-nav">
-          <a href="/ai-detector" class="nav-link fw-bold">AI Text Detector</a>
-          <a href="/ocr" class="nav-link fw-bold">Image-Text to Text</a>
-          <a href="/audio-text" class="nav-link fw-bold">Audio to Text</a>
-          <a href="/generate-image-page" class="nav-link fw-bold">Text to Image</a>
+          <div class="navbar-nav">
+            <a href="/ai-detector" class="nav-link fw-bold">AI Text Detector</a>
+            <a href="/ocr" class="nav-link fw-bold">Image-Text to Text</a>
+            <a href="/audio-text" class="nav-link fw-bold">Audio to Text</a>
+            <a href="/generate-image-page" class="nav-link fw-bold">Text to Image</a>
+          </div>
         </div>
-    </div>
-  </nav>
+      </nav>
 
     <!-- Page Header -->
     <main class="container">
@@ -78,13 +78,17 @@
   <!-- Footer -->
   <footer class="small text-muted">
       <div class="container">
-          <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
-          <a href="/about">About</a>
-          <a href="/privacy">Privacy</a>
-          <a href="/terms">Terms</a>
-          <a href="/cookies">Cookies</a>
-          <a href="/contact">Contact</a>
-          <span class="ms-auto">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
+          <div class="footer-left">
+              <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
+              <nav class="footer-nav">
+                  <a href="/about">About</a>
+                  <a href="/privacy">Privacy</a>
+                  <a href="/terms">Terms</a>
+                  <a href="/cookies">Cookies</a>
+                  <a href="/contact">Contact</a>
+              </nav>
+          </div>
+          <span class="footer-right">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
       </div>
   </footer>
     </div>

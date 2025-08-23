@@ -274,13 +274,17 @@
     <!-- Footer -->
         <footer class="small text-muted">
             <div class="container">
-                <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
-                <a href="/about">About</a>
-                <a href="/privacy">Privacy</a>
-                <a href="/terms">Terms</a>
-                <a href="/cookies">Cookies</a>
-                <a href="/contact">Contact</a>
-                <span class="ms-auto">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
+                <div class="footer-left">
+                    <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
+                    <nav class="footer-nav">
+                        <a href="/about">About</a>
+                        <a href="/privacy">Privacy</a>
+                        <a href="/terms">Terms</a>
+                        <a href="/cookies">Cookies</a>
+                        <a href="/contact">Contact</a>
+                    </nav>
+                </div>
+                <span class="footer-right">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
             </div>
         </footer>
     </div>

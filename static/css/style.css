@@ -594,22 +594,46 @@ footer {
 footer .container {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
-    gap: 1rem;
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
+    gap: 1rem;
 }
 
-/* Ensure proper spacing between all footer elements */
-footer .container > span,
-footer .container > a {
-    white-space: nowrap;
+/* Footer left section (copyright + navigation links) */
+footer .container .footer-left {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
 }
 
-/* Additional spacing for footer links to ensure they don't run together */
+/* Footer navigation links */
+footer .container .footer-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Footer links styling */
 footer .container a {
-    margin-left: 0.25rem;
-    margin-right: 0.25rem;
+    white-space: nowrap;
+    text-decoration: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+footer .container a:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+    color: #0d6efd;
+}
+
+/* Footer right section (contact info) */
+footer .container .footer-right {
+    white-space: nowrap;
+    margin-left: auto;
 }
 
 /* Legacy footer content container */
@@ -670,11 +694,29 @@ footer a:hover {
     
     footer .container {
         flex-direction: column;
-        gap: 0.75rem !important;
+        align-items: center;
         text-align: center;
+        gap: 1rem !important;
         min-height: 80px;
         justify-content: center;
         padding-bottom: 1.25rem;
+    }
+    
+    footer .container .footer-left {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    footer .container .footer-nav {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.75rem;
+    }
+    
+    footer .container .footer-right {
+        margin-left: 0;
+        order: 3;
     }
     
     footer .footer-content,
@@ -686,10 +728,6 @@ footer a:hover {
         text-align: center;
         min-height: 80px;
         justify-content: center;
-    }
-    
-    footer .ms-auto {
-        margin-left: 0 !important;
     }
 } 
 
