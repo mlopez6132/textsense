@@ -657,7 +657,7 @@ footer .container .footer-right {
 footer .footer-content {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 1.5rem 2rem 1.5rem 2rem;
+    padding: 1rem 2rem 1rem 2rem;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
