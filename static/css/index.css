@@ -28,12 +28,17 @@ body {
     padding: 0 !important;
 }
 
+/* Remove top padding to eliminate gap between header and hero */
+.index-page .page-container {
+    padding-top: 0 !important;
+}
+
 /* Hero section full width */
 .hero-section {
     width: 100vw !important;
     max-width: 100vw !important;
     margin: 0 !important;
-    padding: 100px 0 !important;
+    padding: 60px 0 !important;
     position: relative;
     left: 50%;
     right: 50%;
@@ -89,7 +94,7 @@ body {
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
     .hero-section {
-        padding: 60px 0 !important;
+        padding: 40px 0 !important;
     }
 
     .about-section {
