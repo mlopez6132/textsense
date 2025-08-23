@@ -34,6 +34,12 @@ body {
     margin-top: 0 !important;
 }
 
+/* Ensure hero section starts immediately below header with no gap */
+.hero-section {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
 /* Keep body padding-top for index page to prevent header overlap */
 body.index-page {
     padding-top: 90px !important;
