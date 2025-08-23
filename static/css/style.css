@@ -57,7 +57,7 @@ body.index-page {
 /* Header Layout */
 .site-header {
     margin: 0 !important;
-    padding: 1rem 0;
+    padding: 0;
     width: 100%;
 }
 
