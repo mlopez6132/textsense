@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import os
-from typing import Optional, Tuple
+from typing import Union, Tuple
 
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import (
@@ -32,20 +34,20 @@ def get_auth_headers() -> dict:
 
 
 async def prepare_text_from_inputs(
-    text: Optional[str],
-    file: Optional[UploadFile],
+    text: Union[str, None],
+    file: Union[UploadFile, None],
     max_length: int = 50000,
 ) -> str:
     """Return text content from either direct text or uploaded file. Raises HTTPException on errors."""
     if (not text or not text.strip()) and (file is None or not getattr(file, "filename", None)):
         raise HTTPException(status_code=400, detail="No text or file provided.")
 
-    submit_text: Optional[str] = None
+    submit_text: Union[str, None] = None
     if file is not None and file.filename:
         try:
             raw_bytes = await file.read()
         except OSError as e:
-            raise HTTPException(status_code=400, detail=f"File read error: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"File read error: {str(e)}") from e
         try:
             submit_text = raw_bytes.decode("utf-8")
         except UnicodeDecodeError:
@@ -64,9 +66,9 @@ async def prepare_text_from_inputs(
 def forward_post_json(
     remote_url: str,
     *,
-    data: Optional[dict] = None,
-    files: Optional[dict] = None,
-    headers: Optional[dict] = None,
+    data: Union[dict, None] = None,
+    files: Union[dict, None] = None,
+    headers: Union[dict, None] = None,
     timeout: int = DEFAULT_TIMEOUT_SECONDS,
     context: str = "Upstream",
 ) -> dict:
@@ -76,11 +78,11 @@ def forward_post_json(
         resp.raise_for_status()
         return resp.json()
     except RequestException as req_err:
-        raise HTTPException(status_code=502, detail=f"{context} request failed: {str(req_err)}")
+        raise HTTPException(status_code=502, detail=f"{context} request failed: {str(req_err)}") from req_err
 
 
 async def build_image_files(
-    image: Optional[UploadFile], image_url: Optional[str]
+    image: Union[UploadFile, None], image_url: Union[str, None]
 ) -> dict:
     """Return a requests-compatible files dict for image upload, fetching remote URL if needed."""
     if image is not None and image.filename:
@@ -97,7 +99,7 @@ async def build_image_files(
             r = requests.get(image_url.strip(), timeout=30, headers={"User-Agent": "TextSense-Relay/1.0"})
             r.raise_for_status()
         except RequestException as req_err:
-            raise HTTPException(status_code=502, detail=f"Failed to fetch image URL: {str(req_err)}")
+            raise HTTPException(status_code=502, detail=f"Failed to fetch image URL: {str(req_err)}") from req_err
         mime = r.headers.get("content-type", "application/octet-stream").split(";")[0].strip()
         name = image_url.split("?")[0].rstrip("/").split("/")[-1] or "remote.jpg"
         return {"image": (name, r.content, mime)}
@@ -105,8 +107,8 @@ async def build_image_files(
 
 
 async def build_audio_payload(
-    audio: Optional[UploadFile], audio_url: Optional[str], return_timestamps: bool
-) -> Tuple[Optional[dict], dict]:
+    audio: Union[UploadFile, None], audio_url: Union[str, None], return_timestamps: bool
+) -> Tuple[Union[dict, None], dict]:
     """Return (files, data) tuple for audio transcription request."""
     data = {"return_timestamps": str(return_timestamps).lower()}
     if audio is not None and audio.filename:
@@ -293,7 +295,7 @@ async def ads_txt():
 
 
 @app.post("/analyze")
-async def analyze(text: Optional[str] = Form(None), file: Optional[UploadFile] = File(None)):
+async def analyze(text: Union[str, None] = Form(None), file: Union[UploadFile, None] = File(None)):
     submit_text = await prepare_text_from_inputs(text, file, max_length=50000)
     remote_url = get_remote_url()
     headers = get_auth_headers()
@@ -307,7 +309,7 @@ async def analyze(text: Optional[str] = Form(None), file: Optional[UploadFile] =
 
 
 @app.post("/ocr")
-async def ocr(image_url: Optional[str] = Form(None), image: Optional[UploadFile] = File(None), language: str = Form("en")):
+async def ocr(image_url: Union[str, None] = Form(None), image: Union[UploadFile, None] = File(None), language: str = Form("en")):
     files = await build_image_files(image, image_url)
     remote_url = get_ocr_url()
     headers = get_auth_headers()
@@ -322,7 +324,7 @@ async def ocr(image_url: Optional[str] = Form(None), image: Optional[UploadFile]
 
 
 @app.post("/audio-transcribe")
-async def audio_transcribe(audio: Optional[UploadFile] = File(None), audio_url: Optional[str] = Form(None), return_timestamps: bool = Form(False)):
+async def audio_transcribe(audio: Union[UploadFile, None] = File(None), audio_url: Union[str, None] = Form(None), return_timestamps: bool = Form(False)):
     files, data = await build_audio_payload(audio, audio_url, return_timestamps)
     remote_url = get_audio_text_url()
     headers = get_auth_headers()
@@ -345,7 +347,7 @@ async def generate_image(
     num_inference_steps: int = Form(4),
     enable_safety_checker: bool = Form(True),
     enable_prompt_optimizer: bool = Form(True),
-    negative_prompt: Optional[str] = Form("")
+    negative_prompt: Union[str, None] = Form("")
 ):
     try:
         result = image_generator.generate_images(
@@ -359,9 +361,9 @@ async def generate_image(
         )
         return JSONResponse(result)
     except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
+        raise HTTPException(status_code=400, detail=str(ve)) from ve
     except RuntimeError as re:
-        raise HTTPException(status_code=500, detail=f"Image generation runtime error: {str(re)}")
+        raise HTTPException(status_code=500, detail=f"Image generation runtime error: {str(re)}") from re
 
 
 @app.get("/download-image")
@@ -387,7 +389,7 @@ async def download_image(url: str, filename: str = "generated_image.png"):
             headers={"Content-Disposition": f"attachment; filename={filename}", "Cache-Control": "no-cache"}
         )
     except RequestException as req_err:
-        raise HTTPException(status_code=502, detail=f"Image download failed: {str(req_err)}")
+        raise HTTPException(status_code=502, detail=f"Image download failed: {str(req_err)}") from req_err
 
 
 @app.get("/healthz")
