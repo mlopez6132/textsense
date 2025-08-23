@@ -41,9 +41,8 @@ body {
     margin-right: -50vw !important;
 }
 
-.hero-section .container-fluid {
+.hero-section .container {
     max-width: 1200px !important;
-    width: 1200px !important;
     margin: 0 auto !important;
     padding: 0 2rem !important;
     position: relative;
@@ -63,9 +62,8 @@ body {
     margin-right: -50vw !important;
 }
 
-.about-section .container-fluid {
+.about-section .container {
     max-width: 1200px !important;
-    width: 1200px !important;
     margin: 0 auto !important;
     padding: 0 2rem !important;
     position: relative;
@@ -78,7 +76,7 @@ body {
     padding: 80px 0 !important;
 }
 
-.products-section .container-fluid {
+.products-section .container {
     max-width: 1200px !important;
     margin: 0 auto !important;
     padding: 0 2rem !important;
@@ -102,9 +100,9 @@ body {
         padding: 60px 0 !important;
     }
 
-    .hero-section .container-fluid,
-    .about-section .container-fluid,
-    .products-section .container-fluid {
+    .hero-section .container,
+    .about-section .container,
+    .products-section .container {
         width: 100% !important;
         max-width: 100% !important;
         padding: 0 1rem !important;
@@ -116,6 +114,8 @@ main, .main-content, .page-container {
     flex: 1 0 auto !important;
     position: relative !important;
     z-index: 1 !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 

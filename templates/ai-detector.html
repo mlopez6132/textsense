@@ -21,7 +21,7 @@
     <div class="container-fluid">
         <!-- Header / Navbar -->
         <nav class="navbar site-header">
-            <div class="container-fluid">
+            <div class="container">
                 <div class="navbar-brand">
                     <a href="/" class="d-flex align-items-center text-decoration-none">
                         <img src="{{ url_for('static', path='textsense_logo.png') }}" alt="TextSense Logo" height="40" class="me-2">
@@ -41,8 +41,9 @@
         </nav>
 
         <!-- Page Header -->
-        <div class="row justify-content-center">
-            <div class="col-lg-9 col-xl-8">
+        <main class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-9 col-xl-8">
                 <header class="text-center mb-4">
                     <h1 class="display-5 fw-bold text-primary mb-3">
                         <i class="fas fa-search me-2"></i>AI Text Detector
@@ -333,13 +334,14 @@
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     <span id="errorMessage"></span>
                 </div>
+                </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <!-- Footer -->
     <footer class="small text-muted">
-        <div class="footer-content">
+        <div class="container">
             <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
             <a href="/about">About</a>
             <a href="/privacy">Privacy</a>

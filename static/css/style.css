@@ -3,11 +3,13 @@
 /* TextSense — clean, GPTZero-inspired palette */
 html {
     height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 body {
     background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%);
-    min-height: 100vh;
+    min-height: 100dvh;
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #0f172a; /* near-slate */
     margin: 0;
@@ -43,7 +45,7 @@ body.index-page {
     z-index: 1030;
     padding: 0;
     margin: 0;
-    background: #ffffff !important;
+    background: rgba(255, 255, 255, 0.95) !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -56,13 +58,20 @@ body.index-page {
     width: 100%;
 }
 
+.site-header .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Legacy support for container-fluid in header */
 .site-header > .container-fluid {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    padding: 0 3rem;
-    max-width: none;
-    margin: 0;
+    justify-content: space-between;
+    padding: 0 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
     width: 100%;
 }
 
@@ -94,7 +103,6 @@ body.index-page {
     align-items: center;
     gap: 0.5rem;
     margin: 0;
-    margin-left: auto;
     padding: 0;
     list-style: none;
 }
@@ -156,12 +164,22 @@ header p {
     }
 }
 
+/* Shared container utility - consistent across all elements */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
 /* Shared page container utility for content pages */
 .page-container {
-    max-width: 920px;
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 24px 2rem;
     width: 100%;
+    flex: 1 0 auto;
 }
 
 @media (max-width: 768px) {
@@ -440,6 +458,7 @@ textarea.form-control {
         padding: 0.75rem 0;
     }
     
+    .site-header .container,
     .site-header > .container-fluid {
         padding: 0 1.5rem;
         flex-direction: column;
@@ -556,7 +575,8 @@ footer {
     width: 100vw !important;
     margin: 0 !important;
     margin-top: auto !important;
-    padding: 1.5rem 0 !important;
+    margin-bottom: 0 !important;
+    padding: 1.5rem 0 0 0 !important;
     border-top: 1px solid #e9ecef !important;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
@@ -570,11 +590,21 @@ footer {
     z-index: 1020;
 }
 
-/* Footer content container */
+/* Footer content container - use shared .container instead */
+footer .container {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+}
+
+/* Legacy footer content container */
 footer .footer-content {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 2rem;
+    padding: 1.5rem 2rem 1.5rem 2rem;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -590,8 +620,7 @@ footer:not(.footer-content) {
     flex-wrap: wrap;
     gap: 1rem;
     display: flex;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
+    padding: 1.5rem 2rem !important;
 }
 
 /* Main content area to push footer down (only the top-level wrapper) */
@@ -624,7 +653,16 @@ footer a:hover {
 
 @media (max-width: 768px) {
     footer {
-        padding: 1.25rem 0 !important;
+        padding: 1.25rem 0 0 0 !important;
+    }
+    
+    footer .container {
+        flex-direction: column;
+        gap: 0.75rem !important;
+        text-align: center;
+        min-height: 80px;
+        justify-content: center;
+        padding-bottom: 1.25rem;
     }
     
     footer .footer-content,
