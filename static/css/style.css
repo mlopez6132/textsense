@@ -7,6 +7,11 @@ html {
     padding: 0;
 }
 
+/* Global header height variable to keep spacing consistent */
+:root {
+    --header-height: 80px;
+}
+
 body {
     background: #ffffff;
     min-height: 100dvh;
@@ -14,7 +19,7 @@ body {
     color: #0f172a; /* near-slate */
     margin: 0;
     padding: 0;
-    padding-top: 90px; /* Space for fixed header */
+    padding-top: var(--header-height); /* Space for fixed header */
     display: flex;
     flex-direction: column;
     position: relative;
@@ -461,8 +466,9 @@ textarea.form-control {
 
 /* Responsive design */
 @media (max-width: 768px) {
+    :root { --header-height: 72px; }
     body {
-        padding-top: 80px; /* Space for mobile header */
+        padding-top: var(--header-height); /* Space for mobile header */
         padding-bottom: 0; /* No extra space to avoid gap below footer */
     }
     
@@ -690,7 +696,7 @@ body > .container-fluid {
 
 /* Ensure body content takes full height */
 body > .container-fluid {
-    min-height: calc(100vh - 90px); /* Account for header */
+    min-height: calc(100vh - var(--header-height)); /* Account for header */
 }
 
 footer a {
