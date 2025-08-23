@@ -8,7 +8,7 @@ html {
 }
 
 body {
-    background: #ffffff;
+    background: #ffffff !important;
     min-height: 100dvh;
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #0f172a; /* near-slate */
@@ -23,7 +23,7 @@ body {
 
 /* Keep gradient background only for index page */
 body.index-page {
-    background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%);
+    background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%) !important;
 }
 
 .container-fluid {
@@ -61,14 +61,16 @@ body.index-page {
 .site-header .container {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 2rem;
 }
 
 /* Legacy support for container-fluid in header */
 .site-header > .container-fluid {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 2rem;
     padding: 0 2rem;
     max-width: 1200px;
     margin: 0 auto;
@@ -76,7 +78,7 @@ body.index-page {
 }
 
 .navbar-brand {
-    margin-right: 2rem;
+    margin-right: 0;
     padding: 0;
     flex-shrink: 0;
     text-align: left;
@@ -101,14 +103,15 @@ body.index-page {
     display: flex;
     flex-direction: row;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
     margin: 0;
     padding: 0;
     list-style: none;
+    flex-wrap: wrap;
 }
 
 .navbar-nav .nav-link {
-    padding: 0.75rem 1.25rem;
+    padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     transition: all 0.2s ease;
     margin: 0;
@@ -116,6 +119,7 @@ body.index-page {
     font-weight: 600;
     letter-spacing: 0.1px;
     font-size: 0.9rem;
+    white-space: nowrap;
 }
 
 .navbar-nav .nav-link:hover {
@@ -193,9 +197,15 @@ header p {
     border-radius: 16px;
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
+}
+
+/* Glass effect for index page only */
+body.index-page .card {
     background: rgba(255, 255, 255, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.4);
-    box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
 }
@@ -305,7 +315,8 @@ textarea.form-control {
 
 /* Analysis text styling */
 .analysis-text {
-    background: rgba(255, 255, 255, 0.65);
+    background: #ffffff;
+    border: 1px solid #e9ecef;
     border-radius: 10px;
     font-size: 1.1rem;
     line-height: 1.8;
@@ -316,6 +327,12 @@ textarea.form-control {
     overflow-x: hidden; /* prevent horizontal scrollbar flicker from tooltips */
     position: relative; /* create containing block for positioned children */
     contain: layout paint; /* isolate layout/paint to prevent hover jank */
+}
+
+/* Glass effect for index page only */
+body.index-page .analysis-text {
+    background: rgba(255, 255, 255, 0.65);
+    border: none;
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
 }
@@ -468,12 +485,14 @@ textarea.form-control {
     
     .navbar-brand {
         margin-right: 0;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0;
     }
     
     .navbar-nav {
         flex-direction: row;
-        gap: 0.25rem;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: flex-start;
     }
     
     .brand-logo-text {
@@ -595,25 +614,29 @@ footer .container {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     padding-top: 1.5rem;
     padding-bottom: 1.5rem;
     gap: 1rem;
+    min-height: auto;
 }
 
 /* Footer left section (copyright + navigation links) */
 footer .container .footer-left {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 1.5rem;
+    flex-wrap: nowrap;
+    gap: 1rem;
+    flex-shrink: 1;
+    overflow: hidden;
 }
 
 /* Footer navigation links */
 footer .container .footer-nav {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
+    flex-wrap: nowrap;
 }
 
 /* Footer links styling */
@@ -623,6 +646,15 @@ footer .container a {
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
     transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+/* Footer copyright text */
+footer .container .footer-left > span {
+    white-space: nowrap;
+    flex-shrink: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 footer .container a:hover {
@@ -634,6 +666,8 @@ footer .container a:hover {
 footer .container .footer-right {
     white-space: nowrap;
     margin-left: auto;
+    flex-shrink: 0;
+    text-align: right;
 }
 
 /* Legacy footer content container */
@@ -693,32 +727,69 @@ footer a:hover {
     }
     
     footer .container {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 1rem !important;
-        min-height: 80px;
-        justify-content: center;
-        padding-bottom: 1.25rem;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 1rem 1rem;
+        min-height: auto;
     }
     
     footer .container .footer-left {
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+        flex-shrink: 1;
+        min-width: 0;
     }
     
     footer .container .footer-nav {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.75rem;
+        flex-wrap: nowrap;
+        gap: 0.5rem;
+    }
+    
+    footer .container .footer-nav a {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
     }
     
     footer .container .footer-right {
-        margin-left: 0;
-        order: 3;
+        margin-left: auto;
+        flex-shrink: 0;
+        font-size: 0.8rem;
+    }
+}
+
+/* Extra small screens - ultra compact footer */
+@media (max-width: 480px) {
+    footer .container {
+        gap: 0.25rem;
+        padding: 1rem 0.5rem;
     }
     
+    footer .container .footer-left {
+        gap: 0.25rem;
+    }
+    
+    footer .container .footer-left > span {
+        font-size: 0.75rem;
+    }
+    
+    footer .container .footer-nav {
+        gap: 0.25rem;
+    }
+    
+    footer .container .footer-nav a {
+        padding: 0.15rem 0.3rem;
+        font-size: 0.7rem;
+    }
+    
+    footer .container .footer-right {
+        font-size: 0.7rem;
+    }
+}
+
+/* Legacy footer styles */
+@media (max-width: 768px) {
     footer .footer-content,
     footer:not(.footer-content) {
         flex-direction: column;
