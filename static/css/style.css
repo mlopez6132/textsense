@@ -8,7 +8,7 @@ html {
 }
 
 body {
-    background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%);
+    background: #ffffff;
     min-height: 100dvh;
     font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #0f172a; /* near-slate */
