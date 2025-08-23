@@ -88,6 +88,9 @@ body.index-page {
     flex-shrink: 0;
     text-align: left;
     flex-grow: 0 !important;
+    /* Ensure no Bootstrap positioning overrides */
+    position: static !important;
+    float: none !important;
 }
 
 .brand-logo-text {
@@ -115,6 +118,9 @@ body.index-page {
     list-style: none !important;
     margin-left: 0 !important;
     flex-basis: auto !important;
+    /* Ensure no Bootstrap positioning overrides */
+    position: static !important;
+    float: none !important;
 }
 
 .navbar-nav .nav-link {
