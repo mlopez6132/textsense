@@ -1,11 +1,14 @@
 import os
-from typing import Optional
+from typing import Optional, Tuple
 
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, PlainTextResponse
+from fastapi.responses import (
+    HTMLResponse, JSONResponse, FileResponse, PlainTextResponse, StreamingResponse
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import requests
+from requests.exceptions import RequestException, Timeout, ConnectionError as ReqConnectionError
 
 # Import our image generation module
 from image_generation import image_generator
@@ -14,6 +17,113 @@ HF_INFERENCE_URL_ENV = "HF_INFERENCE_URL"
 HF_OCR_URL_ENV = "HF_OCR_URL"
 HF_AUDIO_TEXT_URL_ENV = "HF_AUDIO_TEXT_URL"
 DEFAULT_TIMEOUT_SECONDS = 120
+
+
+# ----------------------
+# Helper utilities
+# ----------------------
+def get_auth_headers() -> dict:
+    """Build optional Authorization header from HF_API_KEY."""
+    headers: dict = {}
+    api_key = os.getenv("HF_API_KEY", "").strip()
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    return headers
+
+
+async def prepare_text_from_inputs(
+    text: Optional[str],
+    file: Optional[UploadFile],
+    max_length: int = 50000,
+) -> str:
+    """Return text content from either direct text or uploaded file. Raises HTTPException on errors."""
+    if (not text or not text.strip()) and (file is None or not getattr(file, "filename", None)):
+        raise HTTPException(status_code=400, detail="No text or file provided.")
+
+    submit_text: Optional[str] = None
+    if file is not None and file.filename:
+        try:
+            raw_bytes = await file.read()
+        except OSError as e:
+            raise HTTPException(status_code=400, detail=f"File read error: {str(e)}")
+        try:
+            submit_text = raw_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            submit_text = raw_bytes.decode("latin-1", errors="ignore")
+    else:
+        submit_text = (text or "").strip()
+
+    if not submit_text:
+        raise HTTPException(status_code=400, detail="No text content available.")
+    # Only enforce limit when text param was used
+    if text and len(submit_text) > max_length:
+        raise HTTPException(status_code=400, detail=f"Text input exceeds {max_length:,} character limit.")
+    return submit_text
+
+
+def forward_post_json(
+    remote_url: str,
+    *,
+    data: Optional[dict] = None,
+    files: Optional[dict] = None,
+    headers: Optional[dict] = None,
+    timeout: int = DEFAULT_TIMEOUT_SECONDS,
+    context: str = "Upstream",
+) -> dict:
+    """POST to upstream and return parsed JSON or raise HTTPException with useful status."""
+    try:
+        resp = requests.post(remote_url, data=data, files=files, headers=headers or {}, timeout=timeout)
+        resp.raise_for_status()
+        return resp.json()
+    except RequestException as req_err:
+        raise HTTPException(status_code=502, detail=f"{context} request failed: {str(req_err)}")
+
+
+async def build_image_files(
+    image: Optional[UploadFile], image_url: Optional[str]
+) -> dict:
+    """Return a requests-compatible files dict for image upload, fetching remote URL if needed."""
+    if image is not None and image.filename:
+        content = await image.read()
+        return {
+            "image": (
+                image.filename,
+                content,
+                image.content_type or "application/octet-stream",
+            )
+        }
+    if image_url:
+        try:
+            r = requests.get(image_url.strip(), timeout=30, headers={"User-Agent": "TextSense-Relay/1.0"})
+            r.raise_for_status()
+        except RequestException as req_err:
+            raise HTTPException(status_code=502, detail=f"Failed to fetch image URL: {str(req_err)}")
+        mime = r.headers.get("content-type", "application/octet-stream").split(";")[0].strip()
+        name = image_url.split("?")[0].rstrip("/").split("/")[-1] or "remote.jpg"
+        return {"image": (name, r.content, mime)}
+    raise HTTPException(status_code=400, detail="No image provided.")
+
+
+async def build_audio_payload(
+    audio: Optional[UploadFile], audio_url: Optional[str], return_timestamps: bool
+) -> Tuple[Optional[dict], dict]:
+    """Return (files, data) tuple for audio transcription request."""
+    data = {"return_timestamps": str(return_timestamps).lower()}
+    if audio is not None and audio.filename:
+        content = await audio.read()
+        files = {
+            "audio": (
+                audio.filename,
+                content,
+                audio.content_type or "audio/mpeg",
+            )
+        }
+        return files, data
+    if audio_url:
+        data["audio_url"] = audio_url.strip()
+        return None, data
+    raise HTTPException(status_code=400, detail="No audio provided.")
+
 
 def get_remote_url() -> str:
     remote = os.getenv(HF_INFERENCE_URL_ENV, "").strip()
@@ -28,21 +138,23 @@ def get_ocr_url() -> str:
     remote = os.getenv(HF_OCR_URL_ENV, "").strip()
     if not remote:
         raise RuntimeError(
-            "No OCR URL configured. Set HF_OCR_URL to your Hugging Face Space OCR endpoint (e.g. https://<space>.hf.space/extract)."
+            "No OCR URL configured. Set HF_OCR_URL to your Hugging Face Space OCR endpoint."
         )
     return remote
+
 
 def get_audio_text_url() -> str:
     remote = os.getenv(HF_AUDIO_TEXT_URL_ENV, "").strip()
     if not remote:
         raise RuntimeError(
-            "No AUDIO URL configured. Set HF_AUDIO_TEXT_URL to your Hugging Face Space AUDIO endpoint (e.g. https://<space>.hf.space/extract)."
+            "No AUDIO URL configured. Set HF_AUDIO_TEXT_URL to your Hugging Face Space AUDIO endpoint."
         )
     return remote
 
+
 app = FastAPI(title="TextSense Relay (FastAPI)")
 
-# Static and templates to preserve the existing UI
+# Static and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
@@ -51,69 +163,58 @@ templates = Jinja2Templates(directory="templates")
 async def favicon():
     return FileResponse("static/favicon.ico")
 
+
 @app.get("/site.webmanifest")
 async def site_webmanifest():
-    """Serve the site.webmanifest file from static folder"""
     return FileResponse("static/site.webmanifest", media_type="application/manifest+json")
+
 
 @app.get("/apple-touch-icon.png")
 async def apple_touch_icon():
-    """Serve the apple-touch-icon.png file from static folder"""
     return FileResponse("static/apple-touch-icon.png")
+
 
 @app.get("/favicon-32x32.png")
 async def favicon_32x32():
-    """Serve the favicon-32x32.png file from static folder"""
     return FileResponse("static/favicon-32x32.png")
+
 
 @app.get("/favicon-16x16.png")
 async def favicon_16x16():
-    """Serve the favicon-16x16.png file from static folder"""
     return FileResponse("static/favicon-16x16.png")
+
 
 @app.get("/android-chrome-192x192.png")
 async def android_chrome_192():
-    """Serve the android-chrome-192x192.png file from static folder"""
     return FileResponse("static/android-chrome-192x192.png")
+
 
 @app.get("/android-chrome-512x512.png")
 async def android_chrome_512():
-    """Serve the android-chrome-512x512.png file from static folder"""
     return FileResponse("static/android-chrome-512x512.png")
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    context = {
-        "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
-    }
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
     return templates.TemplateResponse("index.html", context)
 
 
 @app.get("/about", response_class=HTMLResponse)
 async def about(request: Request):
-    context = {
-        "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
-    }
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
     return templates.TemplateResponse("about.html", context)
 
 
 @app.get("/privacy", response_class=HTMLResponse)
 async def privacy(request: Request):
-    context = {
-        "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
-    }
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
     return templates.TemplateResponse("privacy.html", context)
 
 
 @app.get("/terms", response_class=HTMLResponse)
 async def terms(request: Request):
-    context = {
-        "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "support@example.com"),
-    }
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
     return templates.TemplateResponse("terms.html", context)
 
 
@@ -129,37 +230,25 @@ async def contact(request: Request):
 
 @app.get("/ocr", response_class=HTMLResponse)
 async def ocr_page(request: Request):
-    context = {
-        "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
-    }
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
     return templates.TemplateResponse("ocr.html", context)
 
 
 @app.get("/audio-text", response_class=HTMLResponse)
 async def audio_text_page(request: Request):
-    context = {
-        "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
-    }
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
     return templates.TemplateResponse("audio-text.html", context)
 
 
 @app.get("/ai-detector", response_class=HTMLResponse)
 async def ai_detector_page(request: Request):
-    context = {
-        "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
-    }
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
     return templates.TemplateResponse("ai-detector.html", context)
 
 
 @app.get("/generate-image-page", response_class=HTMLResponse)
 async def generate_image_page(request: Request):
-    context = {
-        "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
-    }
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
     return templates.TemplateResponse("generate-image.html", context)
 
 
@@ -171,239 +260,80 @@ async def submit_contact(request: Request):
     message = (form.get("message") or "").strip()
     token = (form.get("g-recaptcha-response") or "").strip()
 
-    # Optional reCAPTCHA v3 verification
     secret = os.getenv("RECAPTCHA_SECRET_KEY", "").strip()
     if secret:
-        import requests as _r
         try:
-            verify = _r.post("https://www.google.com/recaptcha/api/siteverify", data={
-                "secret": secret,
-                "response": token,
-            }, timeout=10)
-            
+            verify = requests.post(
+                "https://www.google.com/recaptcha/api/siteverify",
+                data={"secret": secret, "response": token},
+                timeout=10,
+            )
             if verify.status_code == 200:
                 result = verify.json()
-                if result.get("success"):
-                    # reCAPTCHA v3 returns a score from 0.0 to 1.0
-                    score = result.get("score", 0.0)
-                    threshold = float(os.getenv("RECAPTCHA_THRESHOLD", "0.5"))
-                    
-                    if score < threshold:
-                        return JSONResponse({
-                            "ok": False, 
-                            "error": f"reCAPTCHA score too low ({score:.2f}). Please try again."
-                        }, status_code=400)
-                else:
-                    return JSONResponse({
-                        "ok": False, 
-                        "error": "reCAPTCHA verification failed"
-                    }, status_code=400)
-            else:
-                return JSONResponse({
-                    "ok": False, 
-                    "error": "reCAPTCHA verification error"
-                }, status_code=400)
-        except Exception:
-            return JSONResponse({
-                "ok": False, 
-                "error": "reCAPTCHA network error"
-            }, status_code=400)
-    # For now, just acknowledge receipt. Integrate email service later.
-    return JSONResponse({
-        "ok": True,
-        "received": {"name": name, "email": email, "message": message}
-    })
+                if not result.get("success"):
+                    return JSONResponse({"ok": False, "error": "reCAPTCHA verification failed"}, status_code=400)
+        except (Timeout, ReqConnectionError) as net_err:
+            return JSONResponse({"ok": False, "error": f"reCAPTCHA network error: {str(net_err)}"}, status_code=400)
+        except RequestException as req_err:
+            return JSONResponse({"ok": False, "error": f"reCAPTCHA request error: {str(req_err)}"}, status_code=400)
+
+    return JSONResponse({"ok": True, "received": {"name": name, "email": email, "message": message}})
 
 
 @app.get("/cookies", response_class=HTMLResponse)
 async def cookies(request: Request):
-    context = {
-        "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
-    }
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
     return templates.TemplateResponse("cookies.html", context)
 
 
 @app.get("/ads.txt", response_class=PlainTextResponse)
 async def ads_txt():
     pub_id = os.getenv("ADSENSE_PUB_ID", "pub-2409576003450898").strip()
-    # IAB ads.txt entry for Google AdSense
     return f"google.com, {pub_id}, DIRECT, f08c47fec0942fa0"
 
 
 @app.post("/analyze")
 async def analyze(text: Optional[str] = Form(None), file: Optional[UploadFile] = File(None)):
-    # Validate input similar to the original Flask endpoint
-    if not text and not file:
-        return JSONResponse({"error": "No text or file provided."}, status_code=400)
-
-    # If file provided, read content; else use text
-    submit_text: Optional[str] = None
-    if file is not None and file.filename:
-        try:
-            raw_bytes = await file.read()
-            try:
-                submit_text = raw_bytes.decode("utf-8")
-            except UnicodeDecodeError:
-                submit_text = raw_bytes.decode("latin-1", errors="ignore")
-        except Exception:
-            return JSONResponse({"error": "Could not read file content. The file might be corrupted or in an unsupported format."}, status_code=400)
-    else:
-        submit_text = (text or "").strip()
-
-    if not submit_text:
-        return JSONResponse({"error": "No text or file provided."}, status_code=400)
-    # Note: Character limit only applies to text input, not file uploads
-    if text and len(submit_text) > 50000:
-        return JSONResponse({"error": "Text input exceeds the 50,000 character limit."}, status_code=400)
-
-    # Proxy to HF Space
-    try:
-        remote_url = get_remote_url()
-        # Send as form-data to stay compatible with either file or text on remote
-        form = {"text": submit_text}
-        headers = {}
-
-        # Optional: support private endpoints via HF_API_KEY
-        api_key = os.getenv("HF_API_KEY", "").strip()
-        if api_key:
-            headers["Authorization"] = f"Bearer {api_key}"
-
-        resp = requests.post(
-            remote_url,
-            data=form,
-            headers=headers,
-            timeout=DEFAULT_TIMEOUT_SECONDS,
-        )
-        if resp.status_code != 200:
-            # Attempt to surface remote error
-            try:
-                payload = resp.json()
-            except Exception:
-                payload = {"error": f"Upstream error (status {resp.status_code})."}
-            raise HTTPException(status_code=resp.status_code, detail=payload.get("error") or payload)
-
-        return JSONResponse(resp.json())
-    except HTTPException:
-        raise
-    except Exception as e:
-        return JSONResponse({"error": f"Relay error: {str(e)}"}, status_code=500)
+    submit_text = await prepare_text_from_inputs(text, file, max_length=50000)
+    remote_url = get_remote_url()
+    headers = get_auth_headers()
+    result = forward_post_json(
+        remote_url,
+        data={"text": submit_text},
+        headers=headers,
+        context="Analyze",
+    )
+    return JSONResponse(result)
 
 
 @app.post("/ocr")
-async def ocr(
-    image_url: Optional[str] = Form(None),
-    image: Optional[UploadFile] = File(None),
-    language: str = Form("en"),
-):
-    if not image_url and (image is None or not image.filename):
-        return JSONResponse({"error": "No image provided. Provide 'image' file or 'image_url'."}, status_code=400)
-
-    try:
-        remote_url = get_ocr_url()
-        headers = {}
-        api_key = os.getenv("HF_API_KEY", "").strip()
-        if api_key:
-            headers["Authorization"] = f"Bearer {api_key}"
-
-        files = None
-
-        if image is not None and image.filename:
-            # Forward uploaded file directly to the Space as field name 'image'
-            content = await image.read()
-            filename = image.filename
-            mime = image.content_type or "application/octet-stream"
-            files = {"image": (filename, content, mime)}
-        elif image_url:
-            # Workaround: fetch URL here (Render has egress), then send bytes to Space
-            url = image_url.strip()
-            if not url:
-                return JSONResponse({"error": "image_url is empty"}, status_code=400)
-            try:
-                fetch_headers = {"User-Agent": "TextSense-Relay/1.0"}
-                r = requests.get(url, timeout=30, headers=fetch_headers)
-                r.raise_for_status()
-            except requests.exceptions.RequestException as re:
-                return JSONResponse({"error": f"Failed to fetch image URL: {str(re)}"}, status_code=400)
-
-            mime = r.headers.get("content-type", "application/octet-stream").split(";")[0].strip()
-            # Derive a filename
-            name = url.split("?")[0].rstrip("/").split("/")[-1] or "remote.jpg"
-            files = {"image": (name, r.content, mime)}
-
-        # Include language parameter in the request
-        data = {"language": language}
-        
-        resp = requests.post(
-            remote_url,
-            files=files,
-            data=data,
-            headers=headers,
-            timeout=DEFAULT_TIMEOUT_SECONDS,
-        )
-        if resp.status_code != 200:
-            try:
-                payload = resp.json()
-            except Exception:
-                payload = {"error": f"Upstream error (status {resp.status_code})."}
-            raise HTTPException(status_code=resp.status_code, detail=payload.get("error") or payload)
-
-        return JSONResponse(resp.json())
-    except HTTPException:
-        raise
-    except Exception as e:
-        return JSONResponse({"error": f"Relay error: {str(e)}"}, status_code=500)
+async def ocr(image_url: Optional[str] = Form(None), image: Optional[UploadFile] = File(None), language: str = Form("en")):
+    files = await build_image_files(image, image_url)
+    remote_url = get_ocr_url()
+    headers = get_auth_headers()
+    result = forward_post_json(
+        remote_url,
+        data={"language": language},
+        files=files,
+        headers=headers,
+        context="OCR",
+    )
+    return JSONResponse(result)
 
 
 @app.post("/audio-transcribe")
-async def audio_transcribe(
-    audio: Optional[UploadFile] = File(None),
-    audio_url: Optional[str] = Form(None),
-    return_timestamps: bool = Form(False),
-):
-    if not audio_url and (audio is None or not audio.filename):
-        return JSONResponse({"error": "No audio provided. Provide 'audio' file or 'audio_url'."}, status_code=400)
-
-    try:
-        remote_url = get_audio_text_url()
-        headers = {}
-        api_key = os.getenv("HF_API_KEY", "").strip()
-        if api_key:
-            headers["Authorization"] = f"Bearer {api_key}"
-
-        # Prepare the request
-        data = {"return_timestamps": str(return_timestamps).lower()}
-        files = None
-
-        if audio is not None and audio.filename:
-            # Forward uploaded audio file
-            content = await audio.read()
-            filename = audio.filename
-            mime = audio.content_type or "audio/mpeg"
-            files = {"audio": (filename, content, mime)}
-        elif audio_url:
-            # Forward audio URL
-            data["audio_url"] = audio_url.strip()
-
-        resp = requests.post(
-            remote_url,
-            data=data,
-            files=files,
-            headers=headers,
-            timeout=DEFAULT_TIMEOUT_SECONDS,
-        )
-        if resp.status_code != 200:
-            try:
-                payload = resp.json()
-            except Exception:
-                payload = {"error": f"Upstream error (status {resp.status_code})."}
-            raise HTTPException(status_code=resp.status_code, detail=payload.get("error") or payload)
-
-        return JSONResponse(resp.json())
-    except HTTPException:
-        raise
-    except Exception as e:
-        return JSONResponse({"error": f"Relay error: {str(e)}"}, status_code=500)
+async def audio_transcribe(audio: Optional[UploadFile] = File(None), audio_url: Optional[str] = Form(None), return_timestamps: bool = Form(False)):
+    files, data = await build_audio_payload(audio, audio_url, return_timestamps)
+    remote_url = get_audio_text_url()
+    headers = get_auth_headers()
+    result = forward_post_json(
+        remote_url,
+        data=data,
+        files=files,
+        headers=headers,
+        context="Audio transcription",
+    )
+    return JSONResponse(result)
 
 
 @app.post("/generate-image")
@@ -417,13 +347,7 @@ async def generate_image(
     enable_prompt_optimizer: bool = Form(True),
     negative_prompt: Optional[str] = Form("")
 ):
-    """Generate images using Flux with prompt enhancement.
-    
-    The endpoint maintains the same form fields for compatibility with existing frontend,
-    but maps them to Flux parameters. Generated images have no watermarks.
-    """
     try:
-        # Use the image generation module
         result = image_generator.generate_images(
             prompt=prompt,
             negative_prompt=negative_prompt,
@@ -433,60 +357,39 @@ async def generate_image(
             enable_safety_checker=enable_safety_checker,
             model="flux"
         )
-        
         return JSONResponse(result)
-        
-    except ValueError as e:
-        return JSONResponse({"error": str(e)}, status_code=400)
-    except Exception as e:
-        return JSONResponse({"error": f"Image generation failed: {str(e)}"}, status_code=500)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except RuntimeError as re:
+        raise HTTPException(status_code=500, detail=f"Image generation runtime error: {str(re)}")
+
 
 @app.get("/download-image")
 async def download_image(url: str, filename: str = "generated_image.png"):
-    """Proxy endpoint to download images from external URLs."""
+    if not url.startswith("https://image.pollinations.ai/"):
+        raise HTTPException(status_code=400, detail="Invalid image URL")
+
     try:
-        # Validate the URL is from a trusted source
-        if not url.startswith("https://image.pollinations.ai/"):
-            return JSONResponse({"error": "Invalid image URL"}, status_code=400)
-        
-        # Fetch the image
         response = requests.get(url, timeout=30, stream=True)
         response.raise_for_status()
-        
-        # Get content type and determine file extension
-        content_type = response.headers.get('content-type', 'image/png')
-        
-        # Ensure filename has correct extension
-        if not filename.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
-            if 'jpeg' in content_type:
-                filename += '.jpg'
-            elif 'webp' in content_type:
-                filename += '.webp'
+        content_type = response.headers.get("content-type", "image/png")
+        if not filename.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+            if "jpeg" in content_type:
+                filename += ".jpg"
+            elif "webp" in content_type:
+                filename += ".webp"
             else:
-                filename += '.png'
-        
-        # Return the image as a streaming response
-        from fastapi.responses import StreamingResponse
-        
-        def generate():
-            for chunk in response.iter_content(chunk_size=8192):
-                yield chunk
-        
+                filename += ".png"
+
         return StreamingResponse(
-            generate(),
+            (chunk for chunk in response.iter_content(chunk_size=8192)),
             media_type=content_type,
-            headers={
-                "Content-Disposition": f"attachment; filename={filename}",
-                "Access-Control-Allow-Origin": "*",
-                "Cache-Control": "no-cache"
-            }
+            headers={"Content-Disposition": f"attachment; filename={filename}", "Cache-Control": "no-cache"}
         )
-        
-    except Exception as e:
-        return JSONResponse({"error": f"Failed to download image: {str(e)}"}, status_code=500)
+    except RequestException as req_err:
+        raise HTTPException(status_code=502, detail=f"Image download failed: {str(req_err)}")
 
 
 @app.get("/healthz")
 async def healthz():
     return {"ok": True}
-    
