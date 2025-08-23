@@ -49,3 +49,34 @@
 })();
 
 
+// Keep HF Spaces warm by pinging periodically
+(function () {
+  try {
+    var SPACES = [
+      'https://mlopez6132-textsense-inference.hf.space/healthz',
+      'https://mlopez6132-textsense-audio-text.hf.space/healthz',
+      'https://mlopez6132-textsense-ocr.hf.space/healthz'
+    ];
+    var RELAY = '/ping';
+
+    function pingAll() {
+      try {
+        // Ping local relay first (very fast)
+        fetch(RELAY, { method: 'GET', cache: 'no-store' }).catch(function () {});
+        // Ping each space health endpoint
+        for (var i = 0; i < SPACES.length; i++) {
+          fetch(SPACES[i], { method: 'GET', cache: 'no-store', mode: 'no-cors' }).catch(function () {});
+        }
+      } catch (e) {}
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      pingAll();
+    } else {
+      document.addEventListener('DOMContentLoaded', pingAll);
+    }
+    // every 5 minutes
+    setInterval(pingAll, 5 * 60 * 1000);
+  } catch (e) {}
+})();
+

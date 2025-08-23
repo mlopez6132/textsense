@@ -392,3 +392,8 @@ async def download_image(url: str, filename: str = "generated_image.png"):
 @app.get("/healthz")
 async def healthz():
     return {"ok": True}
+
+
+@app.get("/ping")
+async def ping():
+    return {"status": "ok"}
