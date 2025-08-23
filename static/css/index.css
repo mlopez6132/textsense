@@ -33,9 +33,9 @@ body {
     padding-top: 0 !important;
 }
 
-/* Override body padding-top for index page to eliminate header gap */
+/* Keep body padding-top for index page to prevent header overlap */
 body.index-page {
-    padding-top: 0 !important;
+    padding-top: 90px !important;
 }
 
 /* Hero section full width */
@@ -43,7 +43,7 @@ body.index-page {
     width: 100vw !important;
     max-width: 100vw !important;
     margin: 0 !important;
-    padding: 20px 0 !important;
+    padding: 10px 0 !important;
     position: relative;
     left: 50%;
     right: 50%;
@@ -99,7 +99,7 @@ body.index-page {
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
     .hero-section {
-        padding: 15px 0 !important;
+        padding: 8px 0 !important;
     }
 
     .about-section {
