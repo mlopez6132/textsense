@@ -593,7 +593,7 @@ footer {
     margin: 0 !important;
     margin-top: auto !important;
     margin-bottom: 0 !important;
-    padding: 1.5rem 0 0 0 !important;
+    padding: 1rem 0 0 0 !important;
     border-top: 1px solid #e9ecef !important;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
@@ -613,8 +613,8 @@ footer .container {
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    padding-top: 1.5rem;
-    padding-bottom: 1.5rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
     gap: 1rem;
 }
 
@@ -706,17 +706,17 @@ footer a:hover {
 
 @media (max-width: 768px) {
     footer {
-        padding: 1.25rem 0 0 0 !important;
+        padding: 0.75rem 0 0 0 !important;
     }
     
     footer .container {
         flex-direction: column;
         align-items: center;
         text-align: center;
-        gap: 1rem !important;
-        min-height: 80px;
+        gap: 0.75rem !important;
+        min-height: 60px;
         justify-content: center;
-        padding-bottom: 1.25rem;
+        padding-bottom: 1rem;
     }
     
     footer .container .footer-left {
