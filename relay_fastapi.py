@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from typing import Union, Tuple
 
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import (
@@ -34,15 +33,15 @@ def get_auth_headers() -> dict:
 
 
 async def prepare_text_from_inputs(
-    text: Union[str, None],
-    file: Union[UploadFile, None],
+    text: str | None,
+    file: UploadFile | None,
     max_length: int = 50000,
 ) -> str:
     """Return text content from either direct text or uploaded file. Raises HTTPException on errors."""
     if (not text or not text.strip()) and (file is None or not getattr(file, "filename", None)):
         raise HTTPException(status_code=400, detail="No text or file provided.")
 
-    submit_text: Union[str, None] = None
+    submit_text: str | None = None
     if file is not None and file.filename:
         try:
             raw_bytes = await file.read()
@@ -66,9 +65,9 @@ async def prepare_text_from_inputs(
 def forward_post_json(
     remote_url: str,
     *,
-    data: Union[dict, None] = None,
-    files: Union[dict, None] = None,
-    headers: Union[dict, None] = None,
+    data: dict | None = None,
+    files: dict | None = None,
+    headers: dict | None = None,
     timeout: int = DEFAULT_TIMEOUT_SECONDS,
     context: str = "Upstream",
 ) -> dict:
@@ -82,7 +81,7 @@ def forward_post_json(
 
 
 async def build_image_files(
-    image: Union[UploadFile, None], image_url: Union[str, None]
+    image: UploadFile | None, image_url: str | None
 ) -> dict:
     """Return a requests-compatible files dict for image upload, fetching remote URL if needed."""
     if image is not None and image.filename:
@@ -107,8 +106,8 @@ async def build_image_files(
 
 
 async def build_audio_payload(
-    audio: Union[UploadFile, None], audio_url: Union[str, None], return_timestamps: bool
-) -> Tuple[Union[dict, None], dict]:
+    audio: UploadFile | None, audio_url: str | None, return_timestamps: bool
+) -> tuple[dict | None, dict]:
     """Return (files, data) tuple for audio transcription request."""
     data = {"return_timestamps": str(return_timestamps).lower()}
     if audio is not None and audio.filename:
@@ -295,7 +294,7 @@ async def ads_txt():
 
 
 @app.post("/analyze")
-async def analyze(text: Union[str, None] = Form(None), file: Union[UploadFile, None] = File(None)):
+async def analyze(text: str | None = Form(None), file: UploadFile | None = File(None)):
     submit_text = await prepare_text_from_inputs(text, file, max_length=50000)
     remote_url = get_remote_url()
     headers = get_auth_headers()
@@ -309,7 +308,7 @@ async def analyze(text: Union[str, None] = Form(None), file: Union[UploadFile, N
 
 
 @app.post("/ocr")
-async def ocr(image_url: Union[str, None] = Form(None), image: Union[UploadFile, None] = File(None), language: str = Form("en")):
+async def ocr(image_url: str | None = Form(None), image: UploadFile | None = File(None), language: str = Form("en")):
     files = await build_image_files(image, image_url)
     remote_url = get_ocr_url()
     headers = get_auth_headers()
@@ -324,7 +323,7 @@ async def ocr(image_url: Union[str, None] = Form(None), image: Union[UploadFile,
 
 
 @app.post("/audio-transcribe")
-async def audio_transcribe(audio: Union[UploadFile, None] = File(None), audio_url: Union[str, None] = Form(None), return_timestamps: bool = Form(False)):
+async def audio_transcribe(audio: UploadFile | None = File(None), audio_url: str | None = Form(None), return_timestamps: bool = Form(False)):
     files, data = await build_audio_payload(audio, audio_url, return_timestamps)
     remote_url = get_audio_text_url()
     headers = get_auth_headers()
@@ -341,13 +340,11 @@ async def audio_transcribe(audio: Union[UploadFile, None] = File(None), audio_ur
 @app.post("/generate-image")
 async def generate_image(
     prompt: str = Form(...),
-    style_index: int = Form(0),
     aspect_ratio: str = Form("1:1"),
     num_images: int = Form(1),
-    num_inference_steps: int = Form(4),
     enable_safety_checker: bool = Form(True),
     enable_prompt_optimizer: bool = Form(True),
-    negative_prompt: Union[str, None] = Form("")
+    negative_prompt: str | None = Form("")
 ):
     try:
         result = image_generator.generate_images(
