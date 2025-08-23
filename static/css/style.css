@@ -21,7 +21,10 @@ body {
     z-index: 1;
 }
 
-/* White background for all pages except index */
+/* Keep gradient background only for index page */
+body.index-page {
+    background: linear-gradient(180deg, #f7f9fc 0%, #eef3fb 100%);
+}
 
 .container-fluid {
     padding: 20px;
@@ -444,7 +447,7 @@ textarea.form-control {
 @media (max-width: 768px) {
     body {
         padding-top: 80px; /* Space for mobile header */
-        padding-bottom: 0 !important; /* No extra space to avoid gap below footer */
+        padding-bottom: 0; /* No extra space to avoid gap below footer */
     }
     
     .container-fluid {
@@ -625,12 +628,16 @@ body > .container-fluid {
     flex: 1 0 auto;
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - 90px); /* Account for header */
 }
 
 .main-content,
 .page-container {
     flex: 1 0 auto;
+}
+
+/* Ensure body content takes full height */
+body > .container-fluid {
+    min-height: calc(100vh - 90px); /* Account for header */
 }
 
 footer a {

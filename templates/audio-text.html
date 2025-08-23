@@ -38,48 +38,48 @@
             </div>
         </nav>
 
-        <!-- Page Content -->
-        <div class="page-container">
+        <!-- Page Header -->
+        <main class="container">
             <div class="row justify-content-center">
-            <div class="col-lg-9 col-xl-8">
-                <header class="text-center mb-4">
-                    <h1 class="display-5 fw-bold text-primary mb-3">
-                        <i class="fas fa-microphone me-2"></i>Audio to Text Converter
-                    </h1>
-                    <p class="lead text-muted mb-4">
-                        Convert speech to text with our advanced AI transcription service.
-                        Perfect for transcribing meetings, podcasts, interviews, and voice memos.
-                    </p>
-                    <div class="row text-center">
-          <div class="col-md-4">
-            <div class="mb-3">
-              <i class="fas fa-upload text-primary fs-1"></i>
-              <h6 class="mt-2">Upload Audio File</h6>
-              <small class="text-muted">MP3, WAV, M4A, OGG</small>
+                <div class="col-lg-9 col-xl-8">
+                    <header class="text-center mb-4">
+                        <h1 class="display-5 fw-bold text-primary mb-3">
+                            <i class="fas fa-microphone me-2"></i>Audio to Text Converter
+                        </h1>
+                        <p class="lead text-muted mb-4">
+                            Convert speech to text with our advanced AI transcription service.
+                            Perfect for transcribing meetings, podcasts, interviews, and voice memos.
+                        </p>
+                        <div class="row text-center">
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <i class="fas fa-upload text-primary fs-1"></i>
+                  <h6 class="mt-2">Upload Audio File</h6>
+                  <small class="text-muted">MP3, WAV, M4A, OGG</small>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <i class="fas fa-brain text-primary fs-1"></i>
+                  <h6 class="mt-2">AI-Powered Whisper</h6>
+                  <small class="text-muted">OpenAI's Whisper model</small>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <i class="fas fa-clock text-primary fs-1"></i>
+                  <h6 class="mt-2">Timestamps Available</h6>
+                  <small class="text-muted">Segment-level timing</small>
+                </div>
+              </div>
+                        </div>
+                    </header>
+                </div>
             </div>
-          </div>
-          <div class="col-md-4">
-            <div class="mb-3">
-              <i class="fas fa-brain text-primary fs-1"></i>
-              <h6 class="mt-2">AI-Powered Whisper</h6>
-              <small class="text-muted">OpenAI's Whisper model</small>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="mb-3">
-              <i class="fas fa-clock text-primary fs-1"></i>
-              <h6 class="mt-2">Timestamps Available</h6>
-              <small class="text-muted">Segment-level timing</small>
-            </div>
-          </div>
-                    </div>
-                </header>
-            </div>
-        </div>
 
-        <!-- Main Content -->
-        <div class="row justify-content-center">
-            <div class="col-lg-9 col-xl-8">
+            <!-- Main Content -->
+            <div class="row justify-content-center">
+                <div class="col-lg-9 col-xl-8">
                 <!-- Audio Transcription Card -->
                 <div class="card shadow-lg mb-4">
         <div class="card-header bg-primary text-white">
@@ -263,10 +263,12 @@
           </div>
                 </div>
             </div>
+                </div>
             </div>
-        </div>
+        </main>
+    </div>
 
-        <!-- Footer -->
+    <!-- Footer -->
         <footer class="small text-muted">
             <div class="container">
                 <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
@@ -278,7 +280,6 @@
                 <span class="ms-auto">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
             </div>
         </footer>
-        </div>
     </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', path='js/site.js') }}"></script>
