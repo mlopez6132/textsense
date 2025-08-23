@@ -84,7 +84,7 @@ body {
     z-index: 2;
 }
 
-/* Remove fixed footer styling for index page - use inline footer like other pages */
+/* Index page specific styles - full width layout with consistent header/footer */
 
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
