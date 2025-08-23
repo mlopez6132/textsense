@@ -6,7 +6,6 @@ Handles Flux image generation via Pollinations API with prompt enhancement
 import os
 import random
 import urllib.parse
-import re
 from typing import Optional, List, Tuple, Dict, Any
 import requests
 
