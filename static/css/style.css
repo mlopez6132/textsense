@@ -49,6 +49,9 @@ body.index-page {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    /* Override Bootstrap navbar default behavior */
+    display: block !important;
+    flex-wrap: nowrap !important;
 }
 
 /* Header Layout */
@@ -58,19 +61,21 @@ body.index-page {
     width: 100%;
 }
 
-.site-header .container {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 2rem;
+.navbar.site-header .container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 2rem !important;
+    flex-wrap: nowrap !important;
 }
 
 /* Legacy support for container-fluid in header */
-.site-header > .container-fluid {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 2rem;
+.navbar.site-header > .container-fluid {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 2rem !important;
+    flex-wrap: nowrap !important;
     padding: 0 2rem;
     max-width: 1200px;
     margin: 0 auto;
@@ -78,10 +83,11 @@ body.index-page {
 }
 
 .navbar-brand {
-    margin-right: 0;
+    margin-right: 0 !important;
     padding: 0;
     flex-shrink: 0;
     text-align: left;
+    flex-grow: 0 !important;
 }
 
 .brand-logo-text {
@@ -100,13 +106,15 @@ body.index-page {
 }
 
 .navbar-nav {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+    margin-left: 0 !important;
+    flex-basis: auto !important;
 }
 
 .navbar-nav .nav-link {
@@ -460,13 +468,13 @@ textarea.form-control {
         padding: 0.75rem 0;
     }
     
-    .site-header .container,
-    .site-header > .container-fluid {
+    .navbar.site-header .container,
+    .navbar.site-header > .container-fluid {
         padding: 0 1.5rem;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-        justify-content: flex-start;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 1rem !important;
+        justify-content: flex-start !important;
     }
     
     .navbar-brand {
