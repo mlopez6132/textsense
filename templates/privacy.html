@@ -40,61 +40,61 @@
   </nav>
 
     <!-- Page Header -->
-    <div class="row justify-content-center">
-      <div class="col-lg-9 col-xl-8">
-        <header class="text-center py-4">
-          <h1 class="fw-bold">Privacy Policy</h1>
-          <p class="text-muted">Transparency about data we process and why</p>
-        </header>
-      </div>
-    </div>
-
-    <section class="card shadow-sm p-4 mb-4">
-      <h2 class="h5">Information We Process</h2>
-      <ul>
-        <li>Submitted text and uploaded files, for the purpose of performing AI detection.</li>
-        <li>Basic analytics (aggregated and de-identified) to improve performance and reliability.</li>
-      </ul>
-    </section>
-
-    <section class="card shadow-sm p-4 mb-4">
-      <h2 class="h5">How We Use Your Data</h2>
-      <ul>
-        <li>To analyze text and return detection results.</li>
-        <li>To maintain and improve the service (e.g., debugging, performance analytics).</li>
-      </ul>
-    </section>
-
-    <section class="card shadow-sm p-4 mb-4">
-      <h2 class="h5">Data Retention</h2>
-      <p>We do not store submitted text longer than necessary to generate results. Uploaded files are removed after processing.</p>
-    </section>
-
-    <section class="card shadow-sm p-4 mb-4">
-      <h2 class="h5">GDPR and CCPA</h2>
-      <p>If you are located in the EU, UK, or California, you may have rights to access or delete your personal information. Contact us at {{ contact_email|default('textsense2@gmail.com') }} to make a request.</p>
-    </section>
-
-    <section class="card shadow-sm p-4 mb-4">
-      <h2 class="h5">Third Parties</h2>
-      <p>For inference, we may relay to a Hugging Face Space. That service processes your submitted text solely to provide analysis.</p>
-    </section>
+    <main class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-9 col-xl-8">
+          <header class="text-center py-4">
+            <h1 class="fw-bold">Privacy Policy</h1>
+            <p class="text-muted">Transparency about data we process and why</p>
+          </header>
         </div>
       </div>
-    </div>
 
-        <!-- Footer -->
-        <footer class="small text-muted">
-            <div class="footer-content">
-                <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
-                <a href="/about">About</a>
-                <a href="/privacy">Privacy</a>
-                <a href="/terms">Terms</a>
-                <a href="/cookies">Cookies</a>
-                <a href="/contact">Contact</a>
-                <span class="ms-auto">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
-            </div>
-        </footer>
+      <section class="card shadow-sm p-4 mb-4">
+        <h2 class="h5">Information We Process</h2>
+        <ul>
+          <li>Submitted text and uploaded files, for the purpose of performing AI detection.</li>
+          <li>Basic analytics (aggregated and de-identified) to improve performance and reliability.</li>
+        </ul>
+      </section>
+
+      <section class="card shadow-sm p-4 mb-4">
+        <h2 class="h5">How We Use Your Data</h2>
+        <ul>
+          <li>To analyze text and return detection results.</li>
+          <li>To maintain and improve the service (e.g., debugging, performance analytics).</li>
+        </ul>
+      </section>
+
+      <section class="card shadow-sm p-4 mb-4">
+        <h2 class="h5">Data Retention</h2>
+        <p>We do not store submitted text longer than necessary to generate results. Uploaded files are removed after processing.</p>
+      </section>
+
+      <section class="card shadow-sm p-4 mb-4">
+        <h2 class="h5">GDPR and CCPA</h2>
+        <p>If you are located in the EU, UK, or California, you may have rights to access or delete your personal information. Contact us at {{ contact_email|default('textsense2@gmail.com') }} to make a request.</p>
+      </section>
+
+      <section class="card shadow-sm p-4 mb-4">
+        <h2 class="h5">Third Parties</h2>
+        <p>For inference, we may relay to a Hugging Face Space. That service processes your submitted text solely to provide analysis.</p>
+      </section>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="small text-muted">
+      <div class="container">
+          <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
+          <a href="/about">About</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="/cookies">Cookies</a>
+          <a href="/contact">Contact</a>
+          <span class="ms-auto">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
+      </div>
+  </footer>
     </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', path='js/site.js') }}"></script>

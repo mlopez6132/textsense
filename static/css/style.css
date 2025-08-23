@@ -600,6 +600,18 @@ footer .container {
     padding-bottom: 1.5rem;
 }
 
+/* Ensure proper spacing between all footer elements */
+footer .container > span,
+footer .container > a {
+    white-space: nowrap;
+}
+
+/* Additional spacing for footer links to ensure they don't run together */
+footer .container a {
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
+}
+
 /* Legacy footer content container */
 footer .footer-content {
     max-width: 1200px;
