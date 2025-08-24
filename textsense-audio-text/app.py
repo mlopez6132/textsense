@@ -1,5 +1,4 @@
 import os
-import io
 import tempfile
 import subprocess
 from typing import Optional, Tuple, List, Dict
@@ -9,12 +8,12 @@ import numpy as np
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from huggingface_hub import hf_hub_download
-import sherpa_onnx
+import sherpa_onnx  # type: ignore
 
 # Model and runtime configuration (sherpa-onnx Whisper distil-small.en INT8)
-WHISPER_VARIANT = os.getenv("WHISPER_VARIANT", "tiny.en")
-MAX_CHUNK_SECONDS = float(os.getenv("MAX_CHUNK_SECONDS", "29.0"))
-CHUNK_OVERLAP_SECONDS = float(os.getenv("CHUNK_OVERLAP_SECONDS", "1.0"))  # No overlap
+WHISPER_VARIANT = os.getenv("WHISPER_VARIANT")
+MAX_CHUNK_SECONDS = os.getenv("MAX_CHUNK_SECONDS")
+CHUNK_OVERLAP_SECONDS = os.getenv("CHUNK_OVERLAP_SECONDS")  
 HF_CACHE_DIR = "/tmp/hf"
 os.makedirs(HF_CACHE_DIR, exist_ok=True)
 os.environ.setdefault("HF_HOME", HF_CACHE_DIR)
@@ -92,100 +91,89 @@ def load_recognizer(name: str) -> sherpa_onnx.OfflineRecognizer:
     return recognizer
 
 
+def _decode_chunk_to_text(chunk_samples: np.ndarray, sample_rate: int) -> str:
+    s = recognizer.create_stream()
+    s.accept_waveform(sample_rate, chunk_samples)
+    recognizer.decode_stream(s)
+    return s.result.text.strip()
+
+
+def _maybe_trim_overlap(prev_text: str, current_text: str, chunk_start_s: float, chunk_end_s: float) -> Tuple[str, float]:
+    if not prev_text or len(prev_text) <= 50:
+        return current_text, chunk_start_s
+    prev_words = prev_text.split()[-10:]
+    curr_words = current_text.split()[:10]
+    common_words = set(prev_words) & set(curr_words)
+    if len(common_words) <= 3:
+        return current_text, chunk_start_s
+    words = current_text.split()
+    if len(words) <= 10:
+        return current_text, chunk_start_s
+    trimmed_text = " ".join(words[5:])
+    adjusted_start = chunk_start_s + (5 * (chunk_end_s - chunk_start_s) / max(len(words), 1))
+    return trimmed_text, adjusted_start
+
+
+def _append_segment(segments: List[Dict], index: int, text: str, start_s: float, end_s: float) -> None:
+    segments.append({
+        "index": index,
+        "text": text,
+        "start_time": round(start_s, 3),
+        "end_time": round(end_s, 3),
+        "timestamp": [round(start_s, 3), round(end_s, 3)],
+        "srt_timestamp": f"{format_timestamp_srt(start_s)} --> {format_timestamp_srt(end_s)}",
+    })
+
+
+def _process_short_audio(samples: np.ndarray, sample_rate: int, segment_index: int) -> List[Dict]:
+    text = _decode_chunk_to_text(samples, sample_rate)
+    if not text:
+        return []
+    end_s = len(samples) / sample_rate
+    segs: List[Dict] = []
+    _append_segment(segs, segment_index, text, 0.0, end_s)
+    return segs
+
+
 def process_audio_chunks(samples: np.ndarray, sample_rate: int = 16000) -> List[Dict]:
     """
     Process audio in chunks with proper overlap handling and segment-level timestamps
     """
     max_chunk_samples = int(MAX_CHUNK_SECONDS * sample_rate)
     overlap_samples = int(CHUNK_OVERLAP_SECONDS * sample_rate)
-    
-    segments = []
+
+    segments: List[Dict] = []
     start = 0
     segment_index = 1
-    
-    # For short audio (under max chunk size), process as single chunk
+
     if len(samples) <= max_chunk_samples:
-        s = recognizer.create_stream()
-        s.accept_waveform(sample_rate, samples)
-        recognizer.decode_stream(s)
-        text = s.result.text.strip()
-        
-        if text:
-            segments.append({
-                "index": segment_index,
-                "text": text,
-                "start_time": 0.0,
-                "end_time": round(len(samples) / sample_rate, 3),
-                "timestamp": [0.0, round(len(samples) / sample_rate, 3)],
-                "srt_timestamp": f"{format_timestamp_srt(0.0)} --> {format_timestamp_srt(len(samples) / sample_rate)}"
-            })
-        
-        return segments
-    
-    # Process longer audio in chunks with overlap
+        return _process_short_audio(samples, sample_rate, segment_index)
+
     while start < len(samples):
-        # Calculate chunk boundaries
         end = min(start + max_chunk_samples, len(samples))
         chunk = samples[start:end]
-        
-        # Ensure we have audio to process
         if len(chunk) == 0:
             break
-            
-        # Process chunk
-        s = recognizer.create_stream()
-        s.accept_waveform(sample_rate, chunk)
-        recognizer.decode_stream(s)
-        chunk_text = s.result.text.strip()
-        
+
+        chunk_text = _decode_chunk_to_text(chunk, sample_rate)
         if chunk_text:
-            # Calculate actual timestamps
             chunk_start_s = start / sample_rate
             chunk_end_s = end / sample_rate
-            
-            # Handle overlap by trimming text from previous chunks if needed
-            # This is a simple approach - for more sophisticated handling,
-            # you might want to use word-level alignment
+
             if segments and start > 0:
-                # Check if this chunk starts with similar content to previous chunk end
-                # This helps avoid duplicate text due to overlap
                 prev_text = segments[-1]["text"]
-                if len(prev_text) > 50:  # Only check for longer texts
-                    prev_words = prev_text.split()[-10:]  # Last 10 words
-                    chunk_words = chunk_text.split()[:10]  # First 10 words
-                    
-                    # Simple overlap detection
-                    common_words = set(prev_words) & set(chunk_words)
-                    if len(common_words) > 3:  # If significant overlap
-                        # Trim the overlapping part from current chunk
-                        words = chunk_text.split()
-                        if len(words) > 10:
-                            chunk_text = " ".join(words[5:])  # Skip first 5 words
-                            # Adjust start time accordingly (rough estimation)
-                            chunk_start_s += (5 * (chunk_end_s - chunk_start_s) / len(words))
-            
-            if chunk_text:  # Only add if we still have text after overlap handling
-                segments.append({
-                    "index": segment_index,
-                    "text": chunk_text,
-                    "start_time": round(chunk_start_s, 3),
-                    "end_time": round(chunk_end_s, 3),
-                    "timestamp": [round(chunk_start_s, 3), round(chunk_end_s, 3)],
-                    "srt_timestamp": f"{format_timestamp_srt(chunk_start_s)} --> {format_timestamp_srt(chunk_end_s)}"
-                })
+                chunk_text, chunk_start_s = _maybe_trim_overlap(prev_text, chunk_text, chunk_start_s, chunk_end_s)
+
+            if chunk_text:
+                _append_segment(segments, segment_index, chunk_text, chunk_start_s, chunk_end_s)
                 segment_index += 1
-        
-        # Move to next chunk with proper overlap
-        if end >= len(samples):  # Last chunk
+
+        if end >= len(samples):
             break
-        
-        # For next iteration, start at (current_end - overlap)
         start = end - overlap_samples
-        
-        # Ensure we don't go backwards
         if start < 0:
             start = 0
-    
+
     return segments
 
 
@@ -214,6 +202,46 @@ def _download_audio_to_file(url: str) -> str:
         return tmp.name
 
 
+async def _resolve_tmp_audio_path(audio: Optional[UploadFile], audio_url: Optional[str]) -> str:
+    """Return a temporary local path for provided audio upload or URL.
+    Raises ValueError for empty URL. Propagates network errors from requests.
+    """
+    if audio is not None and getattr(audio, "filename", None):
+        return await _write_upload_to_file(audio)
+    if audio_url:
+        url = audio_url.strip()
+        if not url:
+            raise ValueError("audio_url is empty")
+        return _download_audio_to_file(url)
+    raise ValueError("No audio provided. Provide 'audio' file or 'audio_url'.")
+
+
+def _read_wav_as_float32_mono_16k(path: str) -> Tuple[np.ndarray, int]:
+    """Read a mono 16kHz WAV as float32 normalized to [-1, 1]."""
+    import wave as _wave
+    with _wave.open(path) as f:
+        assert f.getnchannels() == 1, f.getnchannels()
+        assert f.getsampwidth() == 2, f.getsampwidth()
+        sample_rate = f.getframerate()
+        assert sample_rate == 16000, sample_rate
+        num_frames = f.getnframes()
+        pcm_bytes = f.readframes(num_frames)
+    samples = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+    return samples, sample_rate
+
+
+def _build_transcription_response(segments: List[Dict], duration_seconds: float, return_timestamps: bool) -> Dict:
+    full_text = " ".join(seg["text"] for seg in segments).strip()
+    response_data: Dict = {
+        "text": full_text,
+        "duration": round(duration_seconds, 3),
+        "total_segments": len(segments),
+    }
+    if return_timestamps:
+        response_data["chunks"] = segments
+    return response_data
+
+
 @app.post("/transcribe")
 async def transcribe(
     audio: Optional[UploadFile] = File(None),
@@ -222,56 +250,23 @@ async def transcribe(
 ):
     try:
         tmp_path: Optional[str] = None
-        if audio is not None and audio.filename:
-            tmp_path = await _write_upload_to_file(audio)
-        elif audio_url:
-            url = audio_url.strip()
-            if not url:
-                return JSONResponse({"error": "audio_url is empty"}, status_code=400)
-            try:
-                tmp_path = _download_audio_to_file(url)
-            except requests.exceptions.ConnectionError as ce:
-                return JSONResponse({
-                    "error": f"Network connection failed: {str(ce)}. The Space may have limited network access."
-                }, status_code=400)
-            except requests.exceptions.Timeout:
-                return JSONResponse({"error": "Request timed out while fetching audio"}, status_code=400)
-        else:
-            return JSONResponse({"error": "No audio provided. Provide 'audio' file or 'audio_url'."}, status_code=400)
+        try:
+            tmp_path = await _resolve_tmp_audio_path(audio, audio_url)
+        except requests.exceptions.ConnectionError as ce:
+            return JSONResponse({
+                "error": f"Network connection failed: {str(ce)}. The Space may have limited network access."
+            }, status_code=400)
+        except requests.exceptions.Timeout:
+            return JSONResponse({"error": "Request timed out while fetching audio"}, status_code=400)
+        except ValueError as ve:
+            return JSONResponse({"error": str(ve)}, status_code=400)
 
-        # Ensure correct audio format for sherpa-onnx whisper (mono, 16kHz, s16le WAV)
         wav_path = _ffmpeg_convert_to_wav_16k_mono(tmp_path)
         try:
-            # Read wav as int16 PCM and normalize to float32 in [-1,1]
-            import wave as _wave
-            with _wave.open(wav_path) as f:
-                assert f.getnchannels() == 1, f.getnchannels()
-                assert f.getsampwidth() == 2, f.getsampwidth()
-                sample_rate = f.getframerate()
-                assert sample_rate == 16000, sample_rate
-                num_frames = f.getnframes()
-                pcm_bytes = f.readframes(num_frames)
-            samples = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
-
-            # Calculate audio duration
-            duration_seconds = len(samples) / 16000.0
-            
-            # Process audio with proper chunking
-            segments = process_audio_chunks(samples, sample_rate=16000)
-            
-            # Combine all segment texts
-            full_text = " ".join(seg["text"] for seg in segments).strip()
-            
-            # Add metadata
-            response_data = {
-                "text": full_text,
-                "duration": round(duration_seconds, 3),
-                "total_segments": len(segments)
-            }
-            
-            if return_timestamps:
-                response_data["chunks"] = segments
-                
+            samples, sample_rate = _read_wav_as_float32_mono_16k(wav_path)
+            duration_seconds = len(samples) / float(sample_rate)
+            segments = process_audio_chunks(samples, sample_rate=sample_rate)
+            response_data = _build_transcription_response(segments, duration_seconds, return_timestamps)
         finally:
             try:
                 if os.path.exists(wav_path):
@@ -280,7 +275,7 @@ async def transcribe(
                 pass
 
         return JSONResponse(response_data)
-        
+
     except requests.HTTPError as he:
         return JSONResponse({"error": f"Failed to fetch audio: {str(he)}"}, status_code=400)
     except Exception as e:
