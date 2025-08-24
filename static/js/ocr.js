@@ -128,7 +128,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'ocr.txt';
+            a.download = 'textsense-ocr.txt';
     document.body.appendChild(a);
     a.click();
     a.remove();

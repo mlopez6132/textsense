@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Download images with a small delay to avoid overwhelming the browser
         for (let i = 0; i < images.length; i++) {
             const img = images[i];
-            await downloadImage(img.src, `generated_image_${i + 1}.png`);
+            await downloadImage(img.src, `textsense-generated-image-${i + 1}.png`);
             // Small delay between downloads
             if (i < images.length - 1) {
                 await new Promise(resolve => setTimeout(resolve, 500));
@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             justify-content: center;
                             border-radius: 0.375rem 0.375rem 0 0;
                         ">
-                            <button class="btn btn-light btn-sm download-btn" data-image-url="${imageUrl}" data-filename="generated_image_${index + 1}.png">
+                            <button class="btn btn-light btn-sm download-btn" data-image-url="${imageUrl}" data-filename="textsense-generated-image-${index + 1}.png">
                                 <i class="fas fa-download me-1"></i>Download
                             </button>
                         </div>
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button class="btn btn-outline-primary btn-sm copy-prompt-btn">
                                 <i class="fas fa-copy me-1"></i>Copy Prompt
                             </button>
-                            <button class="btn btn-primary btn-sm download-single-btn" data-image-url="${imageUrl}" data-filename="generated_image_${index + 1}.png">
+                            <button class="btn btn-primary btn-sm download-single-btn" data-image-url="${imageUrl}" data-filename="textsense-generated-image-${index + 1}.png">
                                 <i class="fas fa-download me-1"></i>Download
                             </button>
                         </div>
