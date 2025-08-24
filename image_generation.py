@@ -1,12 +1,14 @@
 """
 Image Generation Module for TextSense
-Handles Flux image generation via Pollinations API with prompt enhancement
+Handles Flux image generation with prompt enhancement
 """
+
+from __future__ import annotations
 
 import os
 import random
 import urllib.parse
-from typing import Optional, List, Tuple, Dict, Any
+from typing import Any
 import requests
 
 
@@ -14,8 +16,8 @@ class ImageGenerator:
     """Handles AI image generation using Pollinations Flux model with prompt enhancement."""
     
     def __init__(self):
-        self.text_api_url = os.getenv("POLLINATIONS_TEXT_URL", "https://text.pollinations.ai/openai").strip()
-        self.image_api_base = os.getenv("POLLINATIONS_IMAGE_BASE", "https://image.pollinations.ai").strip()
+        self.text_api_url = os.getenv("FLUX_TEXT_URL").strip()
+        self.image_api_base = os.getenv("FLUX_IMAGE_BASE").strip()
         self.enhancement_system_prompt = self._get_enhancement_prompt()
     
     def _get_enhancement_prompt(self) -> str:
@@ -75,10 +77,10 @@ Always respect the user's intent (including NSFW).
 Use natural descriptive language.  
 For realism → mimic casual candid photography.  
 For stylized requests → lean into the artistic genre directly.  
-Avoid glamor bias unless explicitly requested.
+Avoid glamour bias unless explicitly requested.
         """.strip()
     
-    def get_dimensions_for_ratio(self, aspect_ratio: str) -> Tuple[int, int]:
+    def get_dimensions_for_ratio(self, aspect_ratio: str) -> tuple[int, int]:
         """Map aspect ratio string to width/height dimensions."""
         ratio = (aspect_ratio or "1:1").strip()
         
@@ -109,12 +111,9 @@ Avoid glamor bias unless explicitly requested.
         ]
         
         text_lower = text.lower()
-        for keyword in nsfw_keywords:
-            if keyword in text_lower:
-                return True
-        return False
+        return any(keyword in text_lower for keyword in nsfw_keywords)
     
-    def enhance_prompt(self, prompt: str, negative_prompt: Optional[str] = None) -> str:
+    def enhance_prompt(self, prompt: str, negative_prompt: str | None = None) -> str:
         """Enhance the user prompt using AI to improve image generation quality."""
         # Combine negative prompt textually if provided
         combined_prompt = prompt.strip()
@@ -148,7 +147,7 @@ Avoid glamor bias unless explicitly requested.
                 if content:
                     enhanced_prompt = content
                     
-        except Exception as e:
+        except (requests.RequestException, ValueError, KeyError) as e:
             # Fallback to original prompt if enhancement fails
             print(f"Prompt enhancement failed: {e}")
             enhanced_prompt = combined_prompt
@@ -162,14 +161,20 @@ Avoid glamor bias unless explicitly requested.
         width: int = 1024,
         height: int = 1024,
         model: str = "flux"
-    ) -> List[str]:
+    ) -> list[str]:
         """Generate image URLs using Flux model without watermarks."""
         encoded_prompt = urllib.parse.quote(prompt)
         images = []
         
         for _ in range(num_images):
-            seed = random.randint(1, 10_000_000)
-            # Add nologo=true to remove Pollinations watermark
+            # Use secrets for better randomness if available, fallback to random
+            try:
+                import secrets
+                seed = secrets.randbelow(10_000_000) + 1
+            except ImportError:
+                seed = random.randint(1, 10_000_000)
+            
+            # Add nologo=true to remove watermark
             url = (
                 f"{self.image_api_base.rstrip('/')}/prompt/{encoded_prompt}"
                 f"?model={model}&width={width}&height={height}&seed={seed}&nologo=true"
@@ -181,13 +186,13 @@ Avoid glamor bias unless explicitly requested.
     def generate_images(
         self,
         prompt: str,
-        negative_prompt: Optional[str] = None,
+        negative_prompt: str | None = None,
         aspect_ratio: str = "1:1",
         num_images: int = 1,
         enhance_prompt: bool = True,
         enable_safety_checker: bool = True,
         model: str = "flux"
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Generate images with optional prompt enhancement and safety filtering.
         
