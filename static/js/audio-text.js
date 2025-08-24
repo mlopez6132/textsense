@@ -25,7 +25,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // File handling
     function handleAudioFile(file) {
         if (!file || !file.type.startsWith('audio/')) {
-            showAlert('Please select a valid audio file.', 'warning');
             return;
         }
 
@@ -43,7 +42,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleAudioUrl(url) {
         if (!url || !isValidUrl(url)) {
-            showAlert('Please enter a valid audio URL.', 'warning');
             return;
         }
 
@@ -129,7 +127,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Transcribe button
     transcribeBtn.addEventListener('click', async () => {
         if (!currentAudioFile && !audioUrl.value.trim()) {
-            showAlert('Please upload an audio file or provide a URL first.', 'warning');
             return;
         }
 
@@ -171,11 +168,8 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 timestampsSection.style.display = 'none';
             }
-
-            showAlert('Transcription completed successfully!', 'success');
         } catch (error) {
             console.error('Transcription error:', error);
-            showAlert(`Error: ${error.message}`, 'danger');
         } finally {
             transcribing.style.display = 'none';
             transcribeBtn.disabled = false;
@@ -186,10 +180,8 @@ document.addEventListener('DOMContentLoaded', function() {
     copyTranscriptionBtn.addEventListener('click', async () => {
         try {
             await navigator.clipboard.writeText(transcriptionOutput.value);
-            showAlert('Transcription copied to clipboard!', 'success');
         } catch (error) {
             console.error('Copy error:', error);
-            showAlert('Failed to copy transcription.', 'danger');
         }
     });
 
@@ -197,7 +189,6 @@ document.addEventListener('DOMContentLoaded', function() {
     downloadTranscriptionBtn.addEventListener('click', () => {
         const text = transcriptionOutput.value;
         if (!text) {
-            showAlert('No transcription to download.', 'warning');
             return;
         }
 
@@ -215,7 +206,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Download timestamps
     downloadTimestampsBtn.addEventListener('click', () => {
         if (!currentTranscriptionData || !currentTranscriptionData.chunks) {
-            showAlert('No timestamp data to download.', 'warning');
             return;
         }
 
@@ -259,24 +249,5 @@ document.addEventListener('DOMContentLoaded', function() {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${millisecs.toString().padStart(3, '0')}`;
     }
 
-    function showAlert(message, type = 'info') {
-        // Create alert element
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-        alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
-        
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
-        
-        document.body.appendChild(alertDiv);
-        
-        // Auto-remove after 5 seconds
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, 5000);
-    }
+
 });
