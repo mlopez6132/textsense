@@ -16,6 +16,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let currentAudioUrl = null;
     let currentAudioBlob = null;
+    let longFormAvailable = false;
+
+    // Check system status for long-form capability
+    async function checkSystemStatus() {
+        try {
+            const response = await fetch('/system-status');
+            const status = await response.json();
+            longFormAvailable = status.speech_generation.long_form_available;
+
+            const statusBadge = document.getElementById('longFormStatus');
+            if (longFormAvailable) {
+                statusBadge.className = 'badge bg-success';
+                statusBadge.textContent = 'Long-form supported';
+            } else {
+                statusBadge.className = 'badge bg-warning';
+                statusBadge.textContent = 'Short content only';
+            }
+        } catch (error) {
+            console.error('Failed to check system status:', error);
+            const statusBadge = document.getElementById('longFormStatus');
+            statusBadge.className = 'badge bg-danger';
+            statusBadge.textContent = 'Status unknown';
+        }
+    }
 
     // Character count functionality
     function updateCharCount() {
@@ -26,8 +50,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show both character and word count
         charCount.textContent = `${count} characters (${wordCount} words)`;
 
-        // Change color and add warnings based on character limit
-        if (count > 22500) {
+        // Change color and add warnings based on character limit and system capabilities
+        if (!longFormAvailable && count > 5000) {
+            charCount.className = 'text-danger fw-bold';
+            charCount.textContent += ' ⚠️ Long content not supported - reduce text length';
+        } else if (count > 22500) {
             charCount.className = 'text-danger fw-bold';
             charCount.textContent += ' ⚠️ Very long text - generation may take several minutes';
         } else if (count > 20000) {
@@ -46,6 +73,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     textInput.addEventListener('input', updateCharCount);
     textInput.addEventListener('keyup', updateCharCount);
+
+    // Check system status on page load
+    checkSystemStatus();
+
     updateCharCount(); // Initial count
 
     // Emotion style character count functionality
@@ -108,6 +139,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (text.length > 25000) {
             alert('Text is too long. Please limit to 25,000 characters.');
+            return;
+        }
+
+        if (!longFormAvailable && text.length > 5000) {
+            alert('Long-form content is not currently supported on this system. Please reduce your text to 5,000 characters or less.');
             return;
         }
 
