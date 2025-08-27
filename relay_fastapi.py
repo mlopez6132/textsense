@@ -13,7 +13,7 @@ from requests.exceptions import RequestException, Timeout, ConnectionError as Re
 
 # Import our generation modules
 from image_generation import image_generator
-from speech_generation import speech_generator, PYDUB_AVAILABLE
+from speech_generation import speech_generator
 
 HF_INFERENCE_URL_ENV = "HF_INFERENCE_URL"
 HF_OCR_URL_ENV = "HF_OCR_URL"
@@ -425,19 +425,3 @@ async def healthz():
 @app.get("/ping")
 async def ping():
     return {"status": "ok"}
-
-
-@app.get("/system-status")
-async def system_status():
-    """Return system capabilities and status."""
-    return {
-        "speech_generation": {
-            "long_form_available": PYDUB_AVAILABLE,
-            "max_characters": 25000,
-            "supported_voices": len(speech_generator.get_available_voices()) if speech_generator else 0
-        },
-        "image_generation": {
-            "available": True
-        },
-        "timestamp": "2025-01-27T00:00:00Z"  # Would be dynamic in production
-    }

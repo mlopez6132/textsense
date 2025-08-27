@@ -16,19 +16,10 @@ import requests
 try:
     from pydub import AudioSegment
     from pydub.effects import normalize
-    # Test if ffmpeg is available by trying to create a simple audio segment
-    test_segment = AudioSegment.silent(duration=100)
     PYDUB_AVAILABLE = True
-    print("✅ Pydub available - long-form audio concatenation enabled!")
-except ImportError as e:
+except ImportError:
     PYDUB_AVAILABLE = False
-    print(f"❌ Pydub not available: {e}")
-    print("📝 Long-form audio concatenation disabled. Only short content supported.")
-except Exception as e:
-    PYDUB_AVAILABLE = False
-    print(f"❌ Pydub/ffmpeg not working: {e}")
-    print("📝 This usually means ffmpeg is not installed on the system.")
-    print("💡 For full functionality, ensure ffmpeg is installed: apt-get install ffmpeg")
+    print("Warning: pydub not available. Audio concatenation disabled.")
 
 
 class SpeechGenerator:
