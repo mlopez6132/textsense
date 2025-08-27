@@ -21,13 +21,24 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateCharCount() {
         const text = textInput.value;
         const count = text.length;
-        charCount.textContent = `${count} characters`;
+        const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
 
-        // Change color based on character limit
-        if (count > 4500) {
-            charCount.className = 'text-danger';
-        } else if (count > 4000) {
-            charCount.className = 'text-warning';
+        // Show both character and word count
+        charCount.textContent = `${count} characters (${wordCount} words)`;
+
+        // Change color and add warnings based on character limit
+        if (count > 22500) {
+            charCount.className = 'text-danger fw-bold';
+            charCount.textContent += ' ⚠️ Very long text - generation may take several minutes';
+        } else if (count > 20000) {
+            charCount.className = 'text-warning fw-bold';
+            charCount.textContent += ' ⚠️ Long text - will be processed in chunks';
+        } else if (count > 15000) {
+            charCount.className = 'text-info';
+            charCount.textContent += ' 📝 Long-form content supported';
+        } else if (count > 5000) {
+            charCount.className = 'text-success';
+            charCount.textContent += ' ✅ Good length for detailed content';
         } else {
             charCount.className = 'text-muted';
         }
@@ -95,8 +106,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        if (text.length > 5000) {
-            alert('Text is too long. Please limit to 5000 characters.');
+        if (text.length > 25000) {
+            alert('Text is too long. Please limit to 25,000 characters.');
             return;
         }
 
