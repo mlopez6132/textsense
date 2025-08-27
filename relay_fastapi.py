@@ -11,8 +11,9 @@ from fastapi.templating import Jinja2Templates
 import requests
 from requests.exceptions import RequestException, Timeout, ConnectionError as ReqConnectionError
 
-# Import our image generation module
+# Import our generation modules
 from image_generation import image_generator
+from speech_generation import speech_generator
 
 HF_INFERENCE_URL_ENV = "HF_INFERENCE_URL"
 HF_OCR_URL_ENV = "HF_OCR_URL"
@@ -375,84 +376,19 @@ async def generate_speech(
     voice: str = Form("alloy"),
     emotion_style: str = Form("")
 ):
-    """Generate speech from text using Pollinations AI TTS API."""
-    if not text or not text.strip():
-        raise HTTPException(status_code=400, detail="Text is required")
-
-    if len(text.strip()) > 5000:
-        raise HTTPException(status_code=400, detail="Text exceeds 5000 character limit")
-
-    if len(emotion_style.strip()) > 200:
-        raise HTTPException(status_code=400, detail="Emotion style prompt exceeds 200 character limit")
-
+    """Generate speech from text using the speech generation module."""
     try:
-        # Construct the prompt with emotion style context
-        emotion_prefix = ""
-        if emotion_style.strip():
-            emotion_prefix = f"Speak {emotion_style.strip()}: "
-
-        full_prompt = f"{emotion_prefix}{text.strip()}"
-
-        # URL encode the prompt and construct API URL with random seed
-        from urllib.parse import quote
-        import random
-        encoded_prompt = quote(full_prompt)
-        seed = random.randint(1, 1000000)  # Generate random seed to potentially bypass tier restrictions
-        api_url = f"https://text.pollinations.ai/{encoded_prompt}?model=openai-audio&voice={voice}&seed={seed}"
-
-        # Make request to Pollinations AI TTS API with referrer and headers
-        headers = {
-            'User-Agent': 'TextSense-TTS/1.0',
-            'Referer': 'https://pollinations.ai'
-        }
-
-        # Add optional API key if available
-        api_key = os.getenv("POLLINATIONS_API_KEY", "").strip()
-        if api_key:
-            headers['Authorization'] = f"Bearer {api_key}"
-        response = requests.get(api_url, headers=headers, timeout=DEFAULT_TIMEOUT_SECONDS)
-
-        if response.status_code == 200:
-            # Return the audio data directly
-            return StreamingResponse(
-                response.iter_content(chunk_size=8192),
-                media_type="audio/mpeg",
-                headers={
-                    "Content-Disposition": "attachment; filename=generated_speech.mp3",
-                    "Cache-Control": "no-cache"
-                }
-            )
-        elif response.status_code == 402:
-            # Try with different seed if tier/access issue
-            seed = random.randint(1, 1000000)
-            api_url = f"https://text.pollinations.ai/{encoded_prompt}?model=openai-audio&voice={voice}&seed={seed}"
-            headers['Authorization'] = f"Bearer anonymous-{seed}"  # Try anonymous auth with seed
-            response = requests.get(api_url, headers=headers, timeout=DEFAULT_TIMEOUT_SECONDS)
-
-            if response.status_code == 200:
-                return StreamingResponse(
-                    response.iter_content(chunk_size=8192),
-                    media_type="audio/mpeg",
-                    headers={
-                        "Content-Disposition": "attachment; filename=generated_speech.mp3",
-                        "Cache-Control": "no-cache"
-                    }
-                )
-            else:
-                raise HTTPException(
-                    status_code=402,
-                    detail="TTS API requires authentication. Please visit https://auth.pollinations.ai to get a token or upgrade your tier."
-                )
-        else:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"TTS API error: {response.text}"
-            )
-
-    except requests.exceptions.Timeout:
-        raise HTTPException(status_code=504, detail="TTS request timed out")
-    except requests.exceptions.RequestException as req_err:
-        raise HTTPException(status_code=502, detail=f"TTS request failed: {str(req_err)}")
+        # Use the speech generator module to handle all the logic
+        return speech_generator.generate_speech(
+            text=text,
+            voice=voice,
+            emotion_style=emotion_style,
+            max_retries=3
+        )
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except RuntimeError as re:
+        raise HTTPException(status_code=502, detail=str(re))
 
 
 @app.get("/download-image")
