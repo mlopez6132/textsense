@@ -253,6 +253,12 @@ async def generate_image_page(request: Request):
     return templates.TemplateResponse("generate-image.html", context)
 
 
+@app.get("/text-to-speech", response_class=HTMLResponse)
+async def text_to_speech_page(request: Request):
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
+    return templates.TemplateResponse("text-to-speech.html", context)
+
+
 @app.post("/contact")
 async def submit_contact(request: Request):
     form = await request.form()
@@ -361,6 +367,60 @@ async def generate_image(
         raise HTTPException(status_code=400, detail=str(ve)) from ve
     except RuntimeError as re:
         raise HTTPException(status_code=500, detail=f"Image generation runtime error: {str(re)}") from re
+
+
+@app.post("/generate-speech")
+async def generate_speech(
+    text: str = Form(...),
+    voice: str = Form("alloy"),
+    emotion_style: str = Form("")
+):
+    """Generate speech from text using Pollinations AI TTS API."""
+    if not text or not text.strip():
+        raise HTTPException(status_code=400, detail="Text is required")
+
+    if len(text.strip()) > 5000:
+        raise HTTPException(status_code=400, detail="Text exceeds 5000 character limit")
+
+    if len(emotion_style.strip()) > 200:
+        raise HTTPException(status_code=400, detail="Emotion style prompt exceeds 200 character limit")
+
+    try:
+        # Construct the prompt with emotion style context
+        emotion_prefix = ""
+        if emotion_style.strip():
+            emotion_prefix = f"Speak {emotion_style.strip()}: "
+
+        full_prompt = f"{emotion_prefix}{text.strip()}"
+
+        # URL encode the prompt and construct API URL
+        from urllib.parse import quote
+        encoded_prompt = quote(full_prompt)
+        api_url = f"https://text.pollinations.ai/{encoded_prompt}?model=openai-audio&voice={voice}"
+
+        # Make request to Pollinations AI TTS API
+        response = requests.get(api_url, timeout=DEFAULT_TIMEOUT_SECONDS)
+
+        if response.status_code == 200:
+            # Return the audio data directly
+            return StreamingResponse(
+                response.iter_content(chunk_size=8192),
+                media_type="audio/mpeg",
+                headers={
+                    "Content-Disposition": "attachment; filename=generated_speech.mp3",
+                    "Cache-Control": "no-cache"
+                }
+            )
+        else:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"TTS API error: {response.text}"
+            )
+
+    except requests.exceptions.Timeout:
+        raise HTTPException(status_code=504, detail="TTS request timed out")
+    except requests.exceptions.RequestException as req_err:
+        raise HTTPException(status_code=502, detail=f"TTS request failed: {str(req_err)}")
 
 
 @app.get("/download-image")

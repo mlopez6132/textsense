@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import os
 import tempfile
 import subprocess
-from typing import Optional, Tuple, List, Dict
+import wave
+from typing import Any
 
 import requests
 import numpy as np
@@ -11,9 +14,20 @@ from huggingface_hub import hf_hub_download
 import sherpa_onnx  # type: ignore
 
 # Model and runtime configuration (sherpa-onnx Whisper distil-small.en INT8)
-WHISPER_VARIANT = os.getenv("WHISPER_VARIANT")
-MAX_CHUNK_SECONDS = os.getenv("MAX_CHUNK_SECONDS")
-CHUNK_OVERLAP_SECONDS = os.getenv("CHUNK_OVERLAP_SECONDS")  
+WHISPER_VARIANT = os.getenv("WHISPER_VARIANT", "tiny.en")
+
+# Safe conversion with fallback values
+def safe_float_env(var_name: str, default: str) -> float:
+    try:
+        value = os.getenv(var_name, default)
+        return float(value)
+    except (ValueError, TypeError):
+        print(f"Warning: Invalid value for {var_name}, using default: {default}")
+        return float(default)
+
+MAX_CHUNK_SECONDS = safe_float_env("MAX_CHUNK_SECONDS", "29.0")
+CHUNK_OVERLAP_SECONDS = safe_float_env("CHUNK_OVERLAP_SECONDS", "1.0")
+
 HF_CACHE_DIR = "/tmp/hf"
 os.makedirs(HF_CACHE_DIR, exist_ok=True)
 os.environ.setdefault("HF_HOME", HF_CACHE_DIR)
@@ -98,7 +112,7 @@ def _decode_chunk_to_text(chunk_samples: np.ndarray, sample_rate: int) -> str:
     return s.result.text.strip()
 
 
-def _maybe_trim_overlap(prev_text: str, current_text: str, chunk_start_s: float, chunk_end_s: float) -> Tuple[str, float]:
+def _maybe_trim_overlap(prev_text: str, current_text: str, chunk_start_s: float, chunk_end_s: float) -> tuple[str, float]:
     if not prev_text or len(prev_text) <= 50:
         return current_text, chunk_start_s
     prev_words = prev_text.split()[-10:]
@@ -114,7 +128,7 @@ def _maybe_trim_overlap(prev_text: str, current_text: str, chunk_start_s: float,
     return trimmed_text, adjusted_start
 
 
-def _append_segment(segments: List[Dict], index: int, text: str, start_s: float, end_s: float) -> None:
+def _append_segment(segments: list[dict], index: int, text: str, start_s: float, end_s: float) -> None:
     segments.append({
         "index": index,
         "text": text,
@@ -125,24 +139,24 @@ def _append_segment(segments: List[Dict], index: int, text: str, start_s: float,
     })
 
 
-def _process_short_audio(samples: np.ndarray, sample_rate: int, segment_index: int) -> List[Dict]:
+def _process_short_audio(samples: np.ndarray, sample_rate: int, segment_index: int) -> list[dict]:
     text = _decode_chunk_to_text(samples, sample_rate)
     if not text:
         return []
     end_s = len(samples) / sample_rate
-    segs: List[Dict] = []
+    segs: list[dict] = []
     _append_segment(segs, segment_index, text, 0.0, end_s)
     return segs
 
 
-def process_audio_chunks(samples: np.ndarray, sample_rate: int = 16000) -> List[Dict]:
+def process_audio_chunks(samples: np.ndarray, sample_rate: int = 16000) -> list[dict]:
     """
     Process audio in chunks with proper overlap handling and segment-level timestamps
     """
     max_chunk_samples = int(MAX_CHUNK_SECONDS * sample_rate)
     overlap_samples = int(CHUNK_OVERLAP_SECONDS * sample_rate)
 
-    segments: List[Dict] = []
+    segments: list[dict] = []
     start = 0
     segment_index = 1
 
@@ -202,7 +216,7 @@ def _download_audio_to_file(url: str) -> str:
         return tmp.name
 
 
-async def _resolve_tmp_audio_path(audio: Optional[UploadFile], audio_url: Optional[str]) -> str:
+async def _resolve_tmp_audio_path(audio: UploadFile | None, audio_url: str | None) -> str:
     """Return a temporary local path for provided audio upload or URL.
     Raises ValueError for empty URL. Propagates network errors from requests.
     """
@@ -216,23 +230,25 @@ async def _resolve_tmp_audio_path(audio: Optional[UploadFile], audio_url: Option
     raise ValueError("No audio provided. Provide 'audio' file or 'audio_url'.")
 
 
-def _read_wav_as_float32_mono_16k(path: str) -> Tuple[np.ndarray, int]:
+def _read_wav_as_float32_mono_16k(path: str) -> tuple[np.ndarray, int]:
     """Read a mono 16kHz WAV as float32 normalized to [-1, 1]."""
-    import wave as _wave
-    with _wave.open(path) as f:
-        assert f.getnchannels() == 1, f.getnchannels()
-        assert f.getsampwidth() == 2, f.getsampwidth()
+    with wave.open(path) as f:
+        if f.getnchannels() != 1:
+            raise ValueError(f"Expected mono audio, got {f.getnchannels()} channels")
+        if f.getsampwidth() != 2:
+            raise ValueError(f"Expected 16-bit audio, got {f.getsampwidth() * 8}-bit")
         sample_rate = f.getframerate()
-        assert sample_rate == 16000, sample_rate
+        if sample_rate != 16000:
+            raise ValueError(f"Expected 16kHz audio, got {sample_rate}Hz")
         num_frames = f.getnframes()
         pcm_bytes = f.readframes(num_frames)
     samples = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
     return samples, sample_rate
 
 
-def _build_transcription_response(segments: List[Dict], duration_seconds: float, return_timestamps: bool) -> Dict:
+def _build_transcription_response(segments: list[dict], duration_seconds: float, return_timestamps: bool) -> dict:
     full_text = " ".join(seg["text"] for seg in segments).strip()
-    response_data: Dict = {
+    response_data: dict = {
         "text": full_text,
         "duration": round(duration_seconds, 3),
         "total_segments": len(segments),
@@ -244,12 +260,12 @@ def _build_transcription_response(segments: List[Dict], duration_seconds: float,
 
 @app.post("/transcribe")
 async def transcribe(
-    audio: Optional[UploadFile] = File(None),
-    audio_url: Optional[str] = Form(None),
+    audio: UploadFile | None = File(None),
+    audio_url: str | None = Form(None),
     return_timestamps: bool = Form(False),
 ):
     try:
-        tmp_path: Optional[str] = None
+        tmp_path: str | None = None
         try:
             tmp_path = await _resolve_tmp_audio_path(audio, audio_url)
         except requests.exceptions.ConnectionError as ce:
