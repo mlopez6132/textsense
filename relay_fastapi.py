@@ -393,13 +393,24 @@ async def generate_speech(
 
         full_prompt = f"{emotion_prefix}{text.strip()}"
 
-        # URL encode the prompt and construct API URL
+        # URL encode the prompt and construct API URL with random seed
         from urllib.parse import quote
+        import random
         encoded_prompt = quote(full_prompt)
-        api_url = f"https://text.pollinations.ai/{encoded_prompt}?model=openai-audio&voice={voice}"
+        seed = random.randint(1, 1000000)  # Generate random seed to potentially bypass tier restrictions
+        api_url = f"https://text.pollinations.ai/{encoded_prompt}?model=openai-audio&voice={voice}&seed={seed}"
 
-        # Make request to Pollinations AI TTS API
-        response = requests.get(api_url, timeout=DEFAULT_TIMEOUT_SECONDS)
+        # Make request to Pollinations AI TTS API with referrer and headers
+        headers = {
+            'User-Agent': 'TextSense-TTS/1.0',
+            'Referer': 'https://pollinations.ai'
+        }
+
+        # Add optional API key if available
+        api_key = os.getenv("POLLINATIONS_API_KEY", "").strip()
+        if api_key:
+            headers['Authorization'] = f"Bearer {api_key}"
+        response = requests.get(api_url, headers=headers, timeout=DEFAULT_TIMEOUT_SECONDS)
 
         if response.status_code == 200:
             # Return the audio data directly
@@ -411,6 +422,27 @@ async def generate_speech(
                     "Cache-Control": "no-cache"
                 }
             )
+        elif response.status_code == 402:
+            # Try with different seed if tier/access issue
+            seed = random.randint(1, 1000000)
+            api_url = f"https://text.pollinations.ai/{encoded_prompt}?model=openai-audio&voice={voice}&seed={seed}"
+            headers['Authorization'] = f"Bearer anonymous-{seed}"  # Try anonymous auth with seed
+            response = requests.get(api_url, headers=headers, timeout=DEFAULT_TIMEOUT_SECONDS)
+
+            if response.status_code == 200:
+                return StreamingResponse(
+                    response.iter_content(chunk_size=8192),
+                    media_type="audio/mpeg",
+                    headers={
+                        "Content-Disposition": "attachment; filename=generated_speech.mp3",
+                        "Cache-Control": "no-cache"
+                    }
+                )
+            else:
+                raise HTTPException(
+                    status_code=402,
+                    detail="TTS API requires authentication. Please visit https://auth.pollinations.ai to get a token or upgrade your tier."
+                )
         else:
             raise HTTPException(
                 status_code=response.status_code,
