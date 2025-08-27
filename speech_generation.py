@@ -153,7 +153,14 @@ class SpeechGenerator:
             {"id": "fable", "name": "Fable", "description": "British accent, clear articulation"},
             {"id": "onyx", "name": "Onyx", "description": "Deep male voice, authoritative"},
             {"id": "nova", "name": "Nova", "description": "Youthful, energetic voice"},
-            {"id": "shimmer", "name": "Shimmer", "description": "Warm female voice, expressive"}
+            {"id": "shimmer", "name": "Shimmer", "description": "Warm female voice, expressive"},
+            {"id": "coral", "name": "Coral", "description": "Soft, melodic female voice"},
+            {"id": "verse", "name": "Verse", "description": "Poetic and expressive voice"},
+            {"id": "ballad", "name": "Ballad", "description": "Storytelling, narrative voice"},
+            {"id": "ash", "name": "Ash", "description": "Calm, soothing male voice"},
+            {"id": "sage", "name": "Sage", "description": "Wise, experienced voice"},
+            {"id": "amuch", "name": "Amuch", "description": "Unique, distinctive character voice"},
+            {"id": "dan", "name": "Dan", "description": "Friendly, approachable male voice"}
         ]
 
     def validate_inputs(
