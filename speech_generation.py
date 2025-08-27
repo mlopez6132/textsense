@@ -16,6 +16,15 @@ import requests
 try:
     from pydub import AudioSegment
     from pydub.effects import normalize
+    # Try to point pydub to a bundled ffmpeg binary (Render often lacks system ffmpeg)
+    try:
+        from imageio_ffmpeg import get_ffmpeg_exe
+        ffmpeg_path = get_ffmpeg_exe()
+        # pydub uses AudioSegment.converter as ffmpeg path
+        AudioSegment.converter = ffmpeg_path
+    except Exception as _ffmpeg_err:
+        # Non-fatal: pydub may still work if system ffmpeg is available
+        pass
     PYDUB_AVAILABLE = True
 except ImportError:
     PYDUB_AVAILABLE = False
@@ -160,7 +169,9 @@ class SpeechGenerator:
         audio_segments = []
         for chunk_data in audio_chunks:
             try:
-                segment = AudioSegment.from_mp3(chunk_data)
+                from io import BytesIO
+                # Interpret raw bytes as an MP3 stream
+                segment = AudioSegment.from_file(BytesIO(chunk_data), format="mp3")
                 # Add a small crossfade to smooth transitions
                 if audio_segments:
                     segment = segment.fade_in(50)
@@ -180,9 +191,12 @@ class SpeechGenerator:
         # Normalize the audio to consistent volume
         combined = normalize(combined)
 
-        # Export as MP3
-        output = combined.export(format="mp3")
-        return output.read()
+        # Export as MP3 to in-memory buffer
+        from io import BytesIO
+        buffer = BytesIO()
+        combined.export(buffer, format="mp3")
+        buffer.seek(0)
+        return buffer.read()
 
     def _handle_api_error(self, response: requests.Response) -> Tuple[bool, str]:
         """Handle API errors and determine if retry is possible."""
