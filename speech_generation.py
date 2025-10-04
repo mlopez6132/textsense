@@ -8,27 +8,9 @@ from __future__ import annotations
 import os
 import random
 import urllib.parse
-import re
-from typing import Any, Tuple, List
+from typing import Any, Tuple
 from fastapi.responses import StreamingResponse
 import httpx
-
-try:
-    from pydub import AudioSegment
-    from pydub.effects import normalize
-    # Try to point pydub to a bundled ffmpeg binary (Render often lacks system ffmpeg)
-    try:
-        from imageio_ffmpeg import get_ffmpeg_exe
-        ffmpeg_path = get_ffmpeg_exe()
-        # pydub uses AudioSegment.converter as ffmpeg path
-        AudioSegment.converter = ffmpeg_path
-    except Exception as _ffmpeg_err:
-        # Non-fatal: pydub may still work if system ffmpeg is available
-        pass
-    PYDUB_AVAILABLE = True
-except ImportError:
-    PYDUB_AVAILABLE = False
-    print("Warning: pydub not available. Audio concatenation disabled.")
 
 
 class SpeechGenerator:
@@ -59,145 +41,6 @@ class SpeechGenerator:
 
         return headers
 
-    def _chunk_text(self, text: str, max_words: int = 300) -> List[str]:
-        """Chunk text into smaller segments based on word count and sentence boundaries."""
-        if not text or not text.strip():
-            return []
-
-        # Split by sentences first to maintain natural breaks
-        sentences = re.split(r'(?<=[.!?])\s+', text.strip())
-
-        chunks = []
-        current_chunk = ""
-        current_word_count = 0
-
-        for sentence in sentences:
-            sentence_words = len(sentence.split())
-            if sentence_words == 0:
-                continue
-
-            # If adding this sentence would exceed the limit and we already have content
-            if current_word_count + sentence_words > max_words and current_chunk:
-                chunks.append(current_chunk.strip())
-                current_chunk = sentence
-                current_word_count = sentence_words
-            else:
-                current_chunk += " " + sentence if current_chunk else sentence
-                current_word_count += sentence_words
-
-        # Add the last chunk if it has content
-        if current_chunk.strip():
-            chunks.append(current_chunk.strip())
-
-        # If we have only one chunk and it's still too long, split by words
-        if len(chunks) == 1 and len(chunks[0].split()) > max_words:
-            words = chunks[0].split()
-            chunks = []
-            for i in range(0, len(words), max_words):
-                chunk_words = words[i:i + max_words]
-                chunks.append(" ".join(chunk_words))
-
-        return [chunk for chunk in chunks if chunk.strip()]
-
-    async def _generate_chunk_audio(
-        self,
-        text: str,
-        voice: str,
-        emotion_style: str,
-        max_retries: int
-    ) -> bytes:
-        """Generate audio data for a text chunk (used for long-form concatenation)."""
-        # Construct the full prompt
-        full_prompt = self._construct_emotion_prompt(text, emotion_style)
-
-        # URL encode the prompt
-        encoded_prompt = urllib.parse.quote(full_prompt)
-
-        # Try multiple attempts with different seeds
-        last_error = ""
-
-        for attempt in range(max_retries):
-            try:
-                # Generate random seed for this attempt
-                seed = random.randint(1, 1000000)
-
-                # Construct API URL
-                api_url = f"{self.tts_base_url}/{encoded_prompt}?model=openai-audio&voice={voice}&seed={seed}"
-
-                # Get headers
-                headers = self._get_headers()
-
-                # If this isn't the first attempt and we got a 402, try anonymous auth
-                if attempt > 0 and "tier" in last_error.lower():
-                    headers['Authorization'] = f"Bearer anonymous-{seed}"
-
-                # Make the request
-                async with httpx.AsyncClient() as client:
-                    response = await client.get(api_url, headers=headers, timeout=120)
-
-                    if response.status_code == 200:
-                        # Return the raw audio data
-                        return response.content
-
-                    # Handle specific error codes
-                    can_retry, error_message = self._handle_api_error(response)
-                    last_error = error_message
-
-                    if not can_retry or attempt == max_retries - 1:
-                        raise RuntimeError(error_message)
-
-                    # Wait a bit before retrying
-                    import asyncio
-                    await asyncio.sleep(1)
-
-            except httpx.RequestError as e:
-                last_error = f"Request failed: {str(e)}"
-                if attempt == max_retries - 1:
-                    raise RuntimeError(f"TTS request failed after {max_retries} attempts: {last_error}")
-
-        # This should never be reached, but just in case
-        raise RuntimeError(f"TTS generation failed: {last_error}")
-
-    def _concatenate_audio(self, audio_chunks: List[bytes]) -> bytes:
-        """Concatenate multiple audio chunks into a single MP3 file."""
-        if not PYDUB_AVAILABLE:
-            raise RuntimeError("pydub is required for audio concatenation. Install with: pip install pydub")
-
-        if len(audio_chunks) == 1:
-            return audio_chunks[0]
-
-        # Create AudioSegment objects from the audio data
-        audio_segments = []
-        for chunk_data in audio_chunks:
-            try:
-                from io import BytesIO
-                # Interpret raw bytes as an MP3 stream
-                segment = AudioSegment.from_file(BytesIO(chunk_data), format="mp3")
-                # Add a small crossfade to smooth transitions
-                if audio_segments:
-                    segment = segment.fade_in(50)
-                audio_segments.append(segment)
-            except Exception as e:
-                print(f"Warning: Failed to process audio chunk: {e}")
-                continue
-
-        if not audio_segments:
-            raise RuntimeError("No valid audio segments to concatenate")
-
-        # Concatenate all segments
-        combined = audio_segments[0]
-        for segment in audio_segments[1:]:
-            combined += segment
-
-        # Normalize the audio to consistent volume
-        combined = normalize(combined)
-
-        # Export as MP3 to in-memory buffer
-        from io import BytesIO
-        buffer = BytesIO()
-        combined.export(buffer, format="mp3")
-        buffer.seek(0)
-        return buffer.read()
 
     def _handle_api_error(self, response: httpx.Response) -> Tuple[bool, str]:
         """Handle API errors and determine if retry is possible."""
@@ -238,22 +81,14 @@ class SpeechGenerator:
         if not text or not text.strip():
             raise ValueError("Text is required")
 
-        if len(text.strip()) > 25000:  # Increased limit for long-form content
-            raise ValueError("Text exceeds 25,000 character limit")
+        if len(text.strip()) > 5000:
+            raise ValueError("Text exceeds 5,000 character limit")
 
         if len(emotion_style.strip()) > 200:
             raise ValueError("Emotion style prompt exceeds 200 character limit")
 
-        # Check if we need to chunk the text
-        word_count = len(text.split())
-        chunk_size = 250  # words per chunk for ~15-20 second segments
-
-        if word_count <= chunk_size:
-            # Short text - use single request
-            return await self._generate_single_speech(text, voice, emotion_style, max_retries)
-        else:
-            # Long text - chunk and concatenate
-            return await self._generate_long_speech(text, voice, emotion_style, chunk_size, max_retries)
+        # Generate speech using single request
+        return await self._generate_single_speech(text, voice, emotion_style, max_retries)
 
     async def _generate_single_speech(
         self,
@@ -304,8 +139,7 @@ class SpeechGenerator:
                                     "Cache-Control": "no-cache",
                                     "X-Speech-Provider": "openai",
                                     "X-Speech-Voice": voice,
-                                    "X-Speech-Emotion": emotion_style or "neutral",
-                                    "X-Speech-Type": "single"
+                                    "X-Speech-Emotion": emotion_style or "neutral"
                                 }
                             )
 
@@ -327,51 +161,6 @@ class SpeechGenerator:
 
         # This should never be reached, but just in case
         raise RuntimeError(f"TTS generation failed: {last_error}")
-
-    async def _generate_long_speech(
-        self,
-        text: str,
-        voice: str,
-        emotion_style: str,
-        chunk_size: int,
-        max_retries: int
-    ) -> StreamingResponse:
-        """Generate speech for long text by chunking and concatenating."""
-        if not PYDUB_AVAILABLE:
-            raise RuntimeError("Long-form speech requires pydub. Install with: pip install pydub")
-
-        # Chunk the text
-        text_chunks = self._chunk_text(text, chunk_size)
-        print(f"Processing {len(text_chunks)} chunks for long-form speech")
-
-        audio_chunks = []
-
-        for i, chunk in enumerate(text_chunks):
-            print(f"Processing chunk {i + 1}/{len(text_chunks)} ({len(chunk.split())} words)")
-
-            # Generate speech for this chunk using direct API call
-            chunk_audio_data = await self._generate_chunk_audio(chunk, voice, emotion_style, max_retries)
-            audio_chunks.append(chunk_audio_data)
-
-        # Concatenate all audio chunks
-        print("Concatenating audio chunks...")
-        final_audio = self._concatenate_audio(audio_chunks)
-
-        # Return the concatenated audio
-        from io import BytesIO
-        return StreamingResponse(
-            BytesIO(final_audio),
-            media_type="audio/mpeg",
-            headers={
-                "Content-Disposition": "attachment; filename=generated_long_speech.mp3",
-                "Cache-Control": "no-cache",
-                "X-Speech-Provider": "openai",
-                "X-Speech-Voice": voice,
-                "X-Speech-Emotion": emotion_style or "neutral",
-                "X-Speech-Type": "long-form",
-                "X-Speech-Chunks": str(len(text_chunks))
-            }
-        )
 
     def get_available_voices(self) -> list[dict[str, str]]:
         """Get list of available voices with descriptions."""
