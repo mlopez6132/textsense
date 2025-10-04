@@ -443,7 +443,7 @@ async def generate_speech(
     """Generate speech from text using the speech generation module."""
     try:
         # Use the speech generator module to handle all the logic
-        return speech_generator.generate_speech(
+        return await speech_generator.generate_speech(
             text=text,
             voice=voice,
             emotion_style=emotion_style,

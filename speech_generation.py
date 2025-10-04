@@ -11,7 +11,7 @@ import urllib.parse
 import re
 from typing import Any, Tuple, List
 from fastapi.responses import StreamingResponse
-import requests
+import httpx
 
 try:
     from pydub import AudioSegment
@@ -99,7 +99,7 @@ class SpeechGenerator:
 
         return [chunk for chunk in chunks if chunk.strip()]
 
-    def _generate_chunk_audio(
+    async def _generate_chunk_audio(
         self,
         text: str,
         voice: str,
@@ -132,24 +132,25 @@ class SpeechGenerator:
                     headers['Authorization'] = f"Bearer anonymous-{seed}"
 
                 # Make the request
-                response = requests.get(api_url, headers=headers, timeout=120)
+                async with httpx.AsyncClient() as client:
+                    response = await client.get(api_url, headers=headers, timeout=120)
 
-                if response.status_code == 200:
-                    # Return the raw audio data
-                    return response.content
+                    if response.status_code == 200:
+                        # Return the raw audio data
+                        return response.content
 
-                # Handle specific error codes
-                can_retry, error_message = self._handle_api_error(response)
-                last_error = error_message
+                    # Handle specific error codes
+                    can_retry, error_message = self._handle_api_error(response)
+                    last_error = error_message
 
-                if not can_retry or attempt == max_retries - 1:
-                    raise RuntimeError(error_message)
+                    if not can_retry or attempt == max_retries - 1:
+                        raise RuntimeError(error_message)
 
-                # Wait a bit before retrying
-                import time
-                time.sleep(1)
+                    # Wait a bit before retrying
+                    import asyncio
+                    await asyncio.sleep(1)
 
-            except requests.RequestException as e:
+            except httpx.RequestError as e:
                 last_error = f"Request failed: {str(e)}"
                 if attempt == max_retries - 1:
                     raise RuntimeError(f"TTS request failed after {max_retries} attempts: {last_error}")
@@ -198,7 +199,7 @@ class SpeechGenerator:
         buffer.seek(0)
         return buffer.read()
 
-    def _handle_api_error(self, response: requests.Response) -> Tuple[bool, str]:
+    def _handle_api_error(self, response: httpx.Response) -> Tuple[bool, str]:
         """Handle API errors and determine if retry is possible."""
         if response.status_code == 402:
             return True, "TTS API requires authentication. Please visit https://auth.pollinations.ai to get a token or upgrade your tier."
@@ -209,7 +210,7 @@ class SpeechGenerator:
         else:
             return False, f"TTS API error: {response.text}"
 
-    def generate_speech(
+    async def generate_speech(
         self,
         text: str,
         voice: str = "alloy",
@@ -249,12 +250,12 @@ class SpeechGenerator:
 
         if word_count <= chunk_size:
             # Short text - use single request
-            return self._generate_single_speech(text, voice, emotion_style, max_retries)
+            return await self._generate_single_speech(text, voice, emotion_style, max_retries)
         else:
             # Long text - chunk and concatenate
-            return self._generate_long_speech(text, voice, emotion_style, chunk_size, max_retries)
+            return await self._generate_long_speech(text, voice, emotion_style, chunk_size, max_retries)
 
-    def _generate_single_speech(
+    async def _generate_single_speech(
         self,
         text: str,
         voice: str,
@@ -287,35 +288,39 @@ class SpeechGenerator:
                     headers['Authorization'] = f"Bearer anonymous-{seed}"
 
                 # Make the request
-                response = requests.get(api_url, headers=headers, timeout=120, stream=True)
+                async with httpx.AsyncClient() as client:
+                    async with client.stream("GET", api_url, headers=headers, timeout=120) as response:
+                        if response.status_code == 200:
+                            # Success! Return the streaming response
+                            async def stream_content():
+                                async for chunk in response.aiter_bytes(chunk_size=8192):
+                                    yield chunk
+                            
+                            return StreamingResponse(
+                                stream_content(),
+                                media_type="audio/mpeg",
+                                headers={
+                                    "Content-Disposition": "attachment; filename=generated_speech.mp3",
+                                    "Cache-Control": "no-cache",
+                                    "X-Speech-Provider": "openai",
+                                    "X-Speech-Voice": voice,
+                                    "X-Speech-Emotion": emotion_style or "neutral",
+                                    "X-Speech-Type": "single"
+                                }
+                            )
 
-                if response.status_code == 200:
-                    # Success! Return the streaming response
-                    return StreamingResponse(
-                        response.iter_content(chunk_size=8192),
-                        media_type="audio/mpeg",
-                        headers={
-                            "Content-Disposition": "attachment; filename=generated_speech.mp3",
-                            "Cache-Control": "no-cache",
-                            "X-Speech-Provider": "openai",
-                            "X-Speech-Voice": voice,
-                            "X-Speech-Emotion": emotion_style or "neutral",
-                            "X-Speech-Type": "single"
-                        }
-                    )
+                        # Handle specific error codes
+                        can_retry, error_message = self._handle_api_error(response)
+                        last_error = error_message
 
-                # Handle specific error codes
-                can_retry, error_message = self._handle_api_error(response)
-                last_error = error_message
+                        if not can_retry or attempt == max_retries - 1:
+                            raise RuntimeError(error_message)
 
-                if not can_retry or attempt == max_retries - 1:
-                    raise RuntimeError(error_message)
+                        # Wait a bit before retrying
+                        import asyncio
+                        await asyncio.sleep(1)
 
-                # Wait a bit before retrying
-                import time
-                time.sleep(1)
-
-            except requests.RequestException as e:
+            except httpx.RequestError as e:
                 last_error = f"Request failed: {str(e)}"
                 if attempt == max_retries - 1:
                     raise RuntimeError(f"TTS request failed after {max_retries} attempts: {last_error}")
@@ -323,7 +328,7 @@ class SpeechGenerator:
         # This should never be reached, but just in case
         raise RuntimeError(f"TTS generation failed: {last_error}")
 
-    def _generate_long_speech(
+    async def _generate_long_speech(
         self,
         text: str,
         voice: str,
@@ -345,7 +350,7 @@ class SpeechGenerator:
             print(f"Processing chunk {i + 1}/{len(text_chunks)} ({len(chunk.split())} words)")
 
             # Generate speech for this chunk using direct API call
-            chunk_audio_data = self._generate_chunk_audio(chunk, voice, emotion_style, max_retries)
+            chunk_audio_data = await self._generate_chunk_audio(chunk, voice, emotion_style, max_retries)
             audio_chunks.append(chunk_audio_data)
 
         # Concatenate all audio chunks
