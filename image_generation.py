@@ -9,7 +9,7 @@ import os
 import random
 import urllib.parse
 from typing import Any
-import requests
+import httpx
 
 
 class ImageGenerator:
@@ -113,7 +113,7 @@ Avoid glamour bias unless explicitly requested.
         text_lower = text.lower()
         return any(keyword in text_lower for keyword in nsfw_keywords)
     
-    def enhance_prompt(self, prompt: str, negative_prompt: str | None = None) -> str:
+    async def enhance_prompt(self, prompt: str, negative_prompt: str | None = None) -> str:
         """Enhance the user prompt using AI to improve image generation quality."""
         # Combine negative prompt textually if provided
         combined_prompt = prompt.strip()
@@ -133,21 +133,22 @@ Avoid glamour bias unless explicitly requested.
             }
             headers = {"Content-Type": "application/json"}
             
-            response = requests.post(
-                self.text_api_url, 
-                json=payload, 
-                headers=headers, 
-                timeout=30
-            )
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    self.text_api_url, 
+                    json=payload, 
+                    headers=headers, 
+                    timeout=30
+                )
             
-            if response.status_code == 200:
-                data = response.json()
-                message = (data.get("choices") or [{}])[0].get("message") or {}
-                content = (message.get("content") or "").strip()
-                if content:
-                    enhanced_prompt = content
+                if response.status_code == 200:
+                    data = response.json()
+                    message = (data.get("choices") or [{}])[0].get("message") or {}
+                    content = (message.get("content") or "").strip()
+                    if content:
+                        enhanced_prompt = content
                     
-        except (requests.RequestException, ValueError, KeyError) as e:
+        except (httpx.HTTPError, ValueError, KeyError) as e:
             # Fallback to original prompt if enhancement fails
             print(f"Prompt enhancement failed: {e}")
             enhanced_prompt = combined_prompt
@@ -183,7 +184,7 @@ Avoid glamour bias unless explicitly requested.
         
         return images
     
-    def generate_images(
+    async def generate_images(
         self,
         prompt: str,
         negative_prompt: str | None = None,
@@ -230,7 +231,7 @@ Avoid glamour bias unless explicitly requested.
         # Enhance prompt if requested
         final_prompt = prompt.strip()
         if enhance_prompt:
-            final_prompt = self.enhance_prompt(prompt, negative_prompt)
+            final_prompt = await self.enhance_prompt(prompt, negative_prompt)
         elif negative_prompt:
             # If not enhancing, still combine negative prompt
             neg = negative_prompt.strip()

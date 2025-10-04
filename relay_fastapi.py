@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import hashlib
 
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import (
@@ -8,8 +9,12 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-import requests
-from requests.exceptions import RequestException, Timeout, ConnectionError as ReqConnectionError
+import httpx
+from httpx import HTTPError, TimeoutException, ConnectError
+from cachetools import TTLCache
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # Import our generation modules
 from image_generation import image_generator
@@ -19,6 +24,15 @@ HF_INFERENCE_URL_ENV = "HF_INFERENCE_URL"
 HF_OCR_URL_ENV = "HF_OCR_URL"
 HF_AUDIO_TEXT_URL_ENV = "HF_AUDIO_TEXT_URL"
 DEFAULT_TIMEOUT_SECONDS = 120
+
+# Initialize cache for AI detection results (1 hour TTL, max 1000 entries)
+detection_cache = TTLCache(maxsize=1000, ttl=3600)
+
+# Initialize async HTTP client with connection pooling
+http_client = httpx.AsyncClient(
+    limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
+    timeout=httpx.Timeout(DEFAULT_TIMEOUT_SECONDS)
+)
 
 
 # ----------------------
@@ -63,7 +77,7 @@ async def prepare_text_from_inputs(
     return submit_text
 
 
-def forward_post_json(
+async def forward_post_json(
     remote_url: str,
     *,
     data: dict | None = None,
@@ -74,17 +88,23 @@ def forward_post_json(
 ) -> dict:
     """POST to upstream and return parsed JSON or raise HTTPException with useful status."""
     try:
-        resp = requests.post(remote_url, data=data, files=files, headers=headers or {}, timeout=timeout)
+        resp = await http_client.post(
+            remote_url, 
+            data=data, 
+            files=files, 
+            headers=headers or {}, 
+            timeout=timeout
+        )
         resp.raise_for_status()
         return resp.json()
-    except RequestException as req_err:
+    except (HTTPError, TimeoutException, ConnectError) as req_err:
         raise HTTPException(status_code=502, detail=f"{context} request failed: {str(req_err)}") from req_err
 
 
 async def build_image_files(
     image: UploadFile | None, image_url: str | None
 ) -> dict:
-    """Return a requests-compatible files dict for image upload, fetching remote URL if needed."""
+    """Return a httpx-compatible files dict for image upload, fetching remote URL if needed."""
     if image is not None and image.filename:
         content = await image.read()
         return {
@@ -96,9 +116,13 @@ async def build_image_files(
         }
     if image_url:
         try:
-            r = requests.get(image_url.strip(), timeout=30, headers={"User-Agent": "TextSense-Relay/1.0"})
+            r = await http_client.get(
+                image_url.strip(), 
+                timeout=30, 
+                headers={"User-Agent": "TextSense-Relay/1.0"}
+            )
             r.raise_for_status()
-        except RequestException as req_err:
+        except (HTTPError, TimeoutException, ConnectError) as req_err:
             raise HTTPException(status_code=502, detail=f"Failed to fetch image URL: {str(req_err)}") from req_err
         mime = r.headers.get("content-type", "application/octet-stream").split(";")[0].strip()
         name = image_url.split("?")[0].rstrip("/").split("/")[-1] or "remote.jpg"
@@ -156,9 +180,27 @@ def get_audio_text_url() -> str:
 
 app = FastAPI(title="TextSense Relay (FastAPI)")
 
-# Static and templates
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Static and templates with cache headers
+class CachedStaticFiles(StaticFiles):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.default_response_class.headers = {
+            "Cache-Control": "public, max-age=31536000",  # 1 year for static assets
+            "X-Content-Type-Options": "nosniff",
+        }
+
+app.mount("/static", CachedStaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+
+def get_cache_key(text: str) -> str:
+    """Generate cache key from text content."""
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
 
 @app.get("/favicon.ico")
@@ -261,6 +303,7 @@ async def text_to_speech_page(request: Request):
 
 
 @app.post("/contact")
+@limiter.limit("5/minute")  # Rate limit: 5 contact form submissions per minute
 async def submit_contact(request: Request):
     form = await request.form()
     name = (form.get("name") or "").strip()
@@ -271,7 +314,7 @@ async def submit_contact(request: Request):
     secret = os.getenv("RECAPTCHA_SECRET_KEY", "").strip()
     if secret:
         try:
-            verify = requests.post(
+            verify = await http_client.post(
                 "https://www.google.com/recaptcha/api/siteverify",
                 data={"secret": secret, "response": token},
                 timeout=10,
@@ -280,9 +323,9 @@ async def submit_contact(request: Request):
                 result = verify.json()
                 if not result.get("success"):
                     return JSONResponse({"ok": False, "error": "reCAPTCHA verification failed"}, status_code=400)
-        except (Timeout, ReqConnectionError) as net_err:
+        except (TimeoutException, ConnectError) as net_err:
             return JSONResponse({"ok": False, "error": f"reCAPTCHA network error: {str(net_err)}"}, status_code=400)
-        except RequestException as req_err:
+        except HTTPError as req_err:
             return JSONResponse({"ok": False, "error": f"reCAPTCHA request error: {str(req_err)}"}, status_code=400)
 
     return JSONResponse({"ok": True, "received": {"name": name, "email": email, "message": message}})
@@ -301,25 +344,41 @@ async def ads_txt():
 
 
 @app.post("/analyze")
-async def analyze(text: str | None = Form(None), file: UploadFile | None = File(None)):
+@limiter.limit("20/minute")  # Rate limit: 20 analysis requests per minute
+async def analyze(request: Request, text: str | None = Form(None), file: UploadFile | None = File(None)):
     submit_text = await prepare_text_from_inputs(text, file, max_length=50000)
+    
+    # Check cache first
+    cache_key = get_cache_key(submit_text)
+    if cache_key in detection_cache:
+        cached_result = detection_cache[cache_key]
+        cached_result["cached"] = True
+        return JSONResponse(cached_result)
+    
+    # Call remote API
     remote_url = get_remote_url()
     headers = get_auth_headers()
-    result = forward_post_json(
+    result = await forward_post_json(
         remote_url,
         data={"text": submit_text},
         headers=headers,
         context="Analyze",
     )
+    
+    # Cache the result
+    result["cached"] = False
+    detection_cache[cache_key] = result
+    
     return JSONResponse(result)
 
 
 @app.post("/ocr")
-async def ocr(image_url: str | None = Form(None), image: UploadFile | None = File(None), language: str = Form("en")):
+@limiter.limit("15/minute")  # Rate limit: 15 OCR requests per minute
+async def ocr(request: Request, image_url: str | None = Form(None), image: UploadFile | None = File(None), language: str = Form("en")):
     files = await build_image_files(image, image_url)
     remote_url = get_ocr_url()
     headers = get_auth_headers()
-    result = forward_post_json(
+    result = await forward_post_json(
         remote_url,
         data={"language": language},
         files=files,
@@ -330,11 +389,12 @@ async def ocr(image_url: str | None = Form(None), image: UploadFile | None = Fil
 
 
 @app.post("/audio-transcribe")
-async def audio_transcribe(audio: UploadFile | None = File(None), audio_url: str | None = Form(None), return_timestamps: bool = Form(False)):
+@limiter.limit("10/minute")  # Rate limit: 10 audio transcription requests per minute
+async def audio_transcribe(request: Request, audio: UploadFile | None = File(None), audio_url: str | None = Form(None), return_timestamps: bool = Form(False)):
     files, data = await build_audio_payload(audio, audio_url, return_timestamps)
     remote_url = get_audio_text_url()
     headers = get_auth_headers()
-    result = forward_post_json(
+    result = await forward_post_json(
         remote_url,
         data=data,
         files=files,
@@ -345,7 +405,9 @@ async def audio_transcribe(audio: UploadFile | None = File(None), audio_url: str
 
 
 @app.post("/generate-image")
+@limiter.limit("10/minute")  # Rate limit: 10 image generation requests per minute
 async def generate_image(
+    request: Request,
     prompt: str = Form(...),
     aspect_ratio: str = Form("1:1"),
     num_images: int = Form(1),
@@ -354,7 +416,7 @@ async def generate_image(
     negative_prompt: str | None = Form("")
 ):
     try:
-        result = image_generator.generate_images(
+        result = await image_generator.generate_images(
             prompt=prompt,
             negative_prompt=negative_prompt,
             aspect_ratio=aspect_ratio,
@@ -371,7 +433,9 @@ async def generate_image(
 
 
 @app.post("/generate-speech")
+@limiter.limit("10/minute")  # Rate limit: 10 speech generation requests per minute
 async def generate_speech(
+    request: Request,
     text: str = Form(...),
     voice: str = Form("alloy"),
     emotion_style: str = Form("")
@@ -392,28 +456,33 @@ async def generate_speech(
 
 
 @app.get("/download-image")
-async def download_image(url: str, filename: str = "generated_image.png"):
+@limiter.limit("30/minute")  # Rate limit: 30 image downloads per minute
+async def download_image(request: Request, url: str, filename: str = "generated_image.png"):
     if not url.startswith("https://image.pollinations.ai/"):
         raise HTTPException(status_code=400, detail="Invalid image URL")
 
     try:
-        response = requests.get(url, timeout=30, stream=True)
-        response.raise_for_status()
-        content_type = response.headers.get("content-type", "image/png")
-        if not filename.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
-            if "jpeg" in content_type:
-                filename += ".jpg"
-            elif "webp" in content_type:
-                filename += ".webp"
-            else:
-                filename += ".png"
+        async with http_client.stream("GET", url, timeout=30) as response:
+            response.raise_for_status()
+            content_type = response.headers.get("content-type", "image/png")
+            if not filename.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+                if "jpeg" in content_type:
+                    filename += ".jpg"
+                elif "webp" in content_type:
+                    filename += ".webp"
+                else:
+                    filename += ".png"
 
-        return StreamingResponse(
-            (chunk for chunk in response.iter_content(chunk_size=8192)),
-            media_type=content_type,
-            headers={"Content-Disposition": f"attachment; filename={filename}", "Cache-Control": "no-cache"}
-        )
-    except RequestException as req_err:
+            async def stream_content():
+                async for chunk in response.aiter_bytes(chunk_size=8192):
+                    yield chunk
+
+            return StreamingResponse(
+                stream_content(),
+                media_type=content_type,
+                headers={"Content-Disposition": f"attachment; filename={filename}", "Cache-Control": "no-cache"}
+            )
+    except (HTTPError, TimeoutException, ConnectError) as req_err:
         raise HTTPException(status_code=502, detail=f"Image download failed: {str(req_err)}") from req_err
 
 
@@ -425,3 +494,9 @@ async def healthz():
 @app.get("/ping")
 async def ping():
     return {"status": "ok"}
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Clean up resources on shutdown."""
+    await http_client.aclose()
