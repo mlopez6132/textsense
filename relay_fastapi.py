@@ -185,17 +185,20 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Static and templates with cache headers
-class CachedStaticFiles(StaticFiles):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.default_response_class.headers = {
-            "Cache-Control": "public, max-age=31536000",  # 1 year for static assets
-            "X-Content-Type-Options": "nosniff",
-        }
-
-app.mount("/static", CachedStaticFiles(directory="static"), name="static")
+# Static and templates
+app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+
+# Middleware to add cache headers to static files
+@app.middleware("http")
+async def add_cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    # Add cache headers for static assets
+    if request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000"  # 1 year
+        response.headers["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 def get_cache_key(text: str) -> str:
