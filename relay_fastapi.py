@@ -59,10 +59,26 @@ async def prepare_text_from_inputs(
 
     submit_text: str | None = None
     if file is not None and file.filename:
+        # Optimize: Stream file reading with size limit check
+        max_file_size = max_length * 2  # Allow 2x character limit in bytes
+        chunks = []
+        total_size = 0
+        
         try:
-            raw_bytes = await file.read()
+            # Stream file in chunks to avoid loading large files into memory
+            async for chunk in file.file:
+                total_size += len(chunk)
+                if total_size > max_file_size:
+                    raise HTTPException(
+                        status_code=413, 
+                        detail=f"File too large. Maximum size is {max_file_size:,} bytes."
+                    )
+                chunks.append(chunk)
+            
+            raw_bytes = b"".join(chunks)
         except OSError as e:
             raise HTTPException(status_code=400, detail=f"File read error: {str(e)}") from e
+        
         try:
             submit_text = raw_bytes.decode("utf-8")
         except UnicodeDecodeError:
@@ -107,7 +123,25 @@ async def build_image_files(
 ) -> dict:
     """Return a httpx-compatible files dict for image upload, fetching remote URL if needed."""
     if image is not None and image.filename:
-        content = await image.read()
+        # Optimize: Stream file reading with size check (max 16MB for images)
+        max_image_size = 16 * 1024 * 1024
+        chunks = []
+        total_size = 0
+        
+        try:
+            async for chunk in image.file:
+                total_size += len(chunk)
+                if total_size > max_image_size:
+                    raise HTTPException(
+                        status_code=413,
+                        detail="Image file too large. Maximum size is 16MB."
+                    )
+                chunks.append(chunk)
+            
+            content = b"".join(chunks)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Image read error: {str(e)}") from e
+        
         return {
             "image": (
                 image.filename,
@@ -137,7 +171,25 @@ async def build_audio_payload(
     """Return (files, data) tuple for audio transcription request."""
     data = {"return_timestamps": str(return_timestamps).lower()}
     if audio is not None and audio.filename:
-        content = await audio.read()
+        # Optimize: Stream file reading with size check (max 25MB for audio)
+        max_audio_size = 25 * 1024 * 1024
+        chunks = []
+        total_size = 0
+        
+        try:
+            async for chunk in audio.file:
+                total_size += len(chunk)
+                if total_size > max_audio_size:
+                    raise HTTPException(
+                        status_code=413,
+                        detail="Audio file too large. Maximum size is 25MB."
+                    )
+                chunks.append(chunk)
+            
+            content = b"".join(chunks)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Audio read error: {str(e)}") from e
+        
         files = {
             "audio": (
                 audio.filename,
@@ -193,12 +245,27 @@ templates = Jinja2Templates(directory="templates")
 
 # Middleware to add cache headers to static files
 @app.middleware("http")
-async def add_cache_headers(request: Request, call_next):
+async def add_cache_and_cdn_headers(request: Request, call_next):
     response = await call_next(request)
+    
     # Add cache headers for static assets
     if request.url.path.startswith("/static/"):
-        response.headers["Cache-Control"] = "public, max-age=31536000"  # 1 year
+        # Aggressive caching for static assets (1 year)
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         response.headers["X-Content-Type-Options"] = "nosniff"
+        
+        # CDN optimization headers
+        response.headers["Vary"] = "Accept-Encoding"
+        
+        # Indicate that the resource can be cached by CDNs
+        if "private" not in response.headers.get("Cache-Control", ""):
+            response.headers["CDN-Cache-Control"] = "public, max-age=31536000"
+    
+    # Add security headers for all responses
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    
     return response
 
 
