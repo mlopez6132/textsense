@@ -170,13 +170,17 @@ async def build_audio_payload(
     """Return (files, data) tuple for audio transcription request."""
     data = {"return_timestamps": str(return_timestamps).lower()}
     if audio is not None and audio.filename:
-        # Optimize: Stream file reading with size check (max 25MB for audio)
-        max_audio_size = 25 * 1024 * 1024
-        chunks = []
+        # Stream read UploadFile using its async read() to avoid blocking and errors
+        max_audio_size = 25 * 1024 * 1024  # 25MB
         total_size = 0
-        
+        chunks: list[bytes] = []
+
         try:
-            async for chunk in audio.file:
+            await audio.seek(0)
+            while True:
+                chunk = await audio.read(8192)
+                if not chunk:
+                    break
                 total_size += len(chunk)
                 if total_size > max_audio_size:
                     raise HTTPException(
@@ -184,16 +188,15 @@ async def build_audio_payload(
                         detail="Audio file too large. Maximum size is 25MB."
                     )
                 chunks.append(chunk)
-            
             content = b"".join(chunks)
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Audio read error: {str(e)}") from e
-        
+
         files = {
             "audio": (
                 audio.filename,
                 content,
-                audio.content_type or "audio/mpeg",
+                audio.content_type or "application/octet-stream",
             )
         }
         return files, data
