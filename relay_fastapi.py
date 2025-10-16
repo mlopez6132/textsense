@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 import hashlib
+import ipaddress
 from typing import Optional
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import (
@@ -10,12 +12,15 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZIPMiddleware
 import httpx
 from httpx import HTTPError, TimeoutException, ConnectError
 from cachetools import TTLCache
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+import magic
 
 # Import our generation modules
 from image_generation import image_generator
@@ -26,8 +31,12 @@ HF_OCR_URL_ENV = "HF_OCR_URL"
 HF_AUDIO_TEXT_URL_ENV = "HF_AUDIO_TEXT_URL"
 DEFAULT_TIMEOUT_SECONDS = 120
 
-# Initialize cache for AI detection results (1 hour TTL, max 1000 entries)
-detection_cache = TTLCache(maxsize=1000, ttl=3600)
+# Security constants
+ALLOWED_IMAGE_MIMES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+ALLOWED_AUDIO_MIMES = {"audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/ogg", "audio/webm"}
+
+# Initialize cache for AI detection results (24 hours TTL, max 5000 entries)
+detection_cache = TTLCache(maxsize=5000, ttl=86400)
 
 # Initialize async HTTP client with connection pooling
 http_client = httpx.AsyncClient(
@@ -121,7 +130,7 @@ async def forward_post_json(
 async def build_image_files(
     image: UploadFile | None, image_url: str | None
 ) -> dict:
-    """Return a httpx-compatible files dict for image upload, fetching remote URL if needed."""
+    """Return a httpx-compatible files dict with SSRF and file type validation."""
     if image is not None and image.filename:
         # Optimize: Stream file reading with size check (max 16MB for images)
         max_image_size = 16 * 1024 * 1024
@@ -142,6 +151,20 @@ async def build_image_files(
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Image read error: {str(e)}") from e
         
+        # Validate MIME type using magic bytes
+        try:
+            mime_detector = magic.Magic(mime=True)
+            mime_type = mime_detector.from_buffer(content)
+            if mime_type not in ALLOWED_IMAGE_MIMES:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid image type: {mime_type}. Allowed: JPEG, PNG, WebP, GIF"
+                )
+        except Exception as e:
+            if isinstance(e, HTTPException):
+                raise
+            raise HTTPException(status_code=400, detail=f"File validation error: {str(e)}") from e
+        
         return {
             "image": (
                 image.filename,
@@ -149,27 +172,69 @@ async def build_image_files(
                 image.content_type or "application/octet-stream",
             )
         }
+    
     if image_url:
+        # SSRF Prevention
+        url = image_url.strip()
+        try:
+            parsed = urlparse(url)
+            
+            # Only allow HTTP/HTTPS
+            if parsed.scheme not in ("http", "https"):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid URL scheme: {parsed.scheme}. Only HTTP/HTTPS allowed."
+                )
+            
+            # Prevent internal IP access
+            if parsed.hostname:
+                try:
+                    ip = ipaddress.ip_address(parsed.hostname)
+                    if ip.is_private or ip.is_loopback or ip.is_reserved:
+                        raise HTTPException(
+                            status_code=400,
+                            detail="Access to internal IP addresses is not allowed"
+                        )
+                except ValueError:
+                    pass  # hostname is a domain name, not an IP
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid URL: {str(e)}") from e
+        
         try:
             r = await http_client.get(
-                image_url.strip(), 
-                timeout=30, 
-                headers={"User-Agent": "TextSense-Relay/1.0"}
+                url,
+                timeout=30,
+                headers={"User-Agent": "TextSense-Relay/1.0"},
+                follow_redirects=False,  # Don't follow redirects to prevent SSRF
             )
             r.raise_for_status()
         except (HTTPError, TimeoutException, ConnectError) as req_err:
             raise HTTPException(status_code=502, detail=f"Failed to fetch image URL: {str(req_err)}") from req_err
-        mime = r.headers.get("content-type", "application/octet-stream").split(";")[0].strip()
-        name = image_url.split("?")[0].rstrip("/").split("/")[-1] or "remote.jpg"
-        return {"image": (name, r.content, mime)}
+        
+        # Validate fetched content MIME type
+        mime_detector = magic.Magic(mime=True)
+        content_mime = mime_detector.from_buffer(r.content)
+        if content_mime not in ALLOWED_IMAGE_MIMES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Remote image has invalid type: {content_mime}"
+            )
+        
+        mime_header = r.headers.get("content-type", "application/octet-stream").split(";")[0].strip()
+        name = url.split("?")[0].rstrip("/").split("/")[-1] or "remote.jpg"
+        return {"image": (name, r.content, mime_header)}
+    
     raise HTTPException(status_code=400, detail="No image provided.")
 
 
 async def build_audio_payload(
     audio: UploadFile | None, audio_url: str | None, return_timestamps: bool
 ) -> tuple[dict | None, dict]:
-    """Return (files, data) tuple for audio transcription request."""
+    """Return (files, data) tuple with SSRF validation for audio transcription request."""
     data = {"return_timestamps": str(return_timestamps).lower()}
+    
     if audio is not None and audio.filename:
         # Optimize: Stream file reading with size check (max 25MB for audio)
         max_audio_size = 25 * 1024 * 1024
@@ -198,9 +263,39 @@ async def build_audio_payload(
             )
         }
         return files, data
+    
     if audio_url:
-        data["audio_url"] = audio_url.strip()
+        # SSRF Prevention for audio URLs
+        url = audio_url.strip()
+        try:
+            parsed = urlparse(url)
+            
+            # Only allow HTTP/HTTPS
+            if parsed.scheme not in ("http", "https"):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid URL scheme: {parsed.scheme}. Only HTTP/HTTPS allowed."
+                )
+            
+            # Prevent internal IP access
+            if parsed.hostname:
+                try:
+                    ip = ipaddress.ip_address(parsed.hostname)
+                    if ip.is_private or ip.is_loopback or ip.is_reserved:
+                        raise HTTPException(
+                            status_code=400,
+                            detail="Access to internal IP addresses is not allowed"
+                        )
+                except ValueError:
+                    pass  # hostname is a domain name, not an IP
+        except HTTPException:
+            raise
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid URL: {str(e)}") from e
+        
+        data["audio_url"] = url
         return None, data
+    
     raise HTTPException(status_code=400, detail="No audio provided.")
 
 
@@ -233,6 +328,24 @@ def get_audio_text_url() -> str:
 
 app = FastAPI(title="TextSense Relay (FastAPI)")
 
+# Add CORS middleware (must be before other middleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://textsense.org",
+        "https://www.textsense.org",
+        "http://localhost:8000",  # For local development
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "HEAD", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+    expose_headers=["X-Total-Count"],
+    max_age=600,
+)
+
+# Add GZIP compression middleware
+app.add_middleware(GZIPMiddleware, minimum_size=1000)
+
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
@@ -240,12 +353,12 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Static and templates
 app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="templates", autoescape=True)
 
 
-# Middleware to add cache headers to static files
+# Middleware to add security and cache headers
 @app.middleware("http")
-async def add_cache_and_cdn_headers(request: Request, call_next):
+async def add_security_and_cache_headers(request: Request, call_next):
     response = await call_next(request)
     
     # Add cache headers for static assets
@@ -261,10 +374,26 @@ async def add_cache_and_cdn_headers(request: Request, call_next):
         if "private" not in response.headers.get("Cache-Control", ""):
             response.headers["CDN-Cache-Control"] = "public, max-age=31536000"
     
-    # Add security headers for all responses
+    # Content Security Policy
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://pagead2.googlesyndication.com; "
+        "style-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com 'unsafe-inline'; "
+        "img-src 'self' data: https: https://image.pollinations.ai; "
+        "font-src 'self' https://cdnjs.cloudflare.com; "
+        "connect-src 'self' https://www.google.com/recaptcha/ https://image.pollinations.ai; "
+        "frame-src 'self' https://www.google.com/recaptcha/; "
+        "upgrade-insecure-requests; "
+        "block-all-mixed-content"
+    )
+    
+    # Comprehensive security headers
+    response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
     
     return response
 
@@ -476,7 +605,7 @@ async def audio_transcribe(request: Request, audio: Optional[UploadFile] = File(
 
 
 @app.post("/generate-image")
-@limiter.limit("10/minute")  # Rate limit: 10 image generation requests per minute
+@limiter.limit("5/minute")  # Rate limit: 5 image generation requests per minute (expensive operation)
 async def generate_image(
     request: Request,
     prompt: str = Form(...),
@@ -504,7 +633,7 @@ async def generate_image(
 
 
 @app.post("/generate-speech")
-@limiter.limit("10/minute")  # Rate limit: 10 speech generation requests per minute
+@limiter.limit("8/minute")  # Rate limit: 8 speech generation requests per minute (expensive operation)
 async def generate_speech(
     request: Request,
     text: str = Form(...),
@@ -513,7 +642,6 @@ async def generate_speech(
 ):
     """Generate speech from text using the speech generation module."""
     try:
-        # Use the speech generator module to handle all the logic
         return await speech_generator.generate_speech(
             text=text,
             voice=voice,
@@ -527,14 +655,28 @@ async def generate_speech(
 
 
 @app.get("/download-image")
-@limiter.limit("30/minute")  # Rate limit: 30 image downloads per minute
+@limiter.limit("10/minute")  # Rate limit: 10 image downloads per minute (stricter to prevent bandwidth abuse)
 async def download_image(request: Request, url: str, filename: str = "generated_image.png"):
     if not url.startswith("https://image.pollinations.ai/"):
         raise HTTPException(status_code=400, detail="Invalid image URL")
+    
+    # Sanitize filename to prevent path traversal
+    import re
+    filename = re.sub(r'[^a-zA-Z0-9._-]', '', filename)
+    filename = filename[:100]  # Max length
+    if not filename:
+        filename = "image.png"
 
     try:
         async with http_client.stream("GET", url, timeout=30) as response:
             response.raise_for_status()
+            
+            # Check content length to prevent huge downloads
+            content_length = int(response.headers.get("content-length", 0))
+            max_download_size = 100 * 1024 * 1024  # 100MB max
+            if content_length > max_download_size:
+                raise HTTPException(status_code=413, detail="File too large to download")
+            
             content_type = response.headers.get("content-type", "image/png")
             if not filename.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
                 if "jpeg" in content_type:
@@ -545,7 +687,11 @@ async def download_image(request: Request, url: str, filename: str = "generated_
                     filename += ".png"
 
             async def stream_content():
+                total_downloaded = 0
                 async for chunk in response.aiter_bytes(chunk_size=8192):
+                    total_downloaded += len(chunk)
+                    if total_downloaded > max_download_size:
+                        raise HTTPException(status_code=413, detail="File too large")
                     yield chunk
 
             return StreamingResponse(
