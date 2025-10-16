@@ -1,4 +1,3 @@
-from __future__ import annotations
 
 import os
 import hashlib
@@ -418,8 +417,8 @@ async def ads_txt():
 @limiter.limit("20/minute")  # Rate limit: 20 analysis requests per minute
 async def analyze(
     request: Request,
-    text: Annotated[Optional[str], Form(None)] = None,
-    file: Annotated[UploadFile | None, File(None)] = None,
+    text: Annotated[Optional[str], Form(None)],
+    file: Annotated[UploadFile | None, File(None)],
 ):
     submit_text = await prepare_text_from_inputs(text, file, max_length=50000)
     
@@ -451,9 +450,9 @@ async def analyze(
 @limiter.limit("15/minute")  # Rate limit: 15 OCR requests per minute
 async def ocr(
     request: Request,
-    image_url: Annotated[Optional[str], Form(None)] = None,
-    image: Annotated[UploadFile | None, File(None)] = None,
-    language: Annotated[str, Form("en") ] = "en",
+    image_url: Annotated[Optional[str], Form(None)],
+    image: Annotated[UploadFile | None, File(None)],
+    language: Annotated[str, Form("en") ],
 ):
     files = await build_image_files(image, image_url)
     remote_url = get_ocr_url()
@@ -472,9 +471,9 @@ async def ocr(
 @limiter.limit("10/minute")  # Rate limit: 10 audio transcription requests per minute
 async def audio_transcribe(
     request: Request,
-    audio: Annotated[UploadFile | None, File(None)] = None,
-    audio_url: Annotated[Optional[str], Form(None)] = None,
-    return_timestamps: Annotated[bool, Form(False)] = False,
+    audio: Annotated[UploadFile | None, File(None)],
+    audio_url: Annotated[Optional[str], Form(None)],
+    return_timestamps: Annotated[bool, Form(False)],
 ):
     files, data = await build_audio_payload(audio, audio_url, return_timestamps)
     remote_url = get_audio_text_url()
