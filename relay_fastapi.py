@@ -20,7 +20,6 @@ from cachetools import TTLCache
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-import magic
 
 # Import our generation modules
 from image_generation import image_generator
@@ -55,6 +54,32 @@ def get_auth_headers() -> dict:
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
     return headers
+
+
+def sniff_image_mime(content: bytes) -> str | None:
+    """Best-effort MIME sniffing for common image formats without external deps.
+    Supports PNG, JPEG, WebP, and GIF based on magic numbers.
+    """
+    if not content or len(content) < 12:
+        return None
+
+    # PNG: 89 50 4E 47 0D 0A 1A 0A
+    if content.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+
+    # JPEG: FF D8 FF
+    if content[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+
+    # GIF: GIF87a or GIF89a
+    if content.startswith(b"GIF87a") or content.startswith(b"GIF89a"):
+        return "image/gif"
+
+    # WebP: RIFF....WEBP
+    if content[:4] == b"RIFF" and content[8:12] == b"WEBP":
+        return "image/webp"
+
+    return None
 
 
 async def prepare_text_from_inputs(
@@ -151,18 +176,20 @@ async def build_image_files(
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Image read error: {str(e)}") from e
         
-        # Validate MIME type using magic bytes
+        # Validate MIME type using lightweight header sniffing
         try:
-            mime_detector = magic.Magic(mime=True)
-            mime_type = mime_detector.from_buffer(content)
+            mime_type = sniff_image_mime(content)
+            # Fallback to client-provided type if sniffing fails
+            if mime_type is None:
+                mime_type = (image.content_type or "").split(";")[0].strip() or "application/octet-stream"
             if mime_type not in ALLOWED_IMAGE_MIMES:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Invalid image type: {mime_type}. Allowed: JPEG, PNG, WebP, GIF"
                 )
+        except HTTPException:
+            raise
         except Exception as e:
-            if isinstance(e, HTTPException):
-                raise
             raise HTTPException(status_code=400, detail=f"File validation error: {str(e)}") from e
         
         return {
@@ -213,9 +240,9 @@ async def build_image_files(
         except (HTTPError, TimeoutException, ConnectError) as req_err:
             raise HTTPException(status_code=502, detail=f"Failed to fetch image URL: {str(req_err)}") from req_err
         
-        # Validate fetched content MIME type
-        mime_detector = magic.Magic(mime=True)
-        content_mime = mime_detector.from_buffer(r.content)
+        # Validate fetched content MIME type via header or sniffing
+        header_mime = r.headers.get("content-type", "").split(";")[0].strip()
+        content_mime = sniff_image_mime(r.content) or header_mime or "application/octet-stream"
         if content_mime not in ALLOWED_IMAGE_MIMES:
             raise HTTPException(
                 status_code=400,
@@ -393,7 +420,10 @@ async def add_security_and_cache_headers(request: Request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+    
+    # HSTS header (only in production)
+    if os.getenv("ENV") == "production":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
     
     return response
 
@@ -642,6 +672,7 @@ async def generate_speech(
 ):
     """Generate speech from text using the speech generation module."""
     try:
+        # Use the speech generator module to handle all the logic
         return await speech_generator.generate_speech(
             text=text,
             voice=voice,
@@ -690,6 +721,7 @@ async def download_image(request: Request, url: str, filename: str = "generated_
                 total_downloaded = 0
                 async for chunk in response.aiter_bytes(chunk_size=8192):
                     total_downloaded += len(chunk)
+                    # Safety check during streaming
                     if total_downloaded > max_download_size:
                         raise HTTPException(status_code=413, detail="File too large")
                     yield chunk
