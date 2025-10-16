@@ -13,7 +13,6 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.gzip import GZIPMiddleware
 import httpx
 from httpx import HTTPError, TimeoutException, ConnectError
 from cachetools import TTLCache
@@ -370,8 +369,7 @@ app.add_middleware(
     max_age=600,
 )
 
-# Add GZIP compression middleware
-app.add_middleware(GZIPMiddleware, minimum_size=1000)
+# Removed GZIP compression middleware due to environment incompatibility
 
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
