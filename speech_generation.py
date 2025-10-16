@@ -17,8 +17,11 @@ class SpeechGenerator:
     """Handles AI text-to-speech generation with emotion/style customization."""
 
     def __init__(self):
-        # Pollinations AI TTS endpoint
-        self.tts_base_url = "https://text.pollinations.ai"
+        # Pollinations AI TTS endpoints (try audio domain first, then text fallback)
+        self.tts_base_urls = [
+            "https://audio.pollinations.ai",  # primary TTS endpoint
+            "https://text.pollinations.ai",   # fallback with model param
+        ]
         self.api_key = os.getenv("POLLINATIONS_API_KEY", "").strip()
 
     def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
@@ -112,47 +115,51 @@ class SpeechGenerator:
                 # Generate random seed for this attempt
                 seed = random.randint(1, 1000000)
 
-                # Construct API URL
-                api_url = f"{self.tts_base_url}/{encoded_prompt}?model=openai-audio&voice={voice}&seed={seed}"
+                # Try both endpoints per attempt
+                for base_url in self.tts_base_urls:
+                    if base_url.endswith("audio.pollinations.ai"):
+                        api_url = f"{base_url}/{encoded_prompt}?voice={voice}&seed={seed}"
+                    else:
+                        api_url = f"{base_url}/{encoded_prompt}?model=openai-audio&voice={voice}&seed={seed}"
 
-                # Get headers
-                headers = self._get_headers()
+                    headers = self._get_headers()
+                    headers.setdefault("Accept", "audio/mpeg, audio/*;q=0.8, */*;q=0.5")
 
-                # If this isn't the first attempt and we got a 402, try anonymous auth
-                if attempt > 0 and "tier" in last_error.lower():
-                    headers['Authorization'] = f"Bearer anonymous-{seed}"
+                    # If this isn't the first attempt and we got a 402, try anonymous auth
+                    if attempt > 0 and "tier" in last_error.lower():
+                        headers['Authorization'] = f"Bearer anonymous-{seed}"
 
-                # Make the request
-                async with httpx.AsyncClient() as client:
-                    async with client.stream("GET", api_url, headers=headers, timeout=120) as response:
-                        if response.status_code == 200:
-                            # Success! Return the streaming response
-                            async def stream_content():
-                                async for chunk in response.aiter_bytes(chunk_size=8192):
-                                    yield chunk
-                            
-                            return StreamingResponse(
-                                stream_content(),
-                                media_type="audio/mpeg",
-                                headers={
-                                    "Content-Disposition": "attachment; filename=generated_speech.mp3",
-                                    "Cache-Control": "no-cache",
-                                    "X-Speech-Provider": "openai",
-                                    "X-Speech-Voice": voice,
-                                    "X-Speech-Emotion": emotion_style or "neutral"
-                                }
-                            )
+                    async with httpx.AsyncClient() as client:
+                        async with client.stream("GET", api_url, headers=headers, timeout=120) as response:
+                            if response.status_code == 200:
+                                media_type = response.headers.get("content-type", "audio/mpeg").split(";")[0]
+                                async def stream_content():
+                                    async for chunk in response.aiter_bytes(chunk_size=8192):
+                                        yield chunk
+                                return StreamingResponse(
+                                    stream_content(),
+                                    media_type=media_type,
+                                    headers={
+                                        "Content-Disposition": "attachment; filename=generated_speech.mp3",
+                                        "Cache-Control": "no-cache",
+                                        "X-Speech-Provider": "pollinations",
+                                        "X-Speech-Voice": voice,
+                                        "X-Speech-Emotion": emotion_style or "neutral"
+                                    }
+                                )
 
-                        # Handle specific error codes
-                        can_retry, error_message = self._handle_api_error(response)
-                        last_error = error_message
+                            # Handle specific error codes
+                            can_retry, error_message = self._handle_api_error(response)
+                            last_error = f"{error_message} (endpoint: {base_url})"
 
-                        if not can_retry or attempt == max_retries - 1:
-                            raise RuntimeError(error_message)
+                            # If fallback available, try next base_url before deciding to retry attempt
+                            continue
 
-                        # Wait a bit before retrying
-                        import asyncio
-                        await asyncio.sleep(1)
+                # If we got here, both endpoints failed this attempt
+                if attempt == max_retries - 1:
+                    raise RuntimeError(last_error or "TTS service error")
+                import asyncio
+                await asyncio.sleep(1)
 
             except httpx.RequestError as e:
                 last_error = f"Request failed: {str(e)}"
