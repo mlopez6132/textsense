@@ -32,9 +32,14 @@ class SpeechGenerator:
 
     def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
         """Construct the full prompt with emotion/style context."""
-        # Verbatim mode: always return input text as-is to avoid the TTS model
-        # adding content based on style instructions.
-        return text.strip()
+        # Verbatim mode: instruct the model to read the text exactly as provided
+        # without adding, removing, translating, or paraphrasing any content.
+        sanitized_text = text.strip()
+        return (
+            "Read exactly and only the following text, "
+            "without adding, removing, reordering, translating, or paraphrasing any words. "
+            "Preserve punctuation and numbers verbatim: \n\n\"\"\"" + sanitized_text + "\"\"\""
+        )
 
     def _get_headers(self) -> dict[str, str]:
         """Get headers for TTS API requests."""
