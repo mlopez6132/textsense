@@ -22,12 +22,15 @@ class SpeechGenerator:
 
     def __init__(self):
         self.tts_url_template = os.getenv("POLLINATIONS_API_KEY", "").strip()
-        if not self.tts_url_template:
-            # Default to audio endpoint if not configured
+        
+        # Validate and set default if invalid
+        if not self.tts_url_template or not self.tts_url_template.startswith("http"):
+            logger.warning(f"Invalid or missing POLLINATIONS_API_KEY: '{self.tts_url_template}', using default audio endpoint")
             self.tts_url_template = "https://audio.pollinations.ai/{prompt}?voice={voice}&seed={seed}"
-            logger.warning("POLLINATIONS_API_KEY not set, using default audio endpoint")
+        else:
+            logger.info(f"TTS initialized with template: {self.tts_url_template}")
+        
         self.fallback_url_template = "https://audio.pollinations.ai/{prompt}?voice={voice}&seed={seed}"
-        logger.info(f"TTS initialized with template: {self.tts_url_template[:50]}...")
 
     def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
         """Construct the full prompt with emotion/style context."""
