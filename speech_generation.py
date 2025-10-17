@@ -18,6 +18,8 @@ class SpeechGenerator:
 
     def __init__(self):
         self.tts_url_template = os.getenv("POLLINATIONS_API_KEY", "").strip()
+        # Fallback to audio endpoint if primary fails
+        self.fallback_url_template = "https://audio.pollinations.ai/{prompt}?voice={voice}&seed={seed}"
 
     def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
         """Construct the full prompt with emotion/style context."""
@@ -100,57 +102,88 @@ class SpeechGenerator:
         encoded_emotion = urllib.parse.quote(emotion_style or "neutral")
 
         last_error = ""
+        use_fallback = False
 
         for attempt in range(max_retries):
             try:
                 seed = random.randint(1, 1000000)
 
-                api_url = self.tts_url_template.format(
-                    prompt=encoded_prompt,
-                    emotion=encoded_emotion,
-                    voice=voice,
-                    seed=seed
-                )
+                # Try fallback URL if primary failed with 502/5xx
+                if use_fallback:
+                    api_url = self.fallback_url_template.format(
+                        prompt=encoded_prompt,
+                        voice=voice,
+                        seed=seed
+                    )
+                else:
+                    api_url = self.tts_url_template.format(
+                        prompt=encoded_prompt,
+                        emotion=encoded_emotion,
+                        voice=voice,
+                        seed=seed
+                    )
 
                 headers = self._get_headers()
 
-                async with httpx.AsyncClient() as client:
-                    async with client.stream("GET", api_url, headers=headers, timeout=120) as response:
+                async with httpx.AsyncClient(timeout=120.0) as client:
+                    async with client.stream("GET", api_url, headers=headers) as response:
                         if response.status_code == 200:
                             content_type_header = response.headers.get("content-type", "audio/mpeg").lower()
                             if "audio" not in content_type_header:
                                 last_error = f"Unexpected content type: {content_type_header}"
-                            else:
-                                media_type = content_type_header.split(";")[0]
-                                async def stream_content():
-                                    async for chunk in response.aiter_bytes(chunk_size=8192):
-                                        yield chunk
-                                return StreamingResponse(
-                                    stream_content(),
-                                    media_type=media_type,
-                                    headers={
-                                        "Content-Disposition": "attachment; filename=generated_speech.mp3",
-                                        "Cache-Control": "no-cache",
-                                        "X-Speech-Provider": "pollinations",
-                                        "X-Speech-Voice": voice,
-                                        "X-Speech-Emotion": emotion_style or "neutral"
-                                    }
-                                )
+                                continue
+                            
+                            media_type = content_type_header.split(";")[0]
+                            
+                            # Collect the audio data first to avoid streaming issues
+                            audio_data = b""
+                            async for chunk in response.aiter_bytes(chunk_size=8192):
+                                audio_data += chunk
+                            
+                            # Return as streaming response
+                            async def stream_audio():
+                                yield audio_data
+                            
+                            return StreamingResponse(
+                                stream_audio(),
+                                media_type=media_type,
+                                headers={
+                                    "Content-Disposition": "attachment; filename=generated_speech.mp3",
+                                    "Cache-Control": "no-cache",
+                                    "X-Speech-Provider": "pollinations",
+                                    "X-Speech-Voice": voice,
+                                    "X-Speech-Emotion": emotion_style or "neutral"
+                                }
+                            )
 
                         # Handle specific error codes
                         can_retry, error_message = self._handle_api_error(response)
                         last_error = error_message
+                        
+                        # Enable fallback on 502/5xx errors
+                        if response.status_code >= 502 and not use_fallback:
+                            use_fallback = True
+                            continue
 
                 # If we got here we failed this attempt; decide to retry
-                if attempt == max_retries - 1 or not can_retry:
+                if attempt == max_retries - 1:
                     raise RuntimeError(last_error or "TTS service error")
+                
                 import asyncio
-                await asyncio.sleep(1)
+                await asyncio.sleep(2)  # Increased delay between retries
 
             except httpx.RequestError as e:
                 last_error = f"Request failed: {str(e)}"
+                # Try fallback on connection errors
+                if not use_fallback:
+                    use_fallback = True
+                    continue
+                    
                 if attempt == max_retries - 1:
                     raise RuntimeError(f"TTS request failed after {max_retries} attempts: {last_error}")
+                
+                import asyncio
+                await asyncio.sleep(2)
 
         # This should never be reached, but just in case
         raise RuntimeError(f"TTS generation failed: {last_error}")
