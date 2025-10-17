@@ -8,9 +8,13 @@ from __future__ import annotations
 import os
 import random
 import urllib.parse
+import logging
 from typing import Any, Tuple
 from fastapi.responses import StreamingResponse
 import httpx
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
 class SpeechGenerator:
@@ -20,6 +24,13 @@ class SpeechGenerator:
         # Get TTS URL template from environment or use default
         self.tts_url_template = os.getenv("POLLINATIONS_API_KEY", "").strip()
         
+        if not self.tts_url_template or not self.tts_url_template.startswith("http"):
+            # Default to the correct Pollinations TTS endpoint
+            self.tts_url_template = "https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}&seed={seed}"
+            logger.warning(f"POLLINATIONS_API_KEY not set or invalid, using default: text.pollinations.ai")
+        else:
+            logger.info(f"TTS initialized with custom template from POLLINATIONS_API_KEY")
+
     def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
         """Construct the full prompt with emotion/style context."""
         if not emotion_style.strip():
@@ -101,31 +112,42 @@ class SpeechGenerator:
         encoded_emotion = urllib.parse.quote(emotion_style or "neutral")
 
         last_error = ""
+        use_fallback = False
 
         for attempt in range(max_retries):
             try:
                 seed = random.randint(1, 1000000)
 
-                # Build API URL from template
-                try:
-                    api_url = self.tts_url_template.format(
-                        prompt=encoded_prompt,
-                        emotion=encoded_emotion,
-                        voice=voice,
-                        seed=seed
-                    )
-                except KeyError:
-                    # If emotion is not in template, try without it
-                    api_url = self.tts_url_template.format(
+                # Try fallback URL if primary failed with 502/5xx
+                if use_fallback:
+                    api_url = self.fallback_url_template.format(
                         prompt=encoded_prompt,
                         voice=voice,
                         seed=seed
                     )
+                    logger.info(f"Attempt {attempt + 1}: Using fallback URL")
+                else:
+                    try:
+                        api_url = self.tts_url_template.format(
+                            prompt=encoded_prompt,
+                            emotion=encoded_emotion,
+                            voice=voice,
+                            seed=seed
+                        )
+                    except KeyError:
+                        # If emotion is not in template, try without it
+                        api_url = self.tts_url_template.format(
+                            prompt=encoded_prompt,
+                            voice=voice,
+                            seed=seed
+                        )
+                    logger.info(f"Attempt {attempt + 1}: Requesting TTS from {api_url[:80]}...")
 
                 headers = self._get_headers()
 
                 async with httpx.AsyncClient(timeout=120.0) as client:
                     async with client.stream("GET", api_url, headers=headers) as response:
+                        logger.info(f"Response status: {response.status_code}")
                         if response.status_code == 200:
                             content_type_header = response.headers.get("content-type", "audio/mpeg").lower()
                             if "audio" not in content_type_header:
@@ -158,23 +180,42 @@ class SpeechGenerator:
                         # Handle specific error codes
                         can_retry, error_message = self._handle_api_error(response)
                         last_error = error_message
+                        logger.error(f"API error: {error_message}")
+                        
+                        # Enable fallback on 502/5xx errors
+                        if response.status_code >= 502 and not use_fallback:
+                            logger.warning(f"Got {response.status_code}, switching to fallback endpoint")
+                            use_fallback = True
+                            continue
 
                 # If we got here we failed this attempt; decide to retry
                 if attempt == max_retries - 1:
+                    logger.error(f"All retries exhausted. Last error: {last_error}")
                     raise RuntimeError(last_error or "TTS service error")
                 
+                logger.info(f"Retrying after 2 second delay...")
                 import asyncio
-                await asyncio.sleep(2)
+                await asyncio.sleep(2)  # Increased delay between retries
 
             except httpx.RequestError as e:
                 error_str = str(e)
                 last_error = f"Request failed: {error_str}"
+                logger.error(f"HTTP request error: {last_error}")
+                logger.error(f"Failed URL was: {api_url}")
                 
-                # DNS error - check domain configuration
+                # DNS error - critical infrastructure issue
                 if "Name or service not known" in error_str or "getaddrinfo failed" in error_str:
-                    raise RuntimeError(f"DNS resolution failed. Cannot reach {api_url.split('/')[2]}. Verify the URL in POLLINATIONS_API_KEY is correct.")
+                    logger.critical("DNS resolution failure! Server cannot resolve domain names. This is a server infrastructure issue.")
+                    raise RuntimeError(f"DNS resolution failed - server networking issue. Cannot reach {api_url.split('/')[2]}. Check server DNS configuration.")
+                
+                # Try fallback on other connection errors
+                if not use_fallback:
+                    logger.warning("Connection error, switching to fallback endpoint")
+                    use_fallback = True
+                    continue
                     
                 if attempt == max_retries - 1:
+                    logger.error(f"All retries exhausted after connection errors")
                     raise RuntimeError(f"TTS request failed after {max_retries} attempts: {last_error}")
                 
                 import asyncio
