@@ -330,6 +330,7 @@ async def android_chrome_512():
 
 
 @app.get("/", response_class=HTMLResponse)
+@app.head("/")
 async def index(request: Request):
     context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
     return templates.TemplateResponse("index.html", context)
@@ -475,17 +476,21 @@ async def ocr(
     image: Annotated[UploadFile | None, File()] = None,
     language: Annotated[str, Form()] = "en",
 ):
-    files = await build_image_files(image, image_url)
-    remote_url = get_ocr_url()
-    headers = get_auth_headers()
-    result = await forward_post_json(
-        remote_url,
-        data={"language": language},
-        files=files,
-        headers=headers,
-        context="OCR",
-    )
-    return JSONResponse(result)
+    try:
+        files = await build_image_files(image, image_url)
+        remote_url = get_ocr_url()
+        headers = get_auth_headers()
+        result = await forward_post_json(
+            remote_url,
+            data={"language": language},
+            files=files,
+            headers=headers,
+            context="OCR",
+        )
+        return JSONResponse(result)
+    except HTTPException as e:
+        # Return error in JSON format that the frontend expects
+        return JSONResponse({"error": e.detail}, status_code=e.status_code)
 
 
 @app.post("/audio-transcribe")
