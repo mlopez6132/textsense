@@ -18,6 +18,8 @@ class ImageGenerator:
     def __init__(self):
         self.text_api_url = os.getenv("FLUX_TEXT_URL").strip()
         self.image_api_base = os.getenv("FLUX_IMAGE_BASE").strip()
+        # Use FLUX_API_KEY to hide underlying provider
+        self.auth_token = os.getenv("FLUX_API_KEY", "").strip()
         self.enhancement_system_prompt = self._get_enhancement_prompt()
     
     def _get_enhancement_prompt(self) -> str:
@@ -132,6 +134,10 @@ Avoid glamour bias unless explicitly requested.
                 ]
             }
             headers = {"Content-Type": "application/json"}
+            
+            # Add authorization token if available
+            if self.auth_token:
+                headers["Authorization"] = f"Bearer {self.auth_token}"
             
             async with httpx.AsyncClient() as client:
                 response = await client.post(

@@ -12,6 +12,14 @@ services:
         sync: false
       - key: HF_OCR_URL
         value: "https://mlopez6132-textsense-ocr.hf.space/extract"
-      - key: POLLINATIONS_TOKEN
+      - key: OPENAI_SPEECH_TOKEN
+        sync: false
+      - key: OPENAI_SPEECH_API_KEY
+        sync: false
+      - key: FLUX_API_KEY
+        sync: false
+      - key: FLUX_TEXT_URL
+        sync: false
+      - key: FLUX_IMAGE_BASE
         sync: false
 

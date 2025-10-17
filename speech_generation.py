@@ -21,19 +21,17 @@ class SpeechGenerator:
     """Handles AI text-to-speech generation with emotion/style customization."""
 
     def __init__(self):
-        self.auth_token = os.getenv("POLLINATIONS_TOKEN", "").strip()
-
-        self.tts_url_template = os.getenv("POLLINATIONS_API_KEY", "").strip()
+        # Use generic OpenAI-style naming to hide underlying provider
+        self.auth_token = os.getenv("OPENAI_SPEECH_TOKEN", "").strip()
+        self.tts_url_template = os.getenv("OPENAI_SPEECH_API_KEY", "").strip()
         
         if self.auth_token:
-            logger.info("TTS initialized with Pollinations authentication token")
+            logger.info("TTS initialized with authentication token")
         else:
-            logger.warning("POLLINATIONS_TOKEN not set - API may require authentication")
+            logger.warning("OPENAI_SPEECH_TOKEN not set - API may require authentication")
 
     def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
         """Construct the full prompt with emotion/style context."""
-        # Verbatim mode: instruct the model to read the text exactly as provided
-        # without adding, removing, translating, or paraphrasing any content.
         sanitized_text = text.strip()
         return (
             "Read exactly and only the following text, "
@@ -157,7 +155,7 @@ class SpeechGenerator:
                                 headers={
                                     "Content-Disposition": "attachment; filename=generated_speech.mp3",
                                     "Cache-Control": "no-cache",
-                                    "X-Speech-Provider": "pollinations",
+                                    "X-Speech-Provider": "openai",
                                     "X-Speech-Voice": voice,
                                     "X-Speech-Emotion": emotion_style or "neutral"
                                 }
@@ -185,8 +183,8 @@ class SpeechGenerator:
                 
                 # DNS error - check domain configuration
                 if "Name or service not known" in error_str or "getaddrinfo failed" in error_str:
-                    logger.critical(f"DNS resolution failure for text.pollinations.ai")
-                    raise RuntimeError(f"DNS resolution failed. Cannot reach text.pollinations.ai. Check server DNS configuration.")
+                    logger.critical(f"DNS resolution failure for speech API")
+                    raise RuntimeError(f"DNS resolution failed. Cannot reach speech API. Check server DNS configuration.")
                     
                 if attempt == max_retries - 1:
                     logger.error(f"All retries exhausted after connection errors")
