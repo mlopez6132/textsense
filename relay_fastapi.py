@@ -140,24 +140,23 @@ async def build_image_files(
 ) -> dict:
     """Return a httpx-compatible files dict for image upload, fetching remote URL if needed."""
     if image is not None and image.filename:
-        # Optimize: Stream file reading with size check (max 16MB for images)
+        # Read the uploaded file with size check (max 16MB for images)
         max_image_size = 16 * 1024 * 1024
-        chunks = []
-        total_size = 0
         
         try:
-            async for chunk in image.file:
-                total_size += len(chunk)
-                if total_size > max_image_size:
-                    raise HTTPException(
-                        status_code=413,
-                        detail="Image file too large. Maximum size is 16MB."
-                    )
-                chunks.append(chunk)
+            # Use UploadFile's async read() method
+            await image.seek(0)
+            content = await image.read()
             
-            content = b"".join(chunks)
+            if len(content) > max_image_size:
+                raise HTTPException(
+                    status_code=413,
+                    detail="Image file too large. Maximum size is 16MB."
+                )
+        except HTTPException:
+            raise
         except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Image read error: {str(e)}") from e
+            raise HTTPException(status_code=400, detail=str(e)) from e
         
         return {
             "image": (
