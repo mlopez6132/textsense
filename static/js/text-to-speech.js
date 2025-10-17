@@ -13,6 +13,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const downloadAudioBtn = document.getElementById('downloadAudioBtn');
     const playAgainBtn = document.getElementById('playAgainBtn');
 
+    // Check if all required elements exist
+    if (!textInput || !vibeSelect || !generateSpeechBtn) {
+        console.error('Required elements not found:', {
+            textInput: !!textInput,
+            vibeSelect: !!vibeSelect,
+            generateSpeechBtn: !!generateSpeechBtn
+        });
+        return;
+    }
+
     let currentAudioUrl = null;
     let currentAudioBlob = null;
 
@@ -69,9 +79,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Generate speech functionality
     generateSpeechBtn.addEventListener('click', async () => {
+        console.log('Generate speech button clicked');
         const text = textInput.value.trim();
         const voice = voiceSelect.value;
         const vibe = vibeSelect.value;
+
+        console.log('Form data:', { text: text.substring(0, 50), voice, vibe: vibe.substring(0, 50) });
 
         if (!text) {
             alert('Please enter some text to convert to speech.');
