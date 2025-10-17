@@ -12,4 +12,6 @@ services:
         sync: false
       - key: HF_OCR_URL
         value: "https://mlopez6132-textsense-ocr.hf.space/extract"
+      - key: HTTPX_DNS_RESOLVER
+        value: "8.8.8.8,8.8.4.4"
 

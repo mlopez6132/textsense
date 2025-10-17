@@ -21,10 +21,10 @@ class SpeechGenerator:
     """Handles AI text-to-speech generation with emotion/style customization."""
 
     def __init__(self):
-        # Use the reliable Pollinations audio endpoint directly
-        self.tts_url_template = "https://audio.pollinations.ai/{prompt}?voice={voice}&seed={seed}"
-        self.fallback_url_template = "https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}&seed={seed}"
-        logger.info("TTS initialized with audio.pollinations.ai endpoint")
+        # Use the correct Pollinations TTS endpoint (text.pollinations.ai with model=openai-audio)
+        self.tts_url_template = "https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}&seed={seed}"
+        self.fallback_url_template = "https://image.pollinations.ai/prompt/{prompt}"  # Not really useful for TTS but exists
+        logger.info("TTS initialized with text.pollinations.ai endpoint")
 
     def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
         """Construct the full prompt with emotion/style context."""
