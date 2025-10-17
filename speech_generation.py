@@ -17,11 +17,9 @@ class SpeechGenerator:
     """Handles AI text-to-speech generation with emotion/style customization."""
 
     def __init__(self):
-        # Pollinations AI TTS endpoints (try audio domain first, then text fallback)
-        self.tts_base_urls = [
-            "https://audio.pollinations.ai",  # primary TTS endpoint
-            "https://text.pollinations.ai",   # fallback with model param
-        ]
+        self.tts_url_template = os.getenv("TTS_API_URL_TEMPLATE", "").strip()
+        if not self.tts_url_template:
+            raise ValueError("Missing Secret: TTS_API_URL_TEMPLATE is not set.")
         self.api_key = os.getenv("POLLINATIONS_API_KEY", "").strip()
 
     def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
@@ -35,10 +33,10 @@ class SpeechGenerator:
         """Get headers for TTS API requests."""
         headers = {
             'User-Agent': 'TextSense-TTS/1.0',
-            'Referer': 'https://pollinations.ai'
+            'Referer': 'https://pollinations.ai',
+            'Accept': 'audio/mpeg, audio/*;q=0.8, */*;q=0.5'
         }
 
-        # Add API key if available
         if self.api_key:
             headers['Authorization'] = f"Bearer {self.api_key}"
 
@@ -101,38 +99,35 @@ class SpeechGenerator:
         max_retries: int
     ) -> StreamingResponse:
         """Generate speech for short text (single request)."""
-        # Construct the full prompt
         full_prompt = self._construct_emotion_prompt(text, emotion_style)
 
         # URL encode the prompt
         encoded_prompt = urllib.parse.quote(full_prompt)
+        encoded_emotion = urllib.parse.quote(emotion_style or "neutral")
 
-        # Try multiple attempts with different seeds
         last_error = ""
 
         for attempt in range(max_retries):
             try:
-                # Generate random seed for this attempt
                 seed = random.randint(1, 1000000)
 
-                # Try both endpoints per attempt
-                for base_url in self.tts_base_urls:
-                    if base_url.endswith("audio.pollinations.ai"):
-                        api_url = f"{base_url}/{encoded_prompt}?voice={voice}&seed={seed}"
-                    else:
-                        api_url = f"{base_url}/{encoded_prompt}?model=openai-audio&voice={voice}&seed={seed}"
+                api_url = self.tts_url_template.format(
+                    prompt=encoded_prompt,
+                    emotion=encoded_emotion,
+                    voice=voice,
+                    seed=seed
+                )
 
-                    headers = self._get_headers()
-                    headers.setdefault("Accept", "audio/mpeg, audio/*;q=0.8, */*;q=0.5")
+                headers = self._get_headers()
 
-                    # If this isn't the first attempt and we got a 402, try anonymous auth
-                    if attempt > 0 and "tier" in last_error.lower():
-                        headers['Authorization'] = f"Bearer anonymous-{seed}"
-
-                    async with httpx.AsyncClient() as client:
-                        async with client.stream("GET", api_url, headers=headers, timeout=120) as response:
-                            if response.status_code == 200:
-                                media_type = response.headers.get("content-type", "audio/mpeg").split(";")[0]
+                async with httpx.AsyncClient() as client:
+                    async with client.stream("GET", api_url, headers=headers, timeout=120) as response:
+                        if response.status_code == 200:
+                            content_type_header = response.headers.get("content-type", "audio/mpeg").lower()
+                            if "audio" not in content_type_header:
+                                last_error = f"Unexpected content type: {content_type_header}"
+                            else:
+                                media_type = content_type_header.split(";")[0]
                                 async def stream_content():
                                     async for chunk in response.aiter_bytes(chunk_size=8192):
                                         yield chunk
@@ -148,15 +143,12 @@ class SpeechGenerator:
                                     }
                                 )
 
-                            # Handle specific error codes
-                            can_retry, error_message = self._handle_api_error(response)
-                            last_error = f"{error_message} (endpoint: {base_url})"
+                        # Handle specific error codes
+                        can_retry, error_message = self._handle_api_error(response)
+                        last_error = error_message
 
-                            # If fallback available, try next base_url before deciding to retry attempt
-                            continue
-
-                # If we got here, both endpoints failed this attempt
-                if attempt == max_retries - 1:
+                # If we got here we failed this attempt; decide to retry
+                if attempt == max_retries - 1 or not can_retry:
                     raise RuntimeError(last_error or "TTS service error")
                 import asyncio
                 await asyncio.sleep(1)
@@ -230,5 +222,4 @@ class SpeechGenerator:
         }
 
 
-# Convenience instance for easy importing
 speech_generator = SpeechGenerator()
