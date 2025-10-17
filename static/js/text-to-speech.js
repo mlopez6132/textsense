@@ -13,16 +13,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const downloadAudioBtn = document.getElementById('downloadAudioBtn');
     const playAgainBtn = document.getElementById('playAgainBtn');
 
-    // Check if all required elements exist
-    if (!textInput || !vibeSelect || !generateSpeechBtn) {
-        console.error('Required elements not found:', {
-            textInput: !!textInput,
-            vibeSelect: !!vibeSelect,
-            generateSpeechBtn: !!generateSpeechBtn
-        });
-        return;
-    }
-
     let currentAudioUrl = null;
     let currentAudioBlob = null;
 
