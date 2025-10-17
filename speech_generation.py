@@ -32,10 +32,9 @@ class SpeechGenerator:
 
     def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
         """Construct the full prompt with emotion/style context."""
-        if not emotion_style.strip():
-            return text.strip()
-
-        return f"Speak {emotion_style.strip()}: {text.strip()}"
+        # Verbatim mode: always return input text as-is to avoid the TTS model
+        # adding content based on style instructions.
+        return text.strip()
 
     def _get_headers(self) -> dict[str, str]:
         """Get headers for TTS API requests."""
