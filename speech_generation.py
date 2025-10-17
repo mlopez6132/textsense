@@ -34,9 +34,6 @@ class SpeechGenerator:
             'Accept': 'audio/mpeg, audio/*;q=0.8, */*;q=0.5'
         }
 
-        if self.api_key:
-            headers['Authorization'] = f"Bearer {self.api_key}"
-
         return headers
 
 
