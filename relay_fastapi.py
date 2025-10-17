@@ -514,7 +514,7 @@ async def audio_transcribe(
 
 
 @app.post("/generate-image")
-@limiter.limit("10/minute")  # Rate limit: 10 image generation requests per minute
+@limiter.limit("5/minute")  # Rate limit: 5 image generation requests per minute (expensive operation)
 async def generate_image(
     request: Request,
     prompt: str = Form(...),
@@ -542,7 +542,7 @@ async def generate_image(
 
 
 @app.post("/generate-speech")
-@limiter.limit("10/minute")  # Rate limit: 10 speech generation requests per minute
+@limiter.limit("8/minute")  # Rate limit: 8 speech generation requests per minute (expensive operation)
 async def generate_speech(
     request: Request,
     text: str = Form(...),
@@ -565,7 +565,7 @@ async def generate_speech(
 
 
 @app.get("/download-image")
-@limiter.limit("30/minute")  # Rate limit: 30 image downloads per minute
+@limiter.limit("10/minute")  # Rate limit: 10 image downloads per minute (prevent bandwidth abuse)
 async def download_image(request: Request, url: str, filename: str = "generated_image.png"):
     if not url.startswith("https://image.pollinations.ai/"):
         raise HTTPException(status_code=400, detail="Invalid image URL")
@@ -573,6 +573,12 @@ async def download_image(request: Request, url: str, filename: str = "generated_
     try:
         async with http_client.stream("GET", url, timeout=30) as response:
             response.raise_for_status()
+            
+            # Check file size to prevent abuse (max 100MB)
+            content_length = int(response.headers.get("content-length", 0))
+            if content_length > 100 * 1024 * 1024:
+                raise HTTPException(status_code=413, detail="File too large (max 100MB)")
+            
             content_type = response.headers.get("content-type", "image/png")
             if not filename.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
                 if "jpeg" in content_type:
@@ -591,6 +597,8 @@ async def download_image(request: Request, url: str, filename: str = "generated_
                 media_type=content_type,
                 headers={"Content-Disposition": f"attachment; filename={filename}", "Cache-Control": "no-cache"}
             )
+    except HTTPException:
+        raise
     except (HTTPError, TimeoutException, ConnectError) as req_err:
         raise HTTPException(status_code=502, detail=f"Image download failed: {str(req_err)}") from req_err
 
