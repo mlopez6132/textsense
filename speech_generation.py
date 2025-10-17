@@ -21,15 +21,10 @@ class SpeechGenerator:
     """Handles AI text-to-speech generation with emotion/style customization."""
 
     def __init__(self):
-        # Get TTS URL template from environment or use default
-        self.tts_url_template = os.getenv("POLLINATIONS_API_KEY", "").strip()
-        
-        if not self.tts_url_template or not self.tts_url_template.startswith("http"):
-            # Default to the correct Pollinations TTS endpoint
-            self.tts_url_template = "https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}&seed={seed}"
-            logger.warning(f"POLLINATIONS_API_KEY not set or invalid, using default: text.pollinations.ai")
-        else:
-            logger.info(f"TTS initialized with custom template from POLLINATIONS_API_KEY")
+        # Use the free Pollinations TTS endpoint (no auth required)
+        # Format: https://text.pollinations.ai/{text}?model=openai-audio&voice={voice}
+        self.tts_url_template = "https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}&seed={seed}"
+        logger.info("TTS initialized with free Pollinations endpoint (no auth required)")
 
     def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
         """Construct the full prompt with emotion/style context."""
@@ -112,36 +107,18 @@ class SpeechGenerator:
         encoded_emotion = urllib.parse.quote(emotion_style or "neutral")
 
         last_error = ""
-        use_fallback = False
 
         for attempt in range(max_retries):
             try:
                 seed = random.randint(1, 1000000)
 
-                # Try fallback URL if primary failed with 502/5xx
-                if use_fallback:
-                    api_url = self.fallback_url_template.format(
-                        prompt=encoded_prompt,
-                        voice=voice,
-                        seed=seed
-                    )
-                    logger.info(f"Attempt {attempt + 1}: Using fallback URL")
-                else:
-                    try:
-                        api_url = self.tts_url_template.format(
-                            prompt=encoded_prompt,
-                            emotion=encoded_emotion,
-                            voice=voice,
-                            seed=seed
-                        )
-                    except KeyError:
-                        # If emotion is not in template, try without it
-                        api_url = self.tts_url_template.format(
-                            prompt=encoded_prompt,
-                            voice=voice,
-                            seed=seed
-                        )
-                    logger.info(f"Attempt {attempt + 1}: Requesting TTS from {api_url[:80]}...")
+                # Build API URL from template
+                api_url = self.tts_url_template.format(
+                    prompt=encoded_prompt,
+                    voice=voice,
+                    seed=seed
+                )
+                logger.info(f"Attempt {attempt + 1}: Requesting TTS from {api_url[:80]}...")
 
                 headers = self._get_headers()
 
@@ -181,12 +158,6 @@ class SpeechGenerator:
                         can_retry, error_message = self._handle_api_error(response)
                         last_error = error_message
                         logger.error(f"API error: {error_message}")
-                        
-                        # Enable fallback on 502/5xx errors
-                        if response.status_code >= 502 and not use_fallback:
-                            logger.warning(f"Got {response.status_code}, switching to fallback endpoint")
-                            use_fallback = True
-                            continue
 
                 # If we got here we failed this attempt; decide to retry
                 if attempt == max_retries - 1:
@@ -195,7 +166,7 @@ class SpeechGenerator:
                 
                 logger.info(f"Retrying after 2 second delay...")
                 import asyncio
-                await asyncio.sleep(2)  # Increased delay between retries
+                await asyncio.sleep(2)
 
             except httpx.RequestError as e:
                 error_str = str(e)
@@ -203,16 +174,10 @@ class SpeechGenerator:
                 logger.error(f"HTTP request error: {last_error}")
                 logger.error(f"Failed URL was: {api_url}")
                 
-                # DNS error - critical infrastructure issue
+                # DNS error - check domain configuration
                 if "Name or service not known" in error_str or "getaddrinfo failed" in error_str:
-                    logger.critical("DNS resolution failure! Server cannot resolve domain names. This is a server infrastructure issue.")
-                    raise RuntimeError(f"DNS resolution failed - server networking issue. Cannot reach {api_url.split('/')[2]}. Check server DNS configuration.")
-                
-                # Try fallback on other connection errors
-                if not use_fallback:
-                    logger.warning("Connection error, switching to fallback endpoint")
-                    use_fallback = True
-                    continue
+                    logger.critical(f"DNS resolution failure for text.pollinations.ai")
+                    raise RuntimeError(f"DNS resolution failed. Cannot reach text.pollinations.ai. Check server DNS configuration.")
                     
                 if attempt == max_retries - 1:
                     logger.error(f"All retries exhausted after connection errors")
