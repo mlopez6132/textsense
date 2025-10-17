@@ -112,9 +112,27 @@ async def forward_post_json(
             timeout=timeout
         )
         resp.raise_for_status()
-        return resp.json()
+        result = resp.json()
+        
+        # Check if the response contains an error field
+        if isinstance(result, dict) and "error" in result:
+            raise HTTPException(status_code=500, detail=f"{context} failed: {result['error']}")
+        
+        return result
+    except HTTPException:
+        raise
     except (HTTPError, TimeoutException, ConnectError) as req_err:
-        raise HTTPException(status_code=502, detail=f"{context} request failed: {str(req_err)}") from req_err
+        error_detail = f"{context} request failed"
+        if hasattr(req_err, 'response') and req_err.response is not None:
+            try:
+                error_json = req_err.response.json()
+                if isinstance(error_json, dict) and "error" in error_json:
+                    error_detail = f"{context} failed: {error_json['error']}"
+            except:
+                pass
+        raise HTTPException(status_code=502, detail=error_detail) from req_err
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"{context} failed: {str(e)}") from e
 
 
 async def build_image_files(
