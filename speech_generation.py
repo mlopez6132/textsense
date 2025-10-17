@@ -17,10 +17,7 @@ class SpeechGenerator:
     """Handles AI text-to-speech generation with emotion/style customization."""
 
     def __init__(self):
-        self.tts_url_template = os.getenv("TTS_API_URL_TEMPLATE", "").strip()
-        if not self.tts_url_template:
-            raise ValueError("Missing Secret: TTS_API_URL_TEMPLATE is not set.")
-        self.api_key = os.getenv("POLLINATIONS_API_KEY", "").strip()
+        self.tts_url_template = os.getenv("POLLINATIONS_API_KEY", "").strip()
 
     def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
         """Construct the full prompt with emotion/style context."""
