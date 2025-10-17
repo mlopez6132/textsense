@@ -21,10 +21,17 @@ class SpeechGenerator:
     """Handles AI text-to-speech generation with emotion/style customization."""
 
     def __init__(self):
-        # Use the free Pollinations TTS endpoint (no auth required)
-        # Format: https://text.pollinations.ai/{text}?model=openai-audio&voice={voice}
-        self.tts_url_template = "https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}&seed={seed}"
-        logger.info("TTS initialized with free Pollinations endpoint (no auth required)")
+        # Get Pollinations token from environment
+        self.auth_token = os.getenv("POLLINATIONS_TOKEN", "").strip()
+        
+        # Use Pollinations TTS endpoint
+        # Format: https://text.pollinations.ai/openai?token=YOUR_TOKEN
+        self.tts_url_template = os.getenv("POLLINATIONS_API_KEY", "").strip()
+        
+        if self.auth_token:
+            logger.info("TTS initialized with Pollinations authentication token")
+        else:
+            logger.warning("POLLINATIONS_TOKEN not set - API may require authentication")
 
     def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
         """Construct the full prompt with emotion/style context."""
@@ -40,6 +47,10 @@ class SpeechGenerator:
             'Referer': 'https://pollinations.ai',
             'Accept': 'audio/mpeg, audio/*;q=0.8, */*;q=0.5'
         }
+
+        # Add Authorization header if token is available
+        if self.auth_token:
+            headers['Authorization'] = f"Bearer {self.auth_token}"
 
         return headers
 
