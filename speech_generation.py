@@ -21,16 +21,10 @@ class SpeechGenerator:
     """Handles AI text-to-speech generation with emotion/style customization."""
 
     def __init__(self):
-        self.tts_url_template = os.getenv("POLLINATIONS_API_KEY", "").strip()
-        
-        # Validate and set default if invalid
-        if not self.tts_url_template or not self.tts_url_template.startswith("http"):
-            logger.warning(f"Invalid or missing POLLINATIONS_API_KEY: '{self.tts_url_template}', using default audio endpoint")
-            self.tts_url_template = "https://audio.pollinations.ai/{prompt}?voice={voice}&seed={seed}"
-        else:
-            logger.info(f"TTS initialized with template: {self.tts_url_template}")
-        
-        self.fallback_url_template = "https://audio.pollinations.ai/{prompt}?voice={voice}&seed={seed}"
+        # Use the reliable Pollinations audio endpoint directly
+        self.tts_url_template = "https://audio.pollinations.ai/{prompt}?voice={voice}&seed={seed}"
+        self.fallback_url_template = "https://text.pollinations.ai/{prompt}?model=openai-audio&voice={voice}&seed={seed}"
+        logger.info("TTS initialized with audio.pollinations.ai endpoint")
 
     def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
         """Construct the full prompt with emotion/style context."""
@@ -199,9 +193,17 @@ class SpeechGenerator:
                 await asyncio.sleep(2)  # Increased delay between retries
 
             except httpx.RequestError as e:
-                last_error = f"Request failed: {str(e)}"
+                error_str = str(e)
+                last_error = f"Request failed: {error_str}"
                 logger.error(f"HTTP request error: {last_error}")
-                # Try fallback on connection errors
+                logger.error(f"Failed URL was: {api_url}")
+                
+                # DNS error - critical infrastructure issue
+                if "Name or service not known" in error_str or "getaddrinfo failed" in error_str:
+                    logger.critical("DNS resolution failure! Server cannot resolve domain names. This is a server infrastructure issue.")
+                    raise RuntimeError(f"DNS resolution failed - server networking issue. Cannot reach {api_url.split('/')[2]}. Check server DNS configuration.")
+                
+                # Try fallback on other connection errors
                 if not use_fallback:
                     logger.warning("Connection error, switching to fallback endpoint")
                     use_fallback = True
