@@ -136,20 +136,28 @@
               </div>
               <div class="col-md-6">
                 <div class="form-group">
-                  <label for="emotionStyleInput" class="form-label">
-                    <i class="fas fa-palette me-2"></i>Emotion/Style Prompt
+                  <label for="vibeSelect" class="form-label">
+                    <i class="fas fa-palette me-2"></i>Vibe
                     <small class="text-muted">(optional)</small>
                   </label>
-                  <input
-                    id="emotionStyleInput"
-                    class="form-control"
-                    type="text"
-                    placeholder="e.g., with excitement and enthusiasm, calmly and soothingly, mysteriously..."
-                    maxlength="200"
-                  />
-                  <div class="form-text">
-                    <small id="emotionCharCount" class="text-muted">0 characters</small>
-                  </div>
+                  <select id="vibeSelect" class="form-select">
+                    <option value="">None (Neutral)</option>
+                    <option value="Calm, composed, and reassuring; project quiet authority and confidence. Sincere, empathetic, and gently authoritative. Steady and moderate pacing.">Calm</option>
+                    <option value="A cheerful guide. Friendly, clear, and reassuring, creating a calm atmosphere. Clear, articulate pronunciation. Warm and supportive, conveying empathy and care.">Friendly</option>
+                    <option value="Low, hushed, and suspenseful; convey tension and intrigue. Deeply serious and mysterious. Slow, deliberate pacing. Restrained yet intense with eerie, haunting effect.">Dramatic</option>
+                    <option value="A gentle, curious narrator with a British accent, guiding a magical, child-friendly adventure. Magical, warm, and inviting. Wonder, curiosity, and sense of adventure.">Bedtime Story</option>
+                    <option value="Slight French accent; sophisticated yet friendly. Warm and a little snooty. Cultured, engaging, and refined with artistic passion and welcoming charm.">Connoisseur</option>
+                    <option value="Energetic, enthusiastic, and upbeat. Fast-paced with high energy. Vibrant and motivating, conveying excitement and positivity throughout.">Energetic</option>
+                    <option value="Professional, authoritative, and confident. Clear and articulate with measured pacing. Commanding presence with expertise and credibility.">Professional</option>
+                    <option value="Soft, gentle, and soothing. Slow, calming pacing with gentle pauses. Comforting and peaceful, creating a sense of relaxation and tranquility.">Soothing</option>
+                    <option value="Witty, playful, and humorous. Light-hearted tone with comedic timing. Amusing and entertaining, with a fun and jovial personality.">Humorous</option>
+                    <option value="Dark, ominous, and foreboding. Deep, resonant voice with slow, menacing pacing. Threatening and intense, conveying danger and fear.">Menacing</option>
+                    <option value="Romantic, tender, and affectionate. Soft, warm tone with gentle pacing. Loving and intimate, expressing deep emotion and connection.">Romantic</option>
+                    <option value="Wise, knowledgeable, and experienced. Measured, thoughtful pacing with deliberate pauses. Sage-like quality with depth and understanding.">Wise</option>
+                    <option value="Urgent, intense, and compelling. Fast-paced with heightened energy. Anxious and pressing, conveying time-sensitivity and importance.">Urgent</option>
+                    <option value="Awestruck, amazed, and inspired. Expressive with varied pacing. Full of wonder and amazement, conveying breathless excitement.">Awestruck</option>
+                    <option value="Melancholic, reflective, and somber. Slower pacing with thoughtful pauses. Sad and introspective, conveying loss or longing.">Melancholic</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -214,9 +222,9 @@
             <div class="col-md-6">
               <h6 class="text-primary">Getting Started</h6>
               <ul class="list-unstyled">
-                <li><i class="fas fa-check text-success me-2"></i><strong>Enter Text:</strong> Type or paste your text in the input area</li>
-                <li><i class="fas fa-check text-success me-2"></i><strong>Choose Voice:</strong> Select from 6 different AI voices</li>
-                <li><i class="fas fa-check text-success me-2"></i><strong>Add Emotion/Style:</strong> Optionally describe how you want it spoken (e.g., "excitedly", "calmly")</li>
+                <li><i class="fas fa-check text-success me-2"></i><strong>Enter Text:</strong> Type or paste your text (up to 999 characters)</li>
+                <li><i class="fas fa-check text-success me-2"></i><strong>Choose Voice:</strong> Select from 13 different AI voices</li>
+                <li><i class="fas fa-check text-success me-2"></i><strong>Select Vibe:</strong> Choose a pre-defined vibe (Calm, Friendly, Dramatic, etc.) or leave as Neutral</li>
                 <li><i class="fas fa-check text-success me-2"></i><strong>Generate:</strong> Click 'Generate Speech' to create audio</li>
               </ul>
             </div>
@@ -225,7 +233,8 @@
               <ul class="list-unstyled">
                 <li><i class="fas fa-star text-warning me-2"></i><strong>Use Punctuation:</strong> Proper punctuation creates natural speech pauses and rhythm</li>
                 <li><i class="fas fa-star text-warning me-2"></i><strong>Voice Selection:</strong> Different voices work better for different content types and moods</li>
-                <li><i class="fas fa-star text-warning me-2"></i><strong>Emotion Prompts:</strong> Customize delivery with phrases like "excitedly and enthusiastically", "calmly and soothingly"</li>
+                <li><i class="fas fa-star text-warning me-2"></i><strong>Vibe Options:</strong> Choose from 14 pre-defined vibes including Calm, Friendly, Dramatic, Bedtime Story, and more</li>
+                <li><i class="fas fa-star text-warning me-2"></i><strong>Combine Voice & Vibe:</strong> Experiment with different voice and vibe combinations for unique results</li>
               </ul>
             </div>
           </div>
@@ -258,14 +267,23 @@
               </ul>
             </div>
             <div class="col-md-6">
-              <h6 class="text-primary">Emotion/Style Examples</h6>
+              <h6 class="text-primary">Available Vibes</h6>
               <ul class="list-unstyled">
-                <li><strong>"excitedly and enthusiastically"</strong> - Energetic delivery</li>
-                <li><strong>"calmly and soothingly"</strong> - Serene and composed</li>
-                <li><strong>"whispering mysteriously"</strong> - Suspenseful tone</li>
-                <li><strong>"confidently and authoritatively"</strong> - Strong presence</li>
-                <li><strong>"gently and warmly"</strong> - Friendly and approachable</li>
-                <li><strong>"dramatically and intensely"</strong> - Powerful expression</li>
+                <li><strong>Calm</strong> - Composed and reassuring with quiet authority</li>
+                <li><strong>Friendly</strong> - Cheerful guide with warm, supportive tone</li>
+                <li><strong>Dramatic</strong> - Suspenseful and mysterious with eerie effect</li>
+                <li><strong>Bedtime Story</strong> - Magical British narrator for fairy tales</li>
+                <li><strong>Connoisseur</strong> - Sophisticated French accent with artistic passion</li>
+                <li><strong>Energetic</strong> - Upbeat and enthusiastic with high energy</li>
+                <li><strong>Professional</strong> - Authoritative and confident delivery</li>
+                <li><strong>Soothing</strong> - Gentle and calming for relaxation</li>
+                <li><strong>Humorous</strong> - Witty and playful with comedic timing</li>
+                <li><strong>Menacing</strong> - Dark and ominous with threatening tone</li>
+                <li><strong>Romantic</strong> - Tender and affectionate delivery</li>
+                <li><strong>Wise</strong> - Sage-like with depth and understanding</li>
+                <li><strong>Urgent</strong> - Fast-paced and time-sensitive</li>
+                <li><strong>Awestruck</strong> - Full of wonder and amazement</li>
+                <li><strong>Melancholic</strong> - Reflective and somber tone</li>
               </ul>
             </div>
           </div>

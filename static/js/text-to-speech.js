@@ -4,8 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const textInput = document.getElementById('textInput');
     const charCount = document.getElementById('charCount');
     const voiceSelect = document.getElementById('voiceSelect');
-    const emotionStyleInput = document.getElementById('emotionStyleInput');
-    const emotionCharCount = document.getElementById('emotionCharCount');
+    const vibeSelect = document.getElementById('vibeSelect');
     const generateSpeechBtn = document.getElementById('generateSpeechBtn');
     const clearBtn = document.getElementById('clearBtn');
     const generatingSpeech = document.getElementById('generatingSpeech');
@@ -26,19 +25,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show both character and word count
         charCount.textContent = `${count} characters (${wordCount} words)`;
 
-        // Change color and add warnings based on character limit
-        if (count > 22500) {
+        // Change color based on character limit (999 max)
+        if (count > 999) {
             charCount.className = 'text-danger fw-bold';
-            charCount.textContent += ' ⚠️ Very long text - generation may take several minutes';
-        } else if (count > 20000) {
+            charCount.textContent += ' ⚠️ Exceeds limit';
+        } else if (count > 900) {
             charCount.className = 'text-warning fw-bold';
-            charCount.textContent += ' ⚠️ Long text - will be processed in chunks';
-        } else if (count > 15000) {
-            charCount.className = 'text-info';
-            charCount.textContent += ' 📝 Long-form content supported';
-        } else if (count > 5000) {
-            charCount.className = 'text-success';
-            charCount.textContent += ' ✅ Good length for detailed content';
+            charCount.textContent += ' ⚠️ Near limit';
         } else {
             charCount.className = 'text-muted';
         }
@@ -48,33 +41,12 @@ document.addEventListener('DOMContentLoaded', function() {
     textInput.addEventListener('keyup', updateCharCount);
     updateCharCount(); // Initial count
 
-    // Emotion style character count functionality
-    function updateEmotionCharCount() {
-        const emotionText = emotionStyleInput.value;
-        const emotionCount = emotionText.length;
-        emotionCharCount.textContent = `${emotionCount} characters`;
-
-        // Change color based on character limit
-        if (emotionCount > 180) {
-            emotionCharCount.className = 'text-danger';
-        } else if (emotionCount > 150) {
-            emotionCharCount.className = 'text-warning';
-        } else {
-            emotionCharCount.className = 'text-muted';
-        }
-    }
-
-    emotionStyleInput.addEventListener('input', updateEmotionCharCount);
-    emotionStyleInput.addEventListener('keyup', updateEmotionCharCount);
-    updateEmotionCharCount(); // Initial count
-
     // Clear functionality
     function clearAll() {
         textInput.value = '';
         updateCharCount();
         voiceSelect.selectedIndex = 0;
-        emotionStyleInput.value = '';
-        updateEmotionCharCount();
+        vibeSelect.selectedIndex = 0;
         hideAudioPreview();
         clearAudioData();
     }
@@ -99,20 +71,15 @@ document.addEventListener('DOMContentLoaded', function() {
     generateSpeechBtn.addEventListener('click', async () => {
         const text = textInput.value.trim();
         const voice = voiceSelect.value;
-        const emotionStyle = emotionStyleInput.value.trim();
+        const vibe = vibeSelect.value;
 
         if (!text) {
             alert('Please enter some text to convert to speech.');
             return;
         }
 
-        if (text.length > 25000) {
-            alert('Text is too long. Please limit to 25,000 characters.');
-            return;
-        }
-
-        if (emotionStyle.length > 200) {
-            alert('Emotion style prompt is too long. Please limit to 200 characters.');
+        if (text.length > 999) {
+            alert('Text is too long. Please limit to 999 characters.');
             return;
         }
 
@@ -126,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('text', text);
             formData.append('voice', voice);
-            formData.append('emotion_style', emotionStyle);
+            formData.append('emotion_style', vibe);
 
             const response = await fetch('/generate-speech', {
                 method: 'POST',
@@ -189,15 +156,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Voice preview functionality (optional enhancement)
+    // Voice and vibe change listeners
     voiceSelect.addEventListener('change', () => {
-        // Could add voice preview samples here in the future
         console.log('Voice changed to:', voiceSelect.value);
     });
 
-    emotionStyleInput.addEventListener('change', () => {
-        // Could add emotion style preview here in the future
-        console.log('Emotion style changed to:', emotionStyleInput.value);
+    vibeSelect.addEventListener('change', () => {
+        console.log('Vibe changed to:', vibeSelect.options[vibeSelect.selectedIndex].text);
     });
 
     // Keyboard shortcuts
