@@ -21,11 +21,8 @@ class SpeechGenerator:
     """Handles AI text-to-speech generation with emotion/style customization."""
 
     def __init__(self):
-        # Get Pollinations token from environment
         self.auth_token = os.getenv("POLLINATIONS_TOKEN", "").strip()
-        
-        # Use Pollinations TTS endpoint
-        # Format: https://text.pollinations.ai/openai?token=YOUR_TOKEN
+
         self.tts_url_template = os.getenv("POLLINATIONS_API_KEY", "").strip()
         
         if self.auth_token:
@@ -48,7 +45,6 @@ class SpeechGenerator:
             'Accept': 'audio/mpeg, audio/*;q=0.8, */*;q=0.5'
         }
 
-        # Add Authorization header if token is available
         if self.auth_token:
             headers['Authorization'] = f"Bearer {self.auth_token}"
 
@@ -94,13 +90,12 @@ class SpeechGenerator:
         if not text or not text.strip():
             raise ValueError("Text is required")
 
-        if len(text.strip()) > 5000:
-            raise ValueError("Text exceeds 5,000 character limit")
+        if len(text.strip()) > 999:
+            raise ValueError("Text exceeds 999 character limit")
 
         if len(emotion_style.strip()) > 200:
             raise ValueError("Emotion style prompt exceeds 200 character limit")
 
-        # Generate speech using single request
         return await self._generate_single_speech(text, voice, emotion_style, max_retries)
 
     async def _generate_single_speech(
@@ -113,7 +108,6 @@ class SpeechGenerator:
         """Generate speech for short text (single request)."""
         full_prompt = self._construct_emotion_prompt(text, emotion_style)
 
-        # URL encode the prompt
         encoded_prompt = urllib.parse.quote(full_prompt)
         encoded_emotion = urllib.parse.quote(emotion_style or "neutral")
 
@@ -236,8 +230,8 @@ class SpeechGenerator:
         # Text validation
         if not text or not text.strip():
             errors.append("Text is required")
-        elif len(text.strip()) > 5000:
-            errors.append("Text exceeds 5000 character limit")
+        elif len(text.strip()) > 999:
+            errors.append("Text exceeds 999 character limit")
         elif len(text.strip()) < 1:
             errors.append("Text is too short")
 
