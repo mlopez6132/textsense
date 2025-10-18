@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Transcribe button
     transcribeBtn.addEventListener('click', async () => {
         if (!currentAudioFile && !audioUrl.value.trim()) {
+            alert('Please upload an MP3/WAV file or enter a valid audio URL.');
             return;
         }
 
