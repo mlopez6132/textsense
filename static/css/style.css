@@ -536,8 +536,14 @@ textarea.form-control {
     /* Show mobile menu toggle */
     .mobile-menu-toggle {
         display: flex !important;
-        order: unset;
+        order: 0;
         margin-left: 0;
+        margin-right: 0.5rem;
+    }
+
+    /* Ensure brand follows the toggle on mobile */
+    .navbar-brand {
+        order: 1 !important;
     }
     
     /* Mobile menu styles */
