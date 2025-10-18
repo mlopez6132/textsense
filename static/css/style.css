@@ -996,114 +996,8 @@ footer a:hover {
     border: 1px solid #e9ecef;
 }
 
-/* Enhanced glass-like slider styling with step marks */
 .form-range {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 8px;
-    background: linear-gradient(to right,
-        rgba(13, 110, 253, 0.15) 0%,
-        rgba(13, 110, 253, 0.25) 100%);
-    border-radius: 10px;
-    outline: none;
-    position: relative;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1),
-                0 1px 2px rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(13, 110, 253, 0.2);
-}
-
-/* Glass slider track with step indicators */
-.form-range::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: repeating-linear-gradient(
-        to right,
-        rgba(13, 110, 253, 0.3) 0px,
-        rgba(13, 110, 253, 0.3) 1px,
-        transparent 1px,
-        transparent calc(100% / 46)
-    );
-    transform: translateY(-50%);
-    pointer-events: none;
-}
-
-/* Webkit slider thumb */
-.form-range::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-    border: 3px solid #ffffff;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.4),
-                inset 0 1px 2px rgba(255, 255, 255, 0.3);
-    transition: all 0.2s ease;
-}
-
-.form-range::-webkit-slider-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.5),
-                inset 0 1px 2px rgba(255, 255, 255, 0.3);
-}
-
-.form-range::-webkit-slider-thumb:active {
-    transform: scale(1.05);
-    box-shadow: 0 2px 6px rgba(13, 110, 253, 0.6),
-                inset 0 1px 2px rgba(255, 255, 255, 0.3);
-}
-
-/* Firefox slider thumb */
-.form-range::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, #0d6efd 0%, #0b5ed7 100%);
-    border: 3px solid #ffffff;
-    border-radius: 50%;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.4),
-                inset 0 1px 2px rgba(255, 255, 255, 0.3);
-    transition: all 0.2s ease;
-}
-
-.form-range::-moz-range-thumb:hover {
-    transform: scale(1.15);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.5),
-                inset 0 1px 2px rgba(255, 255, 255, 0.3);
-}
-
-.form-range::-moz-range-thumb:active {
-    transform: scale(1.05);
-    box-shadow: 0 2px 6px rgba(13, 110, 253, 0.6),
-                inset 0 1px 2px rgba(255, 255, 255, 0.3);
-}
-
-/* Firefox slider track */
-.form-range::-moz-range-track {
-    height: 8px;
-    background: linear-gradient(to right,
-        rgba(13, 110, 253, 0.15) 0%,
-        rgba(13, 110, 253, 0.25) 100%);
-    border-radius: 10px;
-    border: 1px solid rgba(13, 110, 253, 0.2);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1),
-                0 1px 2px rgba(255, 255, 255, 0.8);
-}
-
-/* Focus styling */
-.form-range:focus {
-    outline: none;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1),
-                0 1px 2px rgba(255, 255, 255, 0.8),
-                0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    accent-color: #0d6efd;
 }
 
 /* Example prompts styling */
@@ -1139,6 +1033,23 @@ footer a:hover {
 
 @keyframes fadeIn {
     to { opacity: 1; }
+}
+
+/* Enhanced form controls for image generation */
+.form-range:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.form-range::-webkit-slider-thumb {
+    background-color: #0d6efd;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.form-range::-moz-range-thumb {
+    background-color: #0d6efd;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Image generation responsive adjustments */

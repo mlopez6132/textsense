@@ -158,53 +158,24 @@
               </div>
               <div class="col-md-8">
                 <div class="controls-section">
-                  <h6 class="mb-3">Transcription Settings</h6>
-                  
-                  <!-- Audio Type Selection -->
-                  <div class="mb-3">
-                    <label for="audioType" class="form-label small fw-bold">Audio Type</label>
-                    <select id="audioType" class="form-select">
-                      <option value="general" selected>General (default)</option>
-                      <option value="music">Music (lyrics transcription)</option>
-                      <option value="speech">Speech (spoken words)</option>
-                      <option value="interview">Interview (multiple speakers)</option>
-                      <option value="lecture">Lecture (educational content)</option>
-                    </select>
-                    <small class="text-muted">Select the type of audio for better transcription accuracy</small>
-                  </div>
-
-                  <!-- Language Selection -->
-                  <div class="mb-3">
-                    <label for="languageCode" class="form-label small fw-bold">Language (Optional)</label>
-                    <select id="languageCode" class="form-select">
-                      <option value="">Auto-detect</option>
-                      <option value="en">English</option>
-                      <option value="es">Spanish</option>
-                      <option value="fr">French</option>
-                      <option value="de">German</option>
-                      <option value="it">Italian</option>
-                      <option value="pt">Portuguese</option>
-                      <option value="nl">Dutch</option>
-                      <option value="ru">Russian</option>
-                      <option value="zh">Chinese</option>
-                      <option value="ja">Japanese</option>
-                      <option value="ko">Korean</option>
-                      <option value="ar">Arabic</option>
-                      <option value="hi">Hindi</option>
-                      <option value="pl">Polish</option>
-                      <option value="tr">Turkish</option>
-                    </select>
-                    <small class="text-muted">Specify language for improved accuracy (optional)</small>
-                  </div>
-
-                  <!-- Action Buttons -->
-                  <div class="d-grid gap-2 mb-3">
-                    <button id="transcribeBtn" class="btn btn-primary btn-lg">
-                      <i class="fas fa-microphone me-2"></i>Transcribe Audio
-                    </button>
-                    <button id="clearAudioBtn" class="btn btn-outline-secondary">
-                      <i class="fas fa-times me-2"></i>Clear Audio
-                    </button>
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Actions</h6>
+                    <div class="action-buttons">
+                      <select id="audioType" class="form-select form-select-sm d-inline-block w-auto me-2">
+                        <option value="general" selected>General</option>
+                        <option value="music">Music (lyrics)</option>
+                        <option value="speech">Speech</option>
+                        <option value="interview">Interview</option>
+                        <option value="lecture">Lecture</option>
+                      </select>
+                      <input id="languageCode" class="form-control form-control-sm d-inline-block w-auto me-2" placeholder="Language (e.g., en)" />
+                      <button id="transcribeBtn" class="btn btn-primary">
+                        <i class="fas fa-microphone me-2"></i>Transcribe Audio
+                      </button>
+                      <button id="clearAudioBtn" class="btn btn-outline-secondary ms-2">
+                        <i class="fas fa-times me-2"></i>Clear
+                      </button>
+                    </div>
                   </div>
                   
                   <!-- Loading Spinner for Transcription -->
@@ -213,7 +184,7 @@
                       <div class="spinner-border text-primary" role="status"></div>
                       <div class="analyzing-text mt-2">
                         <strong>Transcribing Audio...</strong>
-                        <div class="small text-muted">Converting speech to text</div>
+                        <div class="small text-muted">Converting speech to text using AI</div>
                       </div>
                     </div>
                   </div>
@@ -319,6 +290,6 @@
     </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="{{ url_for('static', path='js/site.js') }}"></script>
-  <script src="{{ url_for('static', path='js/audio-text.js') }}?v=20251019"></script>
+  <script src="{{ url_for('static', path='js/audio-text.js') }}?v=20251018"></script>
 </body>
 </html>
