@@ -56,7 +56,6 @@ class AudioTranscriber:
         audio_format: str,
         question: str = "Transcribe this:",
         language: Optional[str] = None,
-        return_timestamps: bool = False,
         timeout_seconds: int = 120,
     ) -> dict:
         """
@@ -68,28 +67,18 @@ class AudioTranscriber:
 
         b64 = base64.b64encode(audio_bytes).decode("utf-8")
 
-        # Build content array with optional timestamp request
-        content = [
-            {"type": "text", "text": question},
-            {
-                "type": "input_audio",
-                "input_audio": {"data": b64, "format": normalized_format},
-            },
-        ]
-        
-        # Add timestamp request if needed
-        if return_timestamps:
-            content.append({
-                "type": "text", 
-                "text": "Please include timestamps for each segment of speech."
-            })
-
         payload: dict = {
             "model": "openai-audio",
             "messages": [
                 {
                     "role": "user",
-                    "content": content,
+                    "content": [
+                        {"type": "text", "text": question},
+                        {
+                            "type": "input_audio",
+                            "input_audio": {"data": b64, "format": normalized_format},
+                        },
+                    ],
                 }
             ],
         }

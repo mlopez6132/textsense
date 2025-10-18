@@ -555,7 +555,6 @@ async def audio_transcribe(
     request: Request,
     audio: Annotated[UploadFile | None, File()] = None,
     audio_url: Annotated[Optional[str], Form()] = None,
-    return_timestamps: Annotated[bool, Form()] = False,
 ):
     audio_bytes, audio_format = await get_audio_bytes_and_format(audio, audio_url)
 
@@ -568,7 +567,6 @@ async def audio_transcribe(
             audio_bytes=audio_bytes,
             audio_format=normalized_fmt,
             question="Transcribe this:",
-            return_timestamps=return_timestamps,
         )
 
         extracted_text: str = ""
@@ -584,8 +582,6 @@ async def audio_transcribe(
 
         response_body = {
             "text": extracted_text,
-            "chunks": [],  # chat response doesn't include timestamps in this mode
-            "openai": openai_json,
         }
         return JSONResponse(response_body)
     except ValueError as ve:

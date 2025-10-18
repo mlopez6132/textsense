@@ -14,10 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const transcriptionControls = document.getElementById('transcriptionControls');
     const copyTranscriptionBtn = document.getElementById('copyTranscriptionBtn');
     const downloadTranscriptionBtn = document.getElementById('downloadTranscriptionBtn');
-    const includeTimestamps = document.getElementById('includeTimestamps');
-    const timestampsSection = document.getElementById('timestampsSection');
-    const timestampsOutput = document.getElementById('timestampsOutput');
-    const downloadTimestampsBtn = document.getElementById('downloadTimestampsBtn');
 
     let currentAudioFile = null;
     let currentTranscriptionData = null;
@@ -74,8 +70,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function clearResults() {
         transcriptionOutput.value = '';
         transcriptionControls.style.display = 'none';
-        timestampsSection.style.display = 'none';
-        timestampsOutput.innerHTML = '';
         currentTranscriptionData = null;
     }
 
@@ -153,7 +147,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('audio_url', audioUrl.value.trim());
             }
 
-            formData.append('return_timestamps', includeTimestamps.checked);
 
             const response = await fetch('/audio-transcribe', {
                 method: 'POST',
@@ -171,18 +164,6 @@ document.addEventListener('DOMContentLoaded', function() {
             transcriptionOutput.value = data.text || '';
             transcriptionControls.style.display = 'block';
 
-            // Display timestamps if available
-            if (data.chunks && data.chunks.length > 0 && includeTimestamps.checked) {
-                displayTimestamps(data.chunks);
-                timestampsSection.style.display = 'block';
-            } else if (includeTimestamps.checked && data.text) {
-                // If timestamps were requested but not provided in chunks format,
-                // show a message that timestamps aren't available
-                timestampsOutput.innerHTML = '<div class="alert alert-info">Timestamps were requested but not available in the response.</div>';
-                timestampsSection.style.display = 'block';
-            } else {
-                timestampsSection.style.display = 'none';
-            }
         } catch (error) {
             console.error('Transcription error:', error);
         } finally {
@@ -218,51 +199,6 @@ document.addEventListener('DOMContentLoaded', function() {
         URL.revokeObjectURL(url);
     });
 
-    // Download timestamps
-    downloadTimestampsBtn.addEventListener('click', () => {
-        if (!currentTranscriptionData || !currentTranscriptionData.chunks) {
-            return;
-        }
-
-        const blob = new Blob([JSON.stringify(currentTranscriptionData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'textsense-transcription-with-timestamps.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    });
-
-    function displayTimestamps(chunks) {
-        timestampsOutput.innerHTML = '';
-        
-        chunks.forEach((chunk, index) => {
-            const chunkDiv = document.createElement('div');
-            chunkDiv.className = 'timestamp-chunk p-3 mb-2 border rounded';
-            
-            const timeSpan = document.createElement('span');
-            timeSpan.className = 'badge bg-primary me-2';
-            const startTime = formatTime(chunk.timestamp[0]);
-            const endTime = formatTime(chunk.timestamp[1]);
-            timeSpan.textContent = `${startTime} - ${endTime}`;
-            
-            const textSpan = document.createElement('span');
-            textSpan.textContent = chunk.text;
-            
-            chunkDiv.appendChild(timeSpan);
-            chunkDiv.appendChild(textSpan);
-            timestampsOutput.appendChild(chunkDiv);
-        });
-    }
-
-    function formatTime(seconds) {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        const millisecs = Math.floor((seconds % 1) * 1000);
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${millisecs.toString().padStart(3, '0')}`;
-    }
 
 
 });
