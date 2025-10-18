@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const copyTranscriptionBtn = document.getElementById('copyTranscriptionBtn');
     const downloadTranscriptionBtn = document.getElementById('downloadTranscriptionBtn');
     const audioTypeSelect = document.getElementById('audioType');
-    const languageCodeInput = document.getElementById('languageCode');
 
     let currentAudioFile = null;
     let currentTranscriptionData = null;
@@ -150,13 +149,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 formData.append('audio_url', audioUrl.value.trim());
             }
 
-            // Include audio type and optional language code
+            // Include audio type
             const audioType = (audioTypeSelect?.value || 'general').trim();
             formData.append('audio_type', audioType);
-            const languageCode = (languageCodeInput?.value || '').trim();
-            if (languageCode) {
-                formData.append('language', languageCode);
-            }
 
 
             const response = await fetch('/audio-transcribe', {
