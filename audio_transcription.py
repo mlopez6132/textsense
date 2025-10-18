@@ -32,7 +32,6 @@ class AudioTranscriber:
             "User-Agent": "TextSense-STT/1.0",
             "Referer": "https://pollinations.ai",
             "Accept": "application/json",
-            "Content-Type": "application/json",
         }
         if self.auth_token:
             headers["Authorization"] = f"Bearer {self.auth_token}"
@@ -54,41 +53,31 @@ class AudioTranscriber:
         *,
         audio_bytes: bytes,
         audio_format: str,
-        question: str = "Transcribe this:",
+        question: str = "Transcribe this:",  # kept for API compatibility; unused in multipart
         language: Optional[str] = None,
         timeout_seconds: int = 120,
     ) -> dict:
         """
-        Send base64-encoded audio to OpenAI endpoint and return JSON.
+        Send audio to OpenAI-compatible transcriptions endpoint using multipart/form-data.
         """
         normalized_format = self._normalize_audio_format(audio_format)
         if normalized_format not in {"mp3", "wav"}:
             raise ValueError("Unsupported audio format. Only mp3 and wav are supported.")
 
-        b64 = base64.b64encode(audio_bytes).decode("utf-8")
+        # Build multipart form: files + data
+        filename = f"audio.{normalized_format}"
+        mimetype = "audio/mpeg" if normalized_format == "mp3" else "audio/wav"
 
-        payload: dict = {
-            "model": "openai-audio",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": question},
-                        {
-                            "type": "input_audio",
-                            "input_audio": {"data": b64, "format": normalized_format},
-                        },
-                    ],
-                }
-            ],
-        }
+        data: dict[str, str] = {"model": "whisper-1"}
         if language:
-            payload["language"] = language 
+            data["language"] = language
 
-        headers = self._get_headers()
+        files = {"file": (filename, audio_bytes, mimetype)}
+
+        headers = self._get_headers()  # no Content-Type; httpx sets multipart boundary
 
         async with httpx.AsyncClient(timeout=timeout_seconds) as client:
-            response = await client.post(self.api_url, headers=headers, json=payload)
+            response = await client.post(self.api_url, headers=headers, data=data, files=files)
 
         if response.status_code != 200:
             try:

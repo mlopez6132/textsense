@@ -570,15 +570,19 @@ async def audio_transcribe(
         )
 
         extracted_text: str = ""
-        try:
-            choices = openai_json.get("choices") or []
-            if choices:
-                message = choices[0].get("message") or {}
-                content = message.get("content")
-                if isinstance(content, str):
-                    extracted_text = content
-        except Exception:
-            extracted_text = ""
+        if isinstance(openai_json, dict):
+            if isinstance(openai_json.get("text"), str):
+                extracted_text = openai_json.get("text", "")
+            else:
+                try:
+                    choices = openai_json.get("choices") or []
+                    if choices:
+                        message = choices[0].get("message") or {}
+                        content = message.get("content")
+                        if isinstance(content, str):
+                            extracted_text = content
+                except Exception:
+                    extracted_text = ""
 
         response_body = {
             "text": extracted_text,
