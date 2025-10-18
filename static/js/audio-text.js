@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const copyTranscriptionBtn = document.getElementById('copyTranscriptionBtn');
     const downloadTranscriptionBtn = document.getElementById('downloadTranscriptionBtn');
     const audioTypeSelect = document.getElementById('audioType');
+    const languageCodeInput = document.getElementById('languageCode');
 
     let currentAudioFile = null;
     let currentTranscriptionData = null;
@@ -130,54 +131,66 @@ document.addEventListener('DOMContentLoaded', function() {
     clearAudioBtn.addEventListener('click', clearAll);
 
     // Transcribe button
-    transcribeBtn.addEventListener('click', async () => {
-        if (!currentAudioFile && !audioUrl.value.trim()) {
-            alert('Please upload an MP3/WAV file or enter a valid audio URL.');
-            return;
-        }
-
-        // Show loading state
-        transcribing.style.display = 'block';
-        transcribeBtn.disabled = true;
-
-        try {
-            const formData = new FormData();
+    if (transcribeBtn) {
+        transcribeBtn.addEventListener('click', async () => {
+            console.log('Transcribe button clicked');
             
-            if (currentAudioFile) {
-                formData.append('audio', currentAudioFile);
-            } else {
-                formData.append('audio_url', audioUrl.value.trim());
+            if (!currentAudioFile && !audioUrl.value.trim()) {
+                alert('Please upload an MP3/WAV file or enter a valid audio URL.');
+                return;
             }
 
-            // Include audio type
-            const audioType = (audioTypeSelect?.value || 'general').trim();
-            formData.append('audio_type', audioType);
+            // Show loading state
+            transcribing.style.display = 'block';
+            transcribeBtn.disabled = true;
 
+            try {
+                const formData = new FormData();
+                
+                if (currentAudioFile) {
+                    formData.append('audio', currentAudioFile);
+                } else {
+                    formData.append('audio_url', audioUrl.value.trim());
+                }
 
-            const response = await fetch('/audio-transcribe', {
-                method: 'POST',
-                body: formData
-            });
+                // Include audio type and optional language code
+                const audioType = (audioTypeSelect?.value || 'general').trim();
+                formData.append('audio_type', audioType);
+                const languageCode = (languageCodeInput?.value || '').trim();
+                if (languageCode) {
+                    formData.append('language', languageCode);
+                }
 
-            const data = await response.json();
+                console.log('Sending request to /audio-transcribe');
 
-            if (!response.ok) {
-                throw new Error(data.error || 'Transcription failed');
+                const response = await fetch('/audio-transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                console.log('Response received:', data);
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Transcription failed');
+                }
+
+                // Display results
+                currentTranscriptionData = data;
+                transcriptionOutput.value = data.text || '';
+                transcriptionControls.style.display = 'block';
+
+            } catch (error) {
+                console.error('Transcription error:', error);
+                alert(`Transcription failed: ${error.message}`);
+            } finally {
+                transcribing.style.display = 'none';
+                transcribeBtn.disabled = false;
             }
-
-            // Display results
-            currentTranscriptionData = data;
-            transcriptionOutput.value = data.text || '';
-            transcriptionControls.style.display = 'block';
-
-        } catch (error) {
-            console.error('Transcription error:', error);
-            alert(`Transcription failed: ${error.message}`);
-        } finally {
-            transcribing.style.display = 'none';
-            transcribeBtn.disabled = false;
-        }
-    });
+        });
+    } else {
+        console.error('Transcribe button not found!');
+    }
 
     // Copy transcription
     copyTranscriptionBtn.addEventListener('click', async () => {
