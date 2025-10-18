@@ -464,40 +464,9 @@ textarea.form-control {
     border: none;
 }
 
-/* Hamburger Menu Button (only visible on mobile) */
-.menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    font-size: 28px;
-    cursor: pointer;
-    color: #0d6efd;
-    padding: 0.5rem;
-    margin: 0;
-    z-index: 1031;
-}
-
-/* Close Button inside curtain menu */
-.close-btn {
-    display: none;
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: none;
-    border: none;
-    color: #fff;
-    font-size: 36px;
-    cursor: pointer;
-    z-index: 1032;
-    padding: 0;
-    line-height: 1;
-    width: 40px;
-    height: 40px;
-}
-
 /* Responsive design */
 @media (max-width: 768px) {
-    :root { --header-height: 60px; }
+    :root { --header-height: 72px; }
     body {
         padding-top: var(--header-height); /* Space for mobile header */
         padding-bottom: 0; /* No extra space to avoid gap below footer */
@@ -514,70 +483,20 @@ textarea.form-control {
     .navbar.site-header .container,
     .navbar.site-header > .container-fluid {
         padding: 0 1.5rem;
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 0 !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 1rem !important;
+        justify-content: flex-start !important;
     }
     
     .navbar-brand {
         margin-right: 0;
-        margin-bottom: 0;
+        margin-bottom: 0.5rem;
     }
     
-    /* Show hamburger menu on mobile */
-    .menu-toggle {
-        display: block;
-    }
-    
-    /* Hide navigation by default and make it a curtain menu */
     .navbar-nav {
-        position: fixed;
-        top: 0;
-        right: -100%;
-        height: 100vh;
-        width: 75%;
-        max-width: 320px;
-        background: #0d6efd;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        padding: 80px 20px 20px 20px !important;
-        gap: 0 !important;
-        transition: right 0.3s ease-in-out;
-        z-index: 1031;
-        box-shadow: -4px 0 15px rgba(0, 0, 0, 0.2);
-        overflow-y: auto;
-    }
-    
-    /* Show curtain menu when active */
-    .navbar-nav.show {
-        right: 0;
-    }
-    
-    /* Show close button in mobile curtain menu */
-    .navbar-nav.show .close-btn {
-        display: block;
-    }
-    
-    .navbar-nav .nav-link {
-        color: #ffffff !important;
-        padding: 1rem 0;
-        font-size: 1.1rem;
-        font-weight: 600;
-        width: 100%;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-    }
-    
-    .navbar-nav .nav-link:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        color: #ffffff !important;
-        transform: translateX(5px);
-    }
-    
-    .navbar-nav .nav-link.active {
-        background-color: rgba(255, 255, 255, 0.15);
-        color: #ffffff !important;
+        flex-direction: row;
+        gap: 0.25rem;
     }
     
     .brand-logo-text {
@@ -585,7 +504,12 @@ textarea.form-control {
     }
     
     .brand-tagline {
-        font-size: 0.7rem !important;
+        font-size: 0.75rem !important;
+    }
+    
+    .navbar-nav .nav-link {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
     }
     
     header h1 {
@@ -604,44 +528,6 @@ textarea.form-control {
     .btn-lg {
         padding: 12px 24px;
         font-size: 1rem;
-    }
-}
-
-/* Overlay backdrop when menu is open */
-.menu-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1030;
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-}
-
-.menu-overlay.show {
-    display: block;
-    opacity: 1;
-}
-
-/* Ensure desktop view never shows mobile controls */
-@media (min-width: 769px) {
-    .menu-toggle,
-    .close-btn,
-    .menu-overlay {
-        display: none !important;
-    }
-
-    .navbar-nav {
-        position: static !important;
-        height: auto !important;
-        width: auto !important;
-        background: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        right: auto !important;
     }
 }
 

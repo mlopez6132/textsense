@@ -1,4 +1,4 @@
-// Site-wide utilities: Cookie consent banner, mobile menu, and small helpers
+// Site-wide utilities: Cookie consent banner and small helpers
 
 (function () {
   try {
@@ -42,74 +42,6 @@
       setTimeout(renderBanner, 0);
     } else {
       document.addEventListener('DOMContentLoaded', renderBanner);
-    }
-  } catch (e) {
-    // no-op
-  }
-})();
-
-// Mobile curtain menu functionality
-(function () {
-  try {
-    function initMobileMenu() {
-      var menuToggle = document.getElementById('menu-toggle');
-      var closeBtn = document.getElementById('close-btn');
-      var nav = document.querySelector('.navbar-nav');
-      var overlay = document.getElementById('menu-overlay');
-
-      if (!menuToggle || !nav) return;
-
-      // Open menu
-      menuToggle.addEventListener('click', function() {
-        nav.classList.add('show');
-        if (overlay) overlay.classList.add('show');
-        document.body.style.overflow = 'hidden'; // Prevent background scrolling
-      });
-
-      // Close menu via close button
-      if (closeBtn) {
-        closeBtn.addEventListener('click', function() {
-          nav.classList.remove('show');
-          if (overlay) overlay.classList.remove('show');
-          document.body.style.overflow = ''; // Restore scrolling
-        });
-      }
-
-      // Close menu via overlay click
-      if (overlay) {
-        overlay.addEventListener('click', function() {
-          nav.classList.remove('show');
-          overlay.classList.remove('show');
-          document.body.style.overflow = ''; // Restore scrolling
-        });
-      }
-
-      // Close menu when clicking on a nav link
-      var navLinks = nav.querySelectorAll('.nav-link');
-      for (var i = 0; i < navLinks.length; i++) {
-        navLinks[i].addEventListener('click', function() {
-          nav.classList.remove('show');
-          if (overlay) overlay.classList.remove('show');
-          document.body.style.overflow = ''; // Restore scrolling
-        });
-      }
-
-      // Auto-close and reset when switching to desktop view
-      function handleResize() {
-        if (window.innerWidth >= 769) {
-          nav.classList.remove('show');
-          if (overlay) overlay.classList.remove('show');
-          document.body.style.overflow = '';
-        }
-      }
-      window.addEventListener('resize', handleResize);
-      handleResize();
-    }
-
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      initMobileMenu();
-    } else {
-      document.addEventListener('DOMContentLoaded', initMobileMenu);
     }
   } catch (e) {
     // no-op
