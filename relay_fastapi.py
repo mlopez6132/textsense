@@ -388,25 +388,25 @@ async def android_chrome_512():
 @app.get("/", response_class=HTMLResponse)
 @app.head("/")
 async def index(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
     return templates.TemplateResponse("index.html", context)
 
 
 @app.get("/about", response_class=HTMLResponse)
 async def about(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
     return templates.TemplateResponse("about.html", context)
 
 
 @app.get("/privacy", response_class=HTMLResponse)
 async def privacy(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
     return templates.TemplateResponse("privacy.html", context)
 
 
 @app.get("/terms", response_class=HTMLResponse)
 async def terms(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
     return templates.TemplateResponse("terms.html", context)
 
 
@@ -414,7 +414,7 @@ async def terms(request: Request):
 async def contact(request: Request):
     context = {
         "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
+        "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com"),
         "recaptcha_site_key": os.getenv("RECAPTCHA_SITE_KEY", ""),
     }
     return templates.TemplateResponse("contact.html", context)
@@ -422,31 +422,31 @@ async def contact(request: Request):
 
 @app.get("/ocr", response_class=HTMLResponse)
 async def ocr_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
     return templates.TemplateResponse("ocr.html", context)
 
 
 @app.get("/audio-text", response_class=HTMLResponse)
 async def audio_text_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
     return templates.TemplateResponse("audio-text.html", context)
 
 
 @app.get("/ai-detector", response_class=HTMLResponse)
 async def ai_detector_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
     return templates.TemplateResponse("ai-detector.html", context)
 
 
 @app.get("/generate-image-page", response_class=HTMLResponse)
 async def generate_image_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
     return templates.TemplateResponse("generate-image.html", context)
 
 
 @app.get("/text-to-speech", response_class=HTMLResponse)
 async def text_to_speech_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
     return templates.TemplateResponse("text-to-speech.html", context)
 
 
@@ -481,7 +481,7 @@ async def submit_contact(request: Request):
 
 @app.get("/cookies", response_class=HTMLResponse)
 async def cookies(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
     return templates.TemplateResponse("cookies.html", context)
 
 
