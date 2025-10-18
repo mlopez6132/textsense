@@ -155,7 +155,7 @@ body.index-page {
 
 /* Mobile Menu Toggle Button (Bento/Hamburger) */
 .mobile-menu-toggle {
-    display: none !important;
+    display: none;
     flex-direction: column;
     justify-content: space-between;
     width: 30px;
@@ -539,6 +539,8 @@ textarea.form-control {
         order: 2;
         margin-left: auto;
         margin-right: 0;
+        visibility: visible;
+        opacity: 1;
     }
 
     /* Ensure brand follows natural order on mobile */
