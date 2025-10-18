@@ -51,26 +51,24 @@
               </div>
             </a>
           </div>
-          <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation">
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
+          
+          <!-- Hamburger Menu Button (only visible in mobile) -->
+          <button class="menu-toggle" id="menu-toggle" aria-label="Open menu">☰</button>
+          
+          <!-- Navigation Menu -->
+          <div class="navbar-nav">
+            <button class="close-btn" id="close-btn" aria-label="Close menu">×</button>
+            <a href="/ai-detector" class="nav-link fw-bold">AI Text Detector</a>
+            <a href="/ocr" class="nav-link fw-bold">Image-Text to Text</a>
+            <a href="/audio-text" class="nav-link fw-bold">Audio to Text</a>
+            <a href="/text-to-speech" class="nav-link fw-bold">Text to Speech</a>
+            <a href="/generate-image-page" class="nav-link fw-bold">Text to Image</a>
+          </div>
         </div>
       </nav>
-
-      <!-- Curtain Navigation Menu -->
-      <div class="navbar-nav" id="navbarNav">
-          <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-          <div class="overlay-content">
-            <a href="/ai-detector">AI Text Detector</a>
-            <a href="/ocr">Image-Text to Text</a>
-            <a href="/audio-text">Audio to Text</a>
-            <a href="/text-to-speech">Text to Speech</a>
-            <a href="/generate-image-page">Text to Image</a>
-          </div>
-      </div>
-    </nav>
+      
+      <!-- Menu Overlay (backdrop) -->
+      <div class="menu-overlay" id="menu-overlay"></div>
 
     <!-- Page Header -->
     <main class="container">
@@ -108,7 +106,7 @@
         <div class="col-lg-5">
           <div class="card p-4 shadow-sm">
             <h2 class="h5 mb-3">Contact details</h2>
-            <p>Email: <a href="mailto:{{ contact_email|default('hi@textsense.com') }}">{{ contact_email|default('hi@textsense.com') }}</a></p>
+            <p>Email: <a href="mailto:{{ contact_email|default('textsense2@gmail.com') }}">{{ contact_email|default('textsense2@gmail.com') }}</a></p>
             <p>Response time: 2–3 business days</p>
           </div>
         </div>
@@ -129,7 +127,7 @@
                   <a href="/contact">Contact</a>
               </nav>
           </div>
-          <span class="footer-right">Contact: {{ contact_email|default('hi@textsense.com') }}</span>
+          <span class="footer-right">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
       </div>
   </footer>
     </div>

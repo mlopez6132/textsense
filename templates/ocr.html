@@ -54,25 +54,24 @@
                         </div>
                     </a>
                 </div>
-                <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Toggle navigation">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
+                
+                <!-- Hamburger Menu Button (only visible in mobile) -->
+                <button class="menu-toggle" id="menu-toggle" aria-label="Open menu">☰</button>
+                
+                <!-- Navigation Menu -->
+                <div class="navbar-nav">
+                    <button class="close-btn" id="close-btn" aria-label="Close menu">×</button>
+                    <a href="/ai-detector" class="nav-link fw-bold">AI Text Detector</a>
+                    <a href="/ocr" class="nav-link fw-bold active">Image-Text to Text</a>
+                    <a href="/audio-text" class="nav-link fw-bold">Audio to Text</a>
+                    <a href="/text-to-speech" class="nav-link fw-bold">Text to Speech</a>
+                    <a href="/generate-image-page" class="nav-link fw-bold">Text to Image</a>
+                </div>
             </div>
         </nav>
-
-        <!-- Curtain Navigation Menu -->
-        <div class="navbar-nav" id="navbarNav">
-            <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-            <div class="overlay-content">
-                <a href="/ai-detector">AI Text Detector</a>
-                <a href="/ocr">Image-Text to Text</a>
-                <a href="/audio-text">Audio to Text</a>
-                <a href="/text-to-speech">Text to Speech</a>
-                <a href="/generate-image-page">Text to Image</a>
-            </div>
-        </div>
+        
+        <!-- Menu Overlay (backdrop) -->
+        <div class="menu-overlay" id="menu-overlay"></div>
 
         <!-- Page Header -->
         <main class="container">
@@ -354,7 +353,7 @@
                         <a href="/contact">Contact</a>
                     </nav>
                 </div>
-                <span class="footer-right">Contact: {{ contact_email|default('hi@textsense.com') }}</span>
+                <span class="footer-right">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
             </div>
         </footer>
     </div>

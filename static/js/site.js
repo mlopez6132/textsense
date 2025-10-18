@@ -1,4 +1,4 @@
-// Site-wide utilities: Cookie consent banner and small helpers
+// Site-wide utilities: Cookie consent banner, mobile menu, and small helpers
 
 (function () {
   try {
@@ -48,6 +48,63 @@
   }
 })();
 
+// Mobile curtain menu functionality
+(function () {
+  try {
+    function initMobileMenu() {
+      var menuToggle = document.getElementById('menu-toggle');
+      var closeBtn = document.getElementById('close-btn');
+      var nav = document.querySelector('.navbar-nav');
+      var overlay = document.getElementById('menu-overlay');
+
+      if (!menuToggle || !nav) return;
+
+      // Open menu
+      menuToggle.addEventListener('click', function() {
+        nav.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+      });
+
+      // Close menu via close button
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+          nav.classList.remove('show');
+          if (overlay) overlay.classList.remove('show');
+          document.body.style.overflow = ''; // Restore scrolling
+        });
+      }
+
+      // Close menu via overlay click
+      if (overlay) {
+        overlay.addEventListener('click', function() {
+          nav.classList.remove('show');
+          overlay.classList.remove('show');
+          document.body.style.overflow = ''; // Restore scrolling
+        });
+      }
+
+      // Close menu when clicking on a nav link
+      var navLinks = nav.querySelectorAll('.nav-link');
+      for (var i = 0; i < navLinks.length; i++) {
+        navLinks[i].addEventListener('click', function() {
+          nav.classList.remove('show');
+          if (overlay) overlay.classList.remove('show');
+          document.body.style.overflow = ''; // Restore scrolling
+        });
+      }
+    }
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      initMobileMenu();
+    } else {
+      document.addEventListener('DOMContentLoaded', initMobileMenu);
+    }
+  } catch (e) {
+    // no-op
+  }
+})();
+
 
 // Keep HF Spaces warm by pinging periodically
 (function () {
@@ -78,74 +135,5 @@
     // every 5 minutes
     setInterval(pingAll, 5 * 60 * 1000);
   } catch (e) {}
-})();
-
-
-// Curtain Navigation Menu (slides from right)
-(function() {
-  try {
-    function initCurtainMenu() {
-      var toggle = document.getElementById('mobileMenuToggle');
-      var nav = document.getElementById('navbarNav');
-
-      if (!toggle || !nav) return;
-
-      // Function to open the curtain menu
-      function openNav() {
-        nav.classList.add('show');
-        toggle.classList.add('active');
-      }
-
-      // Function to close the curtain menu
-      function closeNav() {
-        nav.classList.remove('show');
-        toggle.classList.remove('active');
-      }
-
-      toggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        if (nav.classList.contains('show')) {
-          closeNav();
-        } else {
-          openNav();
-        }
-      });
-
-      // Close menu when clicking outside
-      document.addEventListener('click', function(e) {
-        if (!toggle.contains(e.target) && !nav.contains(e.target)) {
-          closeNav();
-        }
-      });
-
-      // Close menu when clicking on a nav link
-      var navLinks = nav.querySelectorAll('a[href^="/"]');
-      for (var i = 0; i < navLinks.length; i++) {
-        navLinks[i].addEventListener('click', function() {
-          closeNav();
-        });
-      }
-
-      // Close menu on escape key
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && nav.classList.contains('show')) {
-          closeNav();
-        }
-      });
-
-      // Make functions globally available
-      window.openNav = openNav;
-      window.closeNav = closeNav;
-    }
-
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      setTimeout(initCurtainMenu, 0);
-    } else {
-      document.addEventListener('DOMContentLoaded', initCurtainMenu);
-    }
-  } catch (e) {
-    // no-op
-  }
 })();
 
