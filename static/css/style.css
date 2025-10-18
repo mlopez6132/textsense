@@ -626,6 +626,25 @@ textarea.form-control {
     opacity: 1;
 }
 
+/* Ensure desktop view never shows mobile controls */
+@media (min-width: 769px) {
+    .menu-toggle,
+    .close-btn,
+    .menu-overlay {
+        display: none !important;
+    }
+
+    .navbar-nav {
+        position: static !important;
+        height: auto !important;
+        width: auto !important;
+        background: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        right: auto !important;
+    }
+}
+
 /* Scrollbar styling */
 .analysis-text::-webkit-scrollbar {
     width: 8px;

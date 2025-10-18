@@ -93,6 +93,17 @@
           document.body.style.overflow = ''; // Restore scrolling
         });
       }
+
+      // Auto-close and reset when switching to desktop view
+      function handleResize() {
+        if (window.innerWidth >= 769) {
+          nav.classList.remove('show');
+          if (overlay) overlay.classList.remove('show');
+          document.body.style.overflow = '';
+        }
+      }
+      window.addEventListener('resize', handleResize);
+      handleResize();
     }
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
