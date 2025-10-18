@@ -161,6 +161,14 @@
                   <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="mb-0">Actions</h6>
                     <div class="action-buttons">
+                      <select id="audioType" class="form-select form-select-sm d-inline-block w-auto me-2">
+                        <option value="general" selected>General</option>
+                        <option value="music">Music (lyrics)</option>
+                        <option value="speech">Speech</option>
+                        <option value="interview">Interview</option>
+                        <option value="lecture">Lecture</option>
+                      </select>
+                      <input id="languageCode" class="form-control form-control-sm d-inline-block w-auto me-2" placeholder="Language (e.g., en)" />
                       <button id="transcribeBtn" class="btn btn-primary">
                         <i class="fas fa-microphone me-2"></i>Transcribe Audio
                       </button>

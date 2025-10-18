@@ -555,6 +555,8 @@ async def audio_transcribe(
     request: Request,
     audio: Annotated[UploadFile | None, File()] = None,
     audio_url: Annotated[Optional[str], Form()] = None,
+    audio_type: Annotated[Optional[str], Form()] = "general",
+    language: Annotated[Optional[str], Form()] = None,
 ):
     audio_bytes, audio_format = await get_audio_bytes_and_format(audio, audio_url)
 
@@ -567,6 +569,8 @@ async def audio_transcribe(
             audio_bytes=audio_bytes,
             audio_format=normalized_fmt,
             question="Transcribe this:",
+            audio_type=audio_type,
+            language=language,
         )
 
         extracted_text: str = ""
