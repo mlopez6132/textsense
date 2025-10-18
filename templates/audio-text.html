@@ -158,24 +158,50 @@
               </div>
               <div class="col-md-8">
                 <div class="controls-section">
-                  <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0">Actions</h6>
-                    <div class="action-buttons">
-                      <select id="audioType" class="form-select form-select-sm d-inline-block w-auto me-2">
-                        <option value="general" selected>General</option>
-                        <option value="music">Music (lyrics)</option>
-                        <option value="speech">Speech</option>
-                        <option value="interview">Interview</option>
-                        <option value="lecture">Lecture</option>
-                      </select>
-                      <input id="languageCode" class="form-control form-control-sm d-inline-block w-auto me-2" placeholder="Language (e.g., en)" />
-                      <button id="transcribeBtn" class="btn btn-primary">
-                        <i class="fas fa-microphone me-2"></i>Transcribe Audio
-                      </button>
-                      <button id="clearAudioBtn" class="btn btn-outline-secondary ms-2">
-                        <i class="fas fa-times me-2"></i>Clear
-                      </button>
-                    </div>
+                  <h6 class="mb-3">Transcription Settings</h6>
+                  
+                  <!-- Audio Type Dropdown -->
+                  <div class="mb-3">
+                    <label for="audioType" class="form-label">Audio Type</label>
+                    <select id="audioType" class="form-select">
+                      <option value="general" selected>General (Default)</option>
+                      <option value="music">Music</option>
+                      <option value="speech">Speech</option>
+                      <option value="interview">Interview</option>
+                      <option value="lecture">Lecture</option>
+                    </select>
+                    <small class="text-muted">Select the type of audio for better transcription accuracy</small>
+                  </div>
+
+                  <!-- Language Dropdown -->
+                  <div class="mb-3">
+                    <label for="languageCode" class="form-label">Language</label>
+                    <select id="languageCode" class="form-select">
+                      <option value="en" selected>English</option>
+                      <option value="es">Spanish</option>
+                      <option value="fr">French</option>
+                      <option value="de">German</option>
+                      <option value="it">Italian</option>
+                      <option value="pt">Portuguese</option>
+                      <option value="nl">Dutch</option>
+                      <option value="ru">Russian</option>
+                      <option value="zh">Chinese</option>
+                      <option value="ja">Japanese</option>
+                      <option value="ko">Korean</option>
+                      <option value="ar">Arabic</option>
+                      <option value="hi">Hindi</option>
+                    </select>
+                    <small class="text-muted">Select the language spoken in the audio</small>
+                  </div>
+
+                  <!-- Action Buttons -->
+                  <div class="d-flex gap-2 mb-3">
+                    <button id="transcribeBtn" class="btn btn-primary">
+                      <i class="fas fa-microphone me-2"></i>Transcribe Audio
+                    </button>
+                    <button id="clearAudioBtn" class="btn btn-outline-secondary">
+                      <i class="fas fa-times me-2"></i>Clear
+                    </button>
                   </div>
                   
                   <!-- Loading Spinner for Transcription -->
@@ -184,7 +210,7 @@
                       <div class="spinner-border text-primary" role="status"></div>
                       <div class="analyzing-text mt-2">
                         <strong>Transcribing Audio...</strong>
-                        <div class="small text-muted">Converting speech to text using AI</div>
+                        <div class="small text-muted">Converting speech to text</div>
                       </div>
                     </div>
                   </div>
