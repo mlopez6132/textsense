@@ -1,5 +1,9 @@
 // Audio-to-Text Transcription JavaScript
+console.log('Audio-text.js loaded');
+
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOMContentLoaded fired');
+    
     // Elements
     const audioDropzone = document.getElementById('audioDropzone');
     const audioFileInput = document.getElementById('audioFileInput');
