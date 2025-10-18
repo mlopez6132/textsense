@@ -1,284 +1,133 @@
-/* ==========================================================================
-   Index Page Specific Styles - Full Width Layout
-   ========================================================================== */
+/* Index Page Specific Styles - Full Width Layout */
 
-/* ==========================================================================
-   Hero Section Styles
-   ========================================================================== */
-
-.hero-section {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-    color: white;
-    padding: var(--space-24) 0;
+/* Full width body and container for index page */
+body {
+    min-height: 100vh;
+    padding-top: var(--header-height) !important; /* Space for fixed header */
+    margin: 0;
     position: relative;
-    overflow: hidden;
-    margin-bottom: var(--space-12);
+    z-index: 1;
+    display: flex !important;
+    flex-direction: column !important;
 }
-
-.hero-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1.5" fill="white" opacity="0.08"/><circle cx="50" cy="10" r="0.8" fill="white" opacity="0.06"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-    pointer-events: none;
-}
-
-.hero-feature {
-    text-align: center;
-    padding: var(--space-4);
-}
-
-.hero-feature i {
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.hero-feature h5 {
-    color: white;
-    margin-bottom: var(--space-2);
-}
-
-.hero-feature p {
-    color: rgba(255, 255, 255, 0.8);
-    margin: 0;
-}
-
-/* ==========================================================================
-   Feature Cards & Components
-   ========================================================================== */
-
-.feature-card {
-    transition: var(--transition-normal);
-    height: 100%;
-    border: none;
-    box-shadow: var(--shadow-md);
-}
-
-.feature-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.feature-icon {
-    width: 80px;
-    height: 80px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: var(--font-size-4xl);
-    margin: 0 auto var(--space-6);
-}
-
-/* ==========================================================================
-   Stats Section
-   ========================================================================== */
-
-.stats-section {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: var(--backdrop-filter);
-    -webkit-backdrop-filter: var(--webkit-backdrop-filter);
-    padding: var(--space-20) 0;
-    margin: 0;
-}
-
-.stat-item {
-    text-align: center;
-    padding: var(--space-8) var(--space-4);
-}
-
-.stat-number {
-    font-size: var(--font-size-5xl);
-    font-weight: var(--font-weight-extrabold);
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-/* ==========================================================================
-   Product Cards
-   ========================================================================== */
-
-.product-card {
-    background: white;
-    border-radius: 15px;
-    padding: var(--space-8);
-    margin-bottom: var(--space-8);
-    box-shadow: var(--shadow-md);
-    transition: var(--transition-normal);
-    border: none;
-}
-
-.product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-/* ==========================================================================
-   Button Styles
-   ========================================================================== */
-
-.btn-primary-gradient {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-    border: none;
-    border-radius: 25px;
-    padding: var(--space-3) var(--space-12);
-    font-weight: var(--font-weight-semibold);
-    transition: var(--transition-normal);
-    color: white !important;
-}
-
-.btn-primary-gradient:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(13, 110, 253, 0.3);
-    color: white !important;
-}
-
-/* ==========================================================================
-   Creator Badge
-   ========================================================================== */
-
-.creator-badge {
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-    color: white;
-    padding: var(--space-4) var(--space-8);
-    border-radius: 50px;
-    display: inline-block;
-    margin-top: var(--space-8);
-    text-decoration: none;
-    transition: var(--transition-normal);
-    cursor: pointer;
-}
-
-.creator-badge:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(13, 110, 253, 0.3);
-    color: white;
-    text-decoration: none;
-}
-
-/* ==========================================================================
-   About Section
-   ========================================================================== */
-
-.about-section {
-    padding: var(--space-20) 0;
-    margin: 0;
-}
-
-/* ==========================================================================
-   Layout Adjustments
-   ========================================================================== */
-
-/* ==========================================================================
-   Full Width Layout Adjustments
-   ========================================================================== */
 
 .container-fluid {
-    max-width: 100%;
-    width: 100vw;
-    margin: 0;
-    padding: 0;
+    max-width: 100% !important;
+    width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
     position: relative;
     z-index: 1;
 }
 
 /* Full width page container */
 .page-container {
-    max-width: 100%;
-    width: 100vw;
-    margin: 0;
-    padding: 0;
+    max-width: 100% !important;
+    width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* Remove top padding to eliminate gap between header and hero */
 .index-page .page-container {
-    padding-top: 0;
+    padding-top: 0 !important;
 }
 
-/* Pull hero up under the fixed header so its background touches the header */
+/* Keep body padding-top for index page to prevent header overlap */
+body.index-page {
+    padding-top: var(--header-height) !important;
+}
+
+/* Hero section full width */
 .hero-section {
-    width: 100vw;
-    max-width: 100vw;
-    margin: 0;
-    margin-top: calc(var(--header-height) * -1);
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    /* Pull hero up under the fixed header so its background touches the header */
+    margin-top: calc(var(--header-height) * -1) !important;
+    padding: calc(100px + var(--header-height)) 0 100px !important;
     position: relative;
     left: 50%;
     right: 50%;
-    margin-left: -50vw;
-    margin-right: -50vw;
+    margin-left: -50vw !important;
+    margin-right: -50vw !important;
 }
 
 .hero-section .container {
-    max-width: var(--max-width);
-    margin: 0 auto;
-    padding: 0 var(--space-8);
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 0 2rem !important;
     position: relative;
     z-index: 2;
 }
 
-/* Full width sections */
-.about-section,
-.products-section {
-    width: 100vw;
-    max-width: 100vw;
-    margin: 0;
+/* About section full width */
+.about-section {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 80px 0 !important;
     position: relative;
     left: 50%;
     right: 50%;
-    margin-left: -50vw;
-    margin-right: -50vw;
+    margin-left: -50vw !important;
+    margin-right: -50vw !important;
 }
 
-.about-section .container,
-.products-section .container {
-    max-width: var(--max-width);
-    margin: 0 auto;
-    padding: 0 var(--space-8);
+.about-section .container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 0 2rem !important;
     position: relative;
     z-index: 2;
 }
 
 /* Products section - contained width */
 .products-section {
-    margin: 0;
+    margin: 0 !important;
+    padding: 80px 0 !important;
 }
 
-/* ==========================================================================
-   Responsive Adjustments for Index Page
-   ========================================================================== */
+.products-section .container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 0 2rem !important;
+    position: relative;
+    z-index: 2;
+}
 
+/* Remove fixed footer styling for index page - use inline footer like other pages */
+
+/* Mobile responsive adjustments */
 @media (max-width: 768px) {
     .hero-section {
-        padding: calc(var(--space-20) + var(--header-height)) 0 var(--space-16);
+        padding: calc(80px + var(--header-height)) 0 60px !important;
     }
 
-    .about-section,
+    .about-section {
+        padding: 60px 0 !important;
+    }
+
     .products-section {
-        padding: var(--space-16) 0;
+        padding: 60px 0 !important;
     }
 
     .hero-section .container,
     .about-section .container,
     .products-section .container {
-        width: 100%;
-        max-width: 100%;
-        padding: 0 var(--space-4);
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 1rem !important;
     }
 }
 
 /* Ensure content flows properly with header and sticky footer */
 main, .main-content, .page-container {
-    flex: 1 0 auto;
-    position: relative;
-    z-index: 1;
-    margin-bottom: 0;
-    padding-bottom: 0;
+    flex: 1 0 auto !important;
+    position: relative !important;
+    z-index: 1 !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 
