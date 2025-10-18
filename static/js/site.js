@@ -81,52 +81,68 @@
 })();
 
 
-// Mobile Menu Toggle (Bento/Hamburger Menu)
+// Curtain Navigation Menu (slides from right)
 (function() {
   try {
-    function initMobileMenu() {
+    function initCurtainMenu() {
       var toggle = document.getElementById('mobileMenuToggle');
       var nav = document.getElementById('navbarNav');
-      
+
       if (!toggle || !nav) return;
-      
+
+      // Function to open the curtain menu
+      function openNav() {
+        nav.classList.add('show');
+        toggle.classList.add('active');
+      }
+
+      // Function to close the curtain menu
+      function closeNav() {
+        nav.classList.remove('show');
+        toggle.classList.remove('active');
+      }
+
       toggle.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        toggle.classList.toggle('active');
-        nav.classList.toggle('show');
+        if (nav.classList.contains('show')) {
+          closeNav();
+        } else {
+          openNav();
+        }
       });
-      
+
       // Close menu when clicking outside
       document.addEventListener('click', function(e) {
         if (!toggle.contains(e.target) && !nav.contains(e.target)) {
-          toggle.classList.remove('active');
-          nav.classList.remove('show');
+          closeNav();
         }
       });
-      
+
       // Close menu when clicking on a nav link
-      var navLinks = nav.querySelectorAll('.nav-link');
+      var navLinks = nav.querySelectorAll('a[href^="/"]');
       for (var i = 0; i < navLinks.length; i++) {
         navLinks[i].addEventListener('click', function() {
-          toggle.classList.remove('active');
-          nav.classList.remove('show');
+          closeNav();
         });
       }
-      
+
       // Close menu on escape key
       document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape' && nav.classList.contains('show')) {
-          toggle.classList.remove('active');
-          nav.classList.remove('show');
+          closeNav();
         }
       });
+
+      // Make functions globally available
+      window.openNav = openNav;
+      window.closeNav = closeNav;
     }
-    
+
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
-      setTimeout(initMobileMenu, 0);
+      setTimeout(initCurtainMenu, 0);
     } else {
-      document.addEventListener('DOMContentLoaded', initMobileMenu);
+      document.addEventListener('DOMContentLoaded', initCurtainMenu);
     }
   } catch (e) {
     // no-op
