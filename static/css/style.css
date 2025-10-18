@@ -155,7 +155,7 @@ body.index-page {
 
 /* Mobile Menu Toggle Button (Bento/Hamburger) */
 .mobile-menu-toggle {
-    display: none;
+    display: none !important;
     flex-direction: column;
     justify-content: space-between;
     width: 30px;
@@ -166,6 +166,8 @@ body.index-page {
     padding: 0;
     z-index: 1031;
     position: relative;
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .mobile-menu-toggle span {
@@ -520,9 +522,10 @@ textarea.form-control {
         padding: 0 1.5rem;
         flex-direction: row !important;
         align-items: center !important;
-        justify-content: space-between !important;
+        justify-content: flex-start !important;
         gap: 1rem !important;
         flex-wrap: nowrap !important;
+        width: 100%;
     }
     
     .navbar-brand {
@@ -532,8 +535,9 @@ textarea.form-control {
     
     /* Show mobile menu toggle */
     .mobile-menu-toggle {
-        display: flex;
-        order: 3;
+        display: flex !important;
+        order: unset;
+        margin-left: auto;
     }
     
     /* Mobile menu styles */
