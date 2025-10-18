@@ -2,14 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>AI Text Detector — TextSense</title>
     <meta name="description" content="Detect AI-generated text with our advanced detector. Identify content created by ChatGPT, GPT-4, and other AI models with high accuracy.">
     <meta name="keywords" content="AI text detector, ChatGPT detector, AI detection, text analysis, content verification">
     <meta name="author" content="TextSense">
-    <meta name="robots" content="index, follow">
-    <meta name="language" content="English">
-    <meta name="revisit-after" content="7 days">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="language" content="en">
+    <meta name="geo.region" content="US">
+    <meta name="geo.placename" content="United States">
     <!-- Open Graph / Social Media -->
     <meta property="og:title" content="AI Text Detector — TextSense">
     <meta property="og:description" content="Detect AI-generated text with our advanced detector. Identify content created by ChatGPT, GPT-4, and other AI models.">
@@ -41,10 +42,10 @@
 <body>
     <div class="container-fluid">
         <!-- Header / Navbar -->
-        <nav class="navbar site-header">
+        <nav class="navbar site-header" role="navigation" aria-label="Main navigation">
             <div class="container">
                 <div class="navbar-brand">
-                    <a href="/" class="d-flex align-items-center text-decoration-none">
+                    <a href="/" class="d-flex align-items-center text-decoration-none" aria-label="TextSense home">
                         <img src="{{ url_for('static', path='textsense_logo.png') }}" alt="TextSense Logo" height="48" class="me-1">
                         <div>
                             <span class="brand-logo-text fw-bold fs-3">TextSense</span>
@@ -52,47 +53,47 @@
                         </div>
                     </a>
                 </div>
-                <div class="navbar-nav">
-                    <a href="/ai-detector" class="nav-link fw-bold active">AI Text Detector</a>
-                    <a href="/ocr" class="nav-link fw-bold">Image-Text to Text</a>
-                    <a href="/audio-text" class="nav-link fw-bold">Audio to Text</a>
-                    <a href="/text-to-speech" class="nav-link fw-bold">Text to Speech</a>
-                    <a href="/generate-image-page" class="nav-link fw-bold">Text to Image</a>
+                <div class="navbar-nav" role="menubar">
+                    <a href="/ai-detector" class="nav-link fw-bold active" role="menuitem" aria-current="page" aria-label="AI Text Detector tool - current page">AI Text Detector</a>
+                    <a href="/ocr" class="nav-link fw-bold" role="menuitem" aria-label="OCR tool to extract text from images">Image-Text to Text</a>
+                    <a href="/audio-text" class="nav-link fw-bold" role="menuitem" aria-label="Audio to Text transcription tool">Audio to Text</a>
+                    <a href="/text-to-speech" class="nav-link fw-bold" role="menuitem" aria-label="Text to Speech synthesis tool">Text to Speech</a>
+                    <a href="/generate-image-page" class="nav-link fw-bold" role="menuitem" aria-label="Text to Image generation tool">Text to Image</a>
                 </div>
             </div>
         </nav>
 
         <!-- Page Header -->
-        <main class="container">
+        <main class="container" role="main">
             <div class="row justify-content-center">
                 <div class="col-lg-9 col-xl-8">
                 <header class="text-center mb-4">
-                    <h1 class="display-5 fw-bold text-primary mb-3">
-                        <i class="fas fa-search me-2"></i>AI Text Detector
+                    <h1 class="display-5 fw-bold text-primary mb-3" id="main-heading">
+                        <i class="fas fa-search me-2" aria-hidden="true"></i>AI Text Detector
                     </h1>
                     <p class="lead text-muted mb-4">
-                        Detect AI-generated content with sentence-level analysis. Get detailed probability scores 
+                        Detect AI-generated content with sentence-level analysis. Get detailed probability scores
                         and visual highlighting to understand exactly which parts of your text appear AI-generated.
                     </p>
-                    <div class="row text-center">
+                    <div class="row text-center" role="img" aria-label="Three key features: Advanced AI Detection, Visual Highlighting, and Export Reports">
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <i class="fas fa-brain text-primary fs-1"></i>
-                                <h6 class="mt-2">Advanced AI Detection</h6>
+                                <i class="fas fa-brain text-primary fs-1" aria-hidden="true"></i>
+                                <h2>Advanced AI Detection</h2>
                                 <small class="text-muted">Sentence-level analysis</small>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <i class="fas fa-highlighter text-primary fs-1"></i>
-                                <h6 class="mt-2">Visual Highlighting</h6>
+                                <i class="fas fa-highlighter text-primary fs-1" aria-hidden="true"></i>
+                                <h2>Visual Highlighting</h2>
                                 <small class="text-muted">Color-coded probability</small>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <i class="fas fa-file-pdf text-primary fs-1"></i>
-                                <h6 class="mt-2">Export Reports</h6>
+                                <i class="fas fa-file-pdf text-primary fs-1" aria-hidden="true"></i>
+                                <h2>Export Reports</h2>
                                 <small class="text-muted">PDF download available</small>
                             </div>
                         </div>
@@ -100,63 +101,65 @@
                 </header>
 
                 <!-- Input Section -->
-                <div class="card shadow-lg mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Analyze Your Text</h5>
-                    </div>
+                <section class="card shadow-lg mb-4" aria-labelledby="input-heading">
+                    <header class="card-header bg-primary text-white">
+                        <h2 class="mb-0" id="input-heading"><i class="fas fa-edit me-2" aria-hidden="true"></i>Analyze Your Text</h2>
+                    </header>
                     <div class="card-body">
-
                         <!-- Tab Navigation -->
-                        <ul class="nav nav-tabs" id="inputTabs" role="tablist">
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-input" type="button" role="tab">
-                                    <i class="fas fa-keyboard me-2"></i>Text Input
-                                </button>
-                            </li>
-                            <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="file-tab" data-bs-toggle="tab" data-bs-target="#file-input" type="button" role="tab">
-                                    <i class="fas fa-file-upload me-2"></i>File Upload
-                                </button>
-                            </li>
-                        </ul>
+                        <nav>
+                            <ul class="nav nav-tabs" id="inputTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="text-tab" data-bs-toggle="tab" data-bs-target="#text-input" type="button" role="tab" aria-selected="true" aria-controls="text-input">
+                                        <i class="fas fa-keyboard me-2" aria-hidden="true"></i>Text Input
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="file-tab" data-bs-toggle="tab" data-bs-target="#file-input" type="button" role="tab" aria-selected="false" aria-controls="file-input">
+                                        <i class="fas fa-file-upload me-2" aria-hidden="true"></i>File Upload
+                                    </button>
+                                </li>
+                            </ul>
+                        </nav>
 
                         <!-- Tab Content -->
                         <div class="tab-content mt-3" id="inputTabsContent">
                             <!-- Text Input Tab -->
-                            <div class="tab-pane fade show active" id="text-input" role="tabpanel">
+                            <div class="tab-pane fade show active" id="text-input" role="tabpanel" aria-labelledby="text-tab">
                                 <form id="textForm">
                                     <div class="mb-3">
                                         <label for="textInput" class="form-label">Enter your text to analyze:</label>
                                         <div class="position-relative">
-                                            <textarea class="form-control" id="textInput" rows="8" placeholder="Paste your text here..." maxlength="50000"></textarea>
-                                            <div id="inputLoadingOverlay" class="input-loading-overlay d-none">
+                                            <textarea class="form-control" id="textInput" rows="8" placeholder="Paste your text here..." maxlength="50000" aria-describedby="textInputHelp"></textarea>
+                                            <div id="inputLoadingOverlay" class="input-loading-overlay d-none" aria-live="polite">
                                                 <div class="text-center">
-                                                    <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;"></div>
+                                                    <div class="spinner-border text-primary" role="status" aria-hidden="true" style="width: 2.5rem; height: 2.5rem;"></div>
                                                     <div class="mt-2 text-muted small">Analyzing…</div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="d-flex justify-content-between mt-1">
+                                        <div id="textInputHelp" class="d-flex justify-content-between mt-1">
                                             <small class="text-muted">Max 50,000 characters</small>
                                             <small id="charCounter" class="char-counter text-muted">0 / 50,000</small>
                                         </div>
                                     </div>
-                                    <button type="submit" class="btn btn-primary btn-lg">
-                                        <i class="fas fa-search me-2"></i>Analyze Text
+                                    <button type="submit" class="btn btn-primary btn-lg" aria-describedby="analyzeButtonHelp">
+                                        <i class="fas fa-search me-2" aria-hidden="true"></i>Analyze Text
                                     </button>
+                                    <div id="analyzeButtonHelp" class="sr-only">Click to analyze the text using AI detection algorithms</div>
                                 </form>
                             </div>
 
                             <!-- File Input Tab -->
-                            <div class="tab-pane fade" id="file-input" role="tabpanel">
+                            <div class="tab-pane fade" id="file-input" role="tabpanel" aria-labelledby="file-tab">
                                 <form id="fileForm" enctype="multipart/form-data">
                                     <div class="mb-3">
                                         <label for="fileInput" class="form-label">Upload a text file:</label>
-                                        <input type="file" class="form-control" id="fileInput" accept=".txt,.md,.doc,.docx">
-                                        <div class="form-text">Supported formats: .txt, .md, .doc, .docx (Max 16MB)</div>
+                                        <input type="file" class="form-control" id="fileInput" accept=".txt,.md,.doc,.docx" aria-describedby="fileInputHelp">
+                                        <div id="fileInputHelp" class="form-text">Supported formats: .txt, .md, .doc, .docx (Max 16MB)</div>
                                     </div>
                                     <button type="submit" class="btn btn-primary btn-lg">
-                                        <i class="fas fa-upload me-2"></i>Upload & Analyze
+                                        <i class="fas fa-upload me-2" aria-hidden="true"></i>Upload & Analyze
                                     </button>
                                 </form>
                             </div>

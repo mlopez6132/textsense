@@ -2,14 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     <title>TextSense — Open Text Tools for Everyone</title>
     <meta name="description" content="Free online text tools including AI text detector, audio transcription, OCR, text-to-speech, and image generation. Open-source, no registration required.">
     <meta name="keywords" content="text tools, AI detector, audio to text, OCR, text to speech, image generation, free tools">
     <meta name="author" content="TextSense">
-    <meta name="robots" content="index, follow">
-    <meta name="language" content="English">
-    <meta name="revisit-after" content="7 days">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="language" content="en">
+    <meta name="geo.region" content="US">
+    <meta name="geo.placename" content="United States">
     <!-- Open Graph / Social Media -->
     <meta property="og:title" content="TextSense — Open Text Tools for Everyone">
     <meta property="og:description" content="Free online text tools including AI text detector, audio transcription, OCR, text-to-speech, and image generation.">
@@ -38,145 +39,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', path='css/style.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', path='css/index.css') }}" rel="stylesheet">
-    <style>
-        .hero-section {
-            background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
-            color: white;
-            padding: 100px 0;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 3rem;
-        }
-        .hero-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1.5" fill="white" opacity="0.08"/><circle cx="50" cy="10" r="0.8" fill="white" opacity="0.06"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-            pointer-events: none;
-        }
-        .feature-card {
-            transition: all 0.3s ease;
-            height: 100%;
-            border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        }
-        .feature-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 2rem;
-            margin: 0 auto 1.5rem;
-        }
-        .stats-section {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            padding: 80px 0;
-            margin: 0;
-        }
-        .stat-item {
-            text-align: center;
-            padding: 2rem 1rem;
-        }
-        .stat-number {
-            font-size: 3rem;
-            font-weight: bold;
-            background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .creator-badge {
-            background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 50px;
-            display: inline-block;
-            margin-top: 2rem;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        .creator-badge:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(13, 110, 253, 0.3);
-            color: white;
-            text-decoration: none;
-        }
-        .about-section {
-            padding: 80px 0;
-            margin: 0;
-        }
-        .product-card {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            border: none;
-        }
-        .product-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-        }
-        .btn-primary-gradient {
-            background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
-            border: none;
-            border-radius: 25px;
-            padding: 12px 30px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            color: white !important;
-        }
-        .btn-primary-gradient:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(13, 110, 253, 0.3);
-            color: white !important;
-        }
-        .hero-feature {
-            text-align: center;
-            padding: 1rem;
-        }
-        .hero-feature i {
-            color: rgba(255, 255, 255, 0.9);
-        }
-        .hero-feature h5 {
-            color: white;
-            margin-bottom: 0.5rem;
-        }
-        .hero-feature p {
-            color: rgba(255, 255, 255, 0.8);
-            margin: 0;
-        }
-        .cta-section {
-            background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
-            color: white;
-            padding: 80px 0;
-            margin: 0;
-        }
-
-    </style>
 </head>
 <body class="index-page">
     <div class="container-fluid">
         <!-- Header / Navbar -->
-        <nav class="navbar site-header">
+        <nav class="navbar site-header" role="navigation" aria-label="Main navigation">
             <div class="container">
                 <div class="navbar-brand">
-                    <a href="/" class="d-flex align-items-center text-decoration-none">
+                    <a href="/" class="d-flex align-items-center text-decoration-none" aria-label="TextSense home">
                         <img src="{{ url_for('static', path='textsense_logo.png') }}" alt="TextSense Logo" height="48" class="me-1">
                         <div>
                             <span class="brand-logo-text fw-bold fs-3">TextSense</span>
@@ -184,66 +54,66 @@
                         </div>
                     </a>
                 </div>
-                <div class="navbar-nav">
-                    <a href="/ai-detector" class="nav-link fw-bold">AI Text Detector</a>
-                    <a href="/ocr" class="nav-link fw-bold">Image-Text to Text</a>
-                    <a href="/audio-text" class="nav-link fw-bold">Audio to Text</a>
-                    <a href="/text-to-speech" class="nav-link fw-bold">Text to Speech</a>
-                    <a href="/generate-image-page" class="nav-link fw-bold">Text to Image</a>
+                <div class="navbar-nav" role="menubar">
+                    <a href="/ai-detector" class="nav-link fw-bold" role="menuitem" aria-label="AI Text Detector tool">AI Text Detector</a>
+                    <a href="/ocr" class="nav-link fw-bold" role="menuitem" aria-label="OCR tool to extract text from images">Image-Text to Text</a>
+                    <a href="/audio-text" class="nav-link fw-bold" role="menuitem" aria-label="Audio to Text transcription tool">Audio to Text</a>
+                    <a href="/text-to-speech" class="nav-link fw-bold" role="menuitem" aria-label="Text to Speech synthesis tool">Text to Speech</a>
+                    <a href="/generate-image-page" class="nav-link fw-bold" role="menuitem" aria-label="Text to Image generation tool">Text to Image</a>
                 </div>
             </div>
         </nav>
 
         <!-- Page Content -->
-        <div class="page-container">
+        <main class="page-container" role="main">
             <!-- Hero Section -->
-            <section class="hero-section">
+            <section class="hero-section" aria-labelledby="hero-heading">
                 <div class="container">
                     <div class="row align-items-center">
                         <div class="col-lg-6">
-                            <h2 class="display-6 fw-bold mb-4">Free AI-Powered Text Analysis Tools</h2>
+                            <h1 id="hero-heading" class="display-6 fw-bold mb-4">Free AI-Powered Text Analysis Tools</h1>
                             <p class="lead mb-4">
-                                Professional-grade text analysis tools accessible to everyone. No paywalls, no limits, 
-                                no registration required. Analyze text with AI, extract text from images, convert 
+                                Professional-grade text analysis tools accessible to everyone. No paywalls, no limits,
+                                no registration required. Analyze text with AI, extract text from images, convert
                                 audio to text, and generate images from text descriptions.
                             </p>
                             <div class="d-flex flex-wrap gap-3">
-                                <a href="/ai-detector" class="btn btn-light btn-lg px-4">
-                                    <i class="fas fa-search me-2"></i>Try AI Detector
+                                <a href="/ai-detector" class="btn btn-light btn-lg px-4" aria-label="Try the AI Text Detector tool">
+                                    <i class="fas fa-search me-2" aria-hidden="true"></i>Try AI Detector
                                 </a>
-                                <a href="#products" class="btn btn-outline-light btn-lg px-4">
-                                    <i class="fas fa-arrow-down me-2"></i>Explore Tools
+                                <a href="#products" class="btn btn-outline-light btn-lg px-4" aria-label="Scroll down to explore all tools">
+                                    <i class="fas fa-arrow-down me-2" aria-hidden="true"></i>Explore Tools
                                 </a>
                             </div>
                         </div>
                         <div class="col-lg-6 text-center">
-                            <div class="hero-features">
+                            <div class="hero-features" role="img" aria-label="Four key features: AI Detection, OCR Technology, Speech-to-Text, and Text-to-Image">
                                 <div class="row">
                                     <div class="col-6 mb-4">
                                         <div class="hero-feature">
-                                            <i class="fas fa-brain fa-3x mb-3"></i>
-                                            <h5>AI Detection</h5>
+                                            <i class="fas fa-brain fa-3x mb-3" aria-hidden="true"></i>
+                                            <h2>AI Detection</h2>
                                             <p class="small">Advanced algorithms</p>
                                         </div>
                                     </div>
                                     <div class="col-6 mb-4">
                                         <div class="hero-feature">
-                                            <i class="fas fa-image fa-3x mb-3"></i>
-                                            <h5>OCR Technology</h5>
+                                            <i class="fas fa-image fa-3x mb-3" aria-hidden="true"></i>
+                                            <h2>OCR Technology</h2>
                                             <p class="small">Extract text from images</p>
                                         </div>
                                     </div>
                                     <div class="col-6 mb-4">
                                         <div class="hero-feature">
-                                            <i class="fas fa-microphone fa-3x mb-3"></i>
-                                            <h5>Speech-to-Text</h5>
+                                            <i class="fas fa-microphone fa-3x mb-3" aria-hidden="true"></i>
+                                            <h2>Speech-to-Text</h2>
                                             <p class="small">Audio transcription</p>
                                         </div>
                                     </div>
                                     <div class="col-6 mb-4">
                                         <div class="hero-feature">
-                                            <i class="fas fa-palette fa-3x mb-3"></i>
-                                            <h5>Text-to-Image</h5>
+                                            <i class="fas fa-palette fa-3x mb-3" aria-hidden="true"></i>
+                                            <h2>Text-to-Image</h2>
                                             <p class="small">AI image generation</p>
                                         </div>
                                     </div>
@@ -255,34 +125,34 @@
             </section>
 
             <!-- Stats Section -->
-            <section class="stats-section">
+            <section class="stats-section" aria-labelledby="stats-heading">
                 <div class="container">
                     <div class="row">
                         <div class="col-lg-3 col-md-6">
-                            <div class="stat-item">
-                                <div class="stat-number">100%</div>
-                                <h5>Free Forever</h5>
+                            <div class="stat-item" role="img" aria-label="100% Free Forever - No hidden fees or paywalls">
+                                <div class="stat-number" aria-label="100%">100%</div>
+                                <h2>Free Forever</h2>
                                 <p class="text-muted">No hidden fees or paywalls</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-6">
-                            <div class="stat-item">
-                                <div class="stat-number">4</div>
-                                <h5>Powerful Tools</h5>
+                            <div class="stat-item" role="img" aria-label="4 Powerful Tools - AI detection, OCR, speech-to-text, text-to-image">
+                                <div class="stat-number" aria-label="4">4</div>
+                                <h2>Powerful Tools</h2>
                                 <p class="text-muted">AI detection, OCR, speech-to-text, text-to-image</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-6">
-                            <div class="stat-item">
-                                <div class="stat-number">50K</div>
-                                <h5>Character Limit</h5>
+                            <div class="stat-item" role="img" aria-label="50K Character Limit - Analyze large documents">
+                                <div class="stat-number" aria-label="50,000">50K</div>
+                                <h2>Character Limit</h2>
                                 <p class="text-muted">Analyze large documents</p>
                             </div>
                         </div>
                         <div class="col-lg-3 col-md-6">
-                            <div class="stat-item">
-                                <div class="stat-number">24/7</div>
-                                <h5>Available</h5>
+                            <div class="stat-item" role="img" aria-label="24/7 Available - Access anytime, anywhere">
+                                <div class="stat-number" aria-label="24/7">24/7</div>
+                                <h2>Available</h2>
                                 <p class="text-muted">Access anytime, anywhere</p>
                             </div>
                         </div>
@@ -291,180 +161,180 @@
             </section>
 
             <!-- Products Section -->
-            <section id="products" class="products-section">
+            <section id="products" class="products-section" aria-labelledby="products-heading">
                 <div class="container">
-                    <div class="text-center mb-5">
-                        <h2 class="display-5 fw-bold mb-3">Our Text Analysis Tools</h2>
+                    <header class="text-center mb-5">
+                        <h2 id="products-heading" class="display-5 fw-bold mb-3">Our Text Analysis Tools</h2>
                         <p class="lead text-muted">Professional-grade tools for all your text analysis needs</p>
-                    </div>
-                    
+                    </header>
+
                     <div class="row">
                         <!-- AI Text Detector -->
-                        <div class="col-lg-6 mb-4">
+                        <article class="col-lg-6 mb-4">
                             <div class="product-card h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-search"></i>
+                                <div class="feature-icon" role="img" aria-label="AI Detection icon">
+                                    <i class="fas fa-search" aria-hidden="true"></i>
                                 </div>
-                                <h4 class="fw-bold mb-3">AI Text Detector</h4>
+                                <h3 class="fw-bold mb-3">AI Text Detector</h3>
                                 <p class="text-muted mb-4">
                                     Detect AI-generated content with sentence-level analysis. Get detailed probability
                                     scores and visual highlighting to identify AI-generated text with high accuracy.
                                 </p>
                                 <ul class="list-unstyled mb-4">
-                                    <li><i class="fas fa-check text-success me-2"></i>Sentence-level analysis</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Visual probability highlighting</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>PDF export reports</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Support for large documents</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Sentence-level analysis</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Visual probability highlighting</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>PDF export reports</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Support for large documents</li>
                                 </ul>
-                                <a href="/ai-detector" class="btn btn-primary-gradient">
-                                    <i class="fas fa-search me-2"></i>Try AI Detector
+                                <a href="/ai-detector" class="btn btn-primary-gradient" aria-label="Try the AI Text Detector tool">
+                                    <i class="fas fa-search me-2" aria-hidden="true"></i>Try AI Detector
                                 </a>
                             </div>
-                        </div>
+                        </article>
 
                         <!-- OCR Tool -->
-                        <div class="col-lg-6 mb-4">
+                        <article class="col-lg-6 mb-4">
                             <div class="product-card h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-image"></i>
+                                <div class="feature-icon" role="img" aria-label="OCR icon">
+                                    <i class="fas fa-image" aria-hidden="true"></i>
                                 </div>
-                                <h4 class="fw-bold mb-3">Image to Text (OCR)</h4>
+                                <h3 class="fw-bold mb-3">Image to Text (OCR)</h3>
                                 <p class="text-muted mb-4">
                                     Extract text from images with high accuracy. Upload photos, screenshots,
                                     or scanned documents and get clean, editable text output instantly.
                                 </p>
                                 <ul class="list-unstyled mb-4">
-                                    <li><i class="fas fa-check text-success me-2"></i>Multiple image formats supported</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>High accuracy text extraction</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Preserves text formatting</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Instant results</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Multiple image formats supported</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>High accuracy text extraction</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Preserves text formatting</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Instant results</li>
                                 </ul>
-                                <a href="/ocr" class="btn btn-primary-gradient">
-                                    <i class="fas fa-image me-2"></i>Try OCR Tool
+                                <a href="/ocr" class="btn btn-primary-gradient" aria-label="Try the OCR tool">
+                                    <i class="fas fa-image me-2" aria-hidden="true"></i>Try OCR Tool
                                 </a>
                             </div>
-                        </div>
+                        </article>
 
                         <!-- Audio to Text -->
-                        <div class="col-lg-6 mb-4">
+                        <article class="col-lg-6 mb-4">
                             <div class="product-card h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-microphone"></i>
+                                <div class="feature-icon" role="img" aria-label="Audio transcription icon">
+                                    <i class="fas fa-microphone" aria-hidden="true"></i>
                                 </div>
-                                <h4 class="fw-bold mb-3">Audio to Text</h4>
+                                <h3 class="fw-bold mb-3">Audio to Text</h3>
                                 <p class="text-muted mb-4">
                                     Convert speech to text with advanced AI transcription. Upload audio files
                                     and get accurate transcriptions for meetings, interviews, or personal notes.
                                 </p>
                                 <ul class="list-unstyled mb-4">
-                                    <li><i class="fas fa-check text-success me-2"></i>Multiple audio formats</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>High-quality transcription</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Speaker identification</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Downloadable transcripts</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Multiple audio formats</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>High-quality transcription</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Speaker identification</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Downloadable transcripts</li>
                                 </ul>
-                                <a href="/audio-text" class="btn btn-primary-gradient">
-                                    <i class="fas fa-microphone me-2"></i>Try Audio Tool
+                                <a href="/audio-text" class="btn btn-primary-gradient" aria-label="Try the Audio to Text tool">
+                                    <i class="fas fa-microphone me-2" aria-hidden="true"></i>Try Audio Tool
                                 </a>
                             </div>
-                        </div>
+                        </article>
 
                         <!-- Text to Image -->
-                        <div class="col-lg-6 mb-4">
+                        <article class="col-lg-6 mb-4">
                             <div class="product-card h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-palette"></i>
+                                <div class="feature-icon" role="img" aria-label="Image generation icon">
+                                    <i class="fas fa-palette" aria-hidden="true"></i>
                                 </div>
-                                <h4 class="fw-bold mb-3">Text to Image</h4>
+                                <h3 class="fw-bold mb-3">Text to Image</h3>
                                 <p class="text-muted mb-4">
                                     Generate stunning images from text descriptions using advanced AI. Create
                                     artwork, illustrations, and visual content from simple text prompts.
                                 </p>
                                 <ul class="list-unstyled mb-4">
-                                    <li><i class="fas fa-check text-success me-2"></i>AI-powered image generation</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Multiple art styles</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>High-resolution output</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Creative and artistic results</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>AI-powered image generation</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Multiple art styles</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>High-resolution output</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Creative and artistic results</li>
                                 </ul>
-                                <a href="/generate-image-page" class="btn btn-primary-gradient">
-                                    <i class="fas fa-palette me-2"></i>Try Image Generator
+                                <a href="/generate-image-page" class="btn btn-primary-gradient" aria-label="Try the Text to Image tool">
+                                    <i class="fas fa-palette me-2" aria-hidden="true"></i>Try Image Generator
                                 </a>
                             </div>
-                        </div>
+                        </article>
 
                         <!-- Text to Speech -->
-                        <div class="col-lg-6 mb-4">
+                        <article class="col-lg-6 mb-4">
                             <div class="product-card h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-volume-up"></i>
+                                <div class="feature-icon" role="img" aria-label="Text to speech icon">
+                                    <i class="fas fa-volume-up" aria-hidden="true"></i>
                                 </div>
-                                <h4 class="fw-bold mb-3">Text to Speech</h4>
+                                <h3 class="fw-bold mb-3">Text to Speech</h3>
                                 <p class="text-muted mb-4">
                                     Transform your text into natural-sounding speech with AI voice synthesis.
                                     Choose from multiple voices and custom emotion/style prompts for personalized audio output.
                                 </p>
                                 <ul class="list-unstyled mb-4">
-                                    <li><i class="fas fa-check text-success me-2"></i>Multiple AI voices</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Custom emotion/style prompts</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>High-quality audio</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Downloadable MP3 files</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Multiple AI voices</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Custom emotion/style prompts</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>High-quality audio</li>
+                                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>Downloadable MP3 files</li>
                                 </ul>
-                                <a href="/text-to-speech" class="btn btn-primary-gradient">
-                                    <i class="fas fa-volume-up me-2"></i>Try Speech Generator
+                                <a href="/text-to-speech" class="btn btn-primary-gradient" aria-label="Try the Text to Speech tool">
+                                    <i class="fas fa-volume-up me-2" aria-hidden="true"></i>Try Speech Generator
                                 </a>
                             </div>
-                        </div>
+                        </article>
                     </div>
                 </div>
             </section>
 
             <!-- About Section -->
-            <section class="about-section" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+            <section class="about-section" aria-labelledby="about-heading" style="background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
                 <div class="container">
                     <div class="row align-items-center">
                         <div class="col-lg-6 mb-5 mb-lg-0">
-                            <h2 class="display-5 fw-bold mb-4">About TextSense</h2>
+                            <h2 id="about-heading" class="display-5 fw-bold mb-4">About TextSense</h2>
                             <p class="lead mb-4">
-                                TextSense is a collection of open text tools designed to be free and accessible 
+                                TextSense is a collection of open text tools designed to be free and accessible
                                 for everyone.
                             </p>
                             <p class="mb-4">
-                                My mission is to democratize text analysis technology by providing professional-grade 
-                                tools that are easy to use, fast, and completely free. Whether you're a student, 
-                                researcher, content creator, or business professional, TextSense gives you the 
-                                tools you need to work with text more effectively. Love using TextSense.org? Or have a suggestion in mind?. 
+                                My mission is to democratize text analysis technology by providing professional-grade
+                                tools that are easy to use, fast, and completely free. Whether you're a student,
+                                researcher, content creator, or business professional, TextSense gives you the
+                                tools you need to work with text more effectively. Love using TextSense.org? Or have a suggestion in mind?.
                                 Your feedback means a lot!
                             </p>
                             <div class="row">
                                 <div class="col-6">
-                                    <h5><i class="fas fa-heart text-danger me-2"></i>Free Forever</h5>
+                                    <h3><i class="fas fa-heart text-danger me-2" aria-hidden="true"></i>Free Forever</h3>
                                     <p class="text-muted small">No hidden costs or limitations</p>
                                 </div>
                                 <div class="col-6">
-                                    <h5><i class="fas fa-shield-alt text-success me-2"></i>Privacy First</h5>
+                                    <h3><i class="fas fa-shield-alt text-success me-2" aria-hidden="true"></i>Privacy First</h3>
                                     <p class="text-muted small">Your data stays secure</p>
                                 </div>
                                 <div class="col-6">
-                                    <h5><i class="fas fa-rocket text-primary me-2"></i>Fast Results</h5>
+                                    <h3><i class="fas fa-rocket text-primary me-2" aria-hidden="true"></i>Fast Results</h3>
                                     <p class="text-muted small">Optimized for speed</p>
                                 </div>
                                 <div class="col-6">
-                                    <h5><i class="fas fa-users text-info me-2"></i>For Everyone</h5>
+                                    <h3><i class="fas fa-users text-info me-2" aria-hidden="true"></i>For Everyone</h3>
                                     <p class="text-muted small">No registration required</p>
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-6 text-center">
                             <div class="bg-white p-5 rounded-3 shadow">
-                                <i class="fas fa-quote-left fa-3x text-primary mb-4"></i>
+                                <i class="fas fa-quote-left fa-3x text-primary mb-4" aria-hidden="true"></i>
                                 <blockquote class="blockquote">
                                     <p class="mb-4">
                                         "I believe powerful text analysis tools should be accessible to everyone."
                                     </p>
                                 </blockquote>
                                 <div class="text-center">
-                                    <a href="https://www.linkedin.com/in/marc-lopez-295341251/" target="_blank" class="text-decoration-none">
+                                    <a href="https://www.linkedin.com/in/marc-lopez-295341251/" target="_blank" rel="noopener noreferrer" class="text-decoration-none" aria-label="Visit Marc Lopez's LinkedIn profile">
                                         <div class="creator-badge">
-                                            <i class="fas fa-code me-2"></i>
+                                            <i class="fas fa-code me-2" aria-hidden="true"></i>
                                             Created by: Marc Lopez
                                         </div>
                                     </a>
@@ -474,20 +344,19 @@
                     </div>
                 </div>
             </section>
-
-        </div>
+        </main>
 
         <!-- Footer -->
-        <footer class="small text-muted">
+        <footer class="small text-muted" role="contentinfo">
             <div class="container">
                 <div class="footer-left">
                     <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
-                    <nav class="footer-nav">
-                        <a href="/about">About</a>
-                        <a href="/privacy">Privacy</a>
-                        <a href="/terms">Terms</a>
-                        <a href="/cookies">Cookies</a>
-                        <a href="/contact">Contact</a>
+                    <nav class="footer-nav" aria-label="Footer navigation">
+                        <a href="/about" aria-label="About TextSense">About</a>
+                        <a href="/privacy" aria-label="Privacy policy">Privacy</a>
+                        <a href="/terms" aria-label="Terms of service">Terms</a>
+                        <a href="/cookies" aria-label="Cookie policy">Cookies</a>
+                        <a href="/contact" aria-label="Contact information">Contact</a>
                     </nav>
                 </div>
                 <span class="footer-right">Contact: {{ contact_email|default('textsense2@gmail.com') }}</span>
