@@ -19,6 +19,7 @@ from slowapi.errors import RateLimitExceeded
 # Import our generation modules
 from image_generation import image_generator
 from speech_generation import speech_generator
+from audio_transcription import audio_transcriber
 
 HF_INFERENCE_URL_ENV = "HF_INFERENCE_URL"
 HF_OCR_URL_ENV = "HF_OCR_URL"
@@ -220,6 +221,62 @@ async def build_audio_payload(
     if audio_url:
         data["audio_url"] = audio_url.strip()
         return None, data
+    raise HTTPException(status_code=400, detail="No audio provided.")
+
+
+async def get_audio_bytes_and_format(
+    audio: UploadFile | None, audio_url: str | None
+) -> tuple[bytes, str]:
+    """Return raw audio bytes and inferred format (mp3|wav) from upload or URL."""
+    max_audio_size = 25 * 1024 * 1024  # 25MB limit
+    if audio is not None and audio.filename:
+        total_size = 0
+        chunks: list[bytes] = []
+        try:
+            await audio.seek(0)
+            while True:
+                chunk = await audio.read(8192)
+                if not chunk:
+                    break
+                total_size += len(chunk)
+                if total_size > max_audio_size:
+                    raise HTTPException(status_code=413, detail="Audio file too large. Maximum size is 25MB.")
+                chunks.append(chunk)
+            content = b"".join(chunks)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Audio read error: {str(e)}") from e
+
+        # Infer format from filename or content type
+        ext = (audio.filename.rsplit(".", 1)[-1].lower() if "." in audio.filename else "").strip()
+        content_type = (audio.content_type or "").lower()
+        audio_format = ext or ("mp3" if "mpeg" in content_type else ("wav" if "wav" in content_type else ""))
+        return content, audio_format
+
+    if audio_url:
+        try:
+            r = await http_client.get(audio_url.strip(), timeout=30, headers={"User-Agent": "TextSense-Relay/1.0"})
+            r.raise_for_status()
+        except (HTTPError, TimeoutException, ConnectError) as req_err:
+            raise HTTPException(status_code=502, detail=f"Failed to fetch audio URL: {str(req_err)}") from req_err
+
+        content_length = int(r.headers.get("content-length", 0))
+        if content_length and content_length > max_audio_size:
+            raise HTTPException(status_code=413, detail="Audio file too large. Maximum size is 25MB.")
+
+        mime = r.headers.get("content-type", "application/octet-stream").split(";")[0].strip().lower()
+        # Try infer format from URL extension if present
+        name = audio_url.split("?")[0].rstrip("/").split("/")[-1]
+        ext = (name.rsplit(".", 1)[-1].lower() if "." in name else "").strip()
+        if ext in {"mp3", "wav"}:
+            fmt = ext
+        elif "mpeg" in mime or "mp3" in mime:
+            fmt = "mp3"
+        elif "wav" in mime:
+            fmt = "wav"
+        else:
+            fmt = ""
+        return r.content, fmt
+
     raise HTTPException(status_code=400, detail="No audio provided.")
 
 
@@ -500,17 +557,41 @@ async def audio_transcribe(
     audio_url: Annotated[Optional[str], Form()] = None,
     return_timestamps: Annotated[bool, Form()] = False,
 ):
-    files, data = await build_audio_payload(audio, audio_url, return_timestamps)
-    remote_url = get_audio_text_url()
-    headers = get_auth_headers()
-    result = await forward_post_json(
-        remote_url,
-        data=data,
-        files=files,
-        headers=headers,
-        context="Audio transcription",
-    )
-    return JSONResponse(result)
+    audio_bytes, audio_format = await get_audio_bytes_and_format(audio, audio_url)
+
+    normalized_fmt = (audio_format or "").lower()
+    if normalized_fmt not in {"mp3", "wav"}:
+        raise HTTPException(status_code=400, detail="Unsupported audio format. Only MP3 and WAV are supported.")
+
+    try:
+        openai_json = await audio_transcriber.transcribe(
+            audio_bytes=audio_bytes,
+            audio_format=normalized_fmt,
+            question="Transcribe this:",
+            return_timestamps=return_timestamps,
+        )
+
+        extracted_text: str = ""
+        try:
+            choices = openai_json.get("choices") or []
+            if choices:
+                message = choices[0].get("message") or {}
+                content = message.get("content")
+                if isinstance(content, str):
+                    extracted_text = content
+        except Exception:
+            extracted_text = ""
+
+        response_body = {
+            "text": extracted_text,
+            "chunks": [],  # chat response doesn't include timestamps in this mode
+            "openai": openai_json,
+        }
+        return JSONResponse(response_body)
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except RuntimeError as re:
+        raise HTTPException(status_code=502, detail=str(re))
 
 
 @app.post("/generate-image")
@@ -547,7 +628,7 @@ async def generate_speech(
     request: Request,
     text: str = Form(...),
     voice: str = Form("alloy"),
-    emotion_style: str = Form("")
+    vibe: str = Form("")
 ):
     """Generate speech from text using the speech generation module."""
     try:
@@ -555,7 +636,7 @@ async def generate_speech(
         return await speech_generator.generate_speech(
             text=text,
             voice=voice,
-            emotion_style=emotion_style,
+            vibe=vibe,
             max_retries=3
         )
     except ValueError as ve:

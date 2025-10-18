@@ -1,6 +1,6 @@
 """
 Speech Generation Module for TextSense
-Handles AI-powered text-to-speech with emotion/style support
+Handles AI-powered text-to-speech with optional vibe support
 """
 
 from __future__ import annotations
@@ -18,10 +18,9 @@ logger = logging.getLogger(__name__)
 
 
 class SpeechGenerator:
-    """Handles AI text-to-speech generation with emotion/style customization."""
+    """Handles AI text-to-speech generation with optional vibe customization."""
 
     def __init__(self):
-        # Use generic OpenAI-style naming to hide underlying provider
         self.auth_token = os.getenv("OPENAI_SPEECH_TOKEN", "").strip()
         self.tts_url_template = os.getenv("OPENAI_SPEECH_API_KEY", "").strip()
         
@@ -30,14 +29,21 @@ class SpeechGenerator:
         else:
             logger.warning("OPENAI_SPEECH_TOKEN not set - API may require authentication")
 
-    def _construct_emotion_prompt(self, text: str, emotion_style: str = "") -> str:
-        """Construct the full prompt with emotion/style context."""
+    def _construct_prompt(self, text: str, vibe: str = "") -> str:
+        """Construct the full prompt with vibe context."""
         sanitized_text = text.strip()
-        return (
-            "Read exactly and only the following text, "
-            "without adding, removing, reordering, translating, or paraphrasing any words. "
-            "Preserve punctuation and numbers verbatim: \n\n\"\"\"" + sanitized_text + "\"\"\""
-        )
+        
+        if vibe.strip():
+            return (
+                f"Read the following text with this specific vibe and style: {vibe.strip()}\n\n"
+                f"Text to read: \"\"\"{sanitized_text}\"\"\""
+            )
+        else:
+            return (
+                "Read exactly and only the following text, "
+                "without adding, removing, reordering, translating, or paraphrasing any words. "
+                "Preserve punctuation and numbers verbatim: \n\n\"\"\"" + sanitized_text + "\"\"\""
+            )
 
     def _get_headers(self) -> dict[str, str]:
         """Get headers for TTS API requests."""
@@ -68,17 +74,17 @@ class SpeechGenerator:
         self,
         text: str,
         voice: str = "alloy",
-        emotion_style: str = "",
+        vibe: str = "",
         max_retries: int = 3
     ) -> StreamingResponse:
         """
-        Generate speech from text with emotion/style support.
+        Generate speech from text with optional vibe support.
         Automatically handles long-form content by chunking and concatenating.
 
         Args:
             text: The text to convert to speech
             voice: Voice to use (alloy, echo, fable, onyx, nova, shimmer, coral, verse, ballad, ash, sage, amuch, dan)
-            emotion_style: Custom emotion/style description
+            vibe: Optional vibe description
             max_retries: Maximum number of retry attempts
 
         Returns:
@@ -95,23 +101,19 @@ class SpeechGenerator:
         if len(text.strip()) > 999:
             raise ValueError("Text exceeds 999 character limit")
 
-        if len(emotion_style.strip()) > 200:
-            raise ValueError("Emotion style prompt exceeds 200 character limit")
-
-        return await self._generate_single_speech(text, voice, emotion_style, max_retries)
+        return await self._generate_single_speech(text, voice, vibe, max_retries)
 
     async def _generate_single_speech(
         self,
         text: str,
         voice: str,
-        emotion_style: str,
+        vibe: str,
         max_retries: int
     ) -> StreamingResponse:
-        """Generate speech for short text (single request)."""
-        full_prompt = self._construct_emotion_prompt(text, emotion_style)
+        """Generate speech"""
+        full_prompt = self._construct_prompt(text, vibe)
 
         encoded_prompt = urllib.parse.quote(full_prompt)
-        encoded_emotion = urllib.parse.quote(emotion_style or "neutral")
 
         last_error = ""
 
@@ -119,7 +121,6 @@ class SpeechGenerator:
             try:
                 seed = random.randint(1, 1000000)
 
-                # Build API URL from template
                 api_url = self.tts_url_template.format(
                     prompt=encoded_prompt,
                     voice=voice,
@@ -157,7 +158,7 @@ class SpeechGenerator:
                                     "Cache-Control": "no-cache",
                                     "X-Speech-Provider": "openai",
                                     "X-Speech-Voice": voice,
-                                    "X-Speech-Emotion": emotion_style or "neutral"
+                                    "X-Speech-Vibe": vibe or ""
                                 }
                             )
 
@@ -218,7 +219,7 @@ class SpeechGenerator:
         self,
         text: str,
         voice: str,
-        emotion_style: str
+        vibe: str
     ) -> dict[str, Any]:
         """
         Validate inputs and return validation results.
@@ -242,18 +243,12 @@ class SpeechGenerator:
         if voice not in valid_voices:
             errors.append(f"Invalid voice. Must be one of: {', '.join(valid_voices)}")
 
-        # Emotion style validation
-        if len(emotion_style.strip()) > 200:
-            errors.append("Emotion style prompt exceeds 200 character limit")
-        elif len(emotion_style.strip()) > 150:
-            warnings.append("Emotion style prompt is long, consider shortening for better results")
-
         return {
             "is_valid": len(errors) == 0,
             "errors": errors,
             "warnings": warnings,
             "text_length": len(text.strip()),
-            "emotion_style_length": len(emotion_style.strip())
+            "vibe_length": len(vibe.strip())
         }
 
 

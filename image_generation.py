@@ -18,7 +18,6 @@ class ImageGenerator:
     def __init__(self):
         self.text_api_url = os.getenv("FLUX_TEXT_URL").strip()
         self.image_api_base = os.getenv("FLUX_IMAGE_BASE").strip()
-        # Use FLUX_API_KEY to hide underlying provider
         self.auth_token = os.getenv("FLUX_API_KEY", "").strip()
         self.enhancement_system_prompt = self._get_enhancement_prompt()
     

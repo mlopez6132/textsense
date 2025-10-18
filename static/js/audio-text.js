@@ -28,6 +28,16 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // Check if file format is supported (MP3 or WAV only)
+        const fileName = file.name.toLowerCase();
+        const isMp3 = fileName.endsWith('.mp3') || file.type.includes('mpeg');
+        const isWav = fileName.endsWith('.wav') || file.type.includes('wav');
+        
+        if (!isMp3 && !isWav) {
+            alert('Only MP3 and WAV files are supported. Please select a different file.');
+            return;
+        }
+
         currentAudioFile = file;
         const url = URL.createObjectURL(file);
         audioPreview.src = url;
@@ -164,6 +174,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Display timestamps if available
             if (data.chunks && data.chunks.length > 0 && includeTimestamps.checked) {
                 displayTimestamps(data.chunks);
+                timestampsSection.style.display = 'block';
+            } else if (includeTimestamps.checked && data.text) {
+                // If timestamps were requested but not provided in chunks format,
+                // show a message that timestamps aren't available
+                timestampsOutput.innerHTML = '<div class="alert alert-info">Timestamps were requested but not available in the response.</div>';
                 timestampsSection.style.display = 'block';
             } else {
                 timestampsSection.style.display = 'none';

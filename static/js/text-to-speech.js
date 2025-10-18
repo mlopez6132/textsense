@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('text', text);
             formData.append('voice', voice);
-            formData.append('emotion_style', vibe);
+            formData.append('vibe', vibe);
 
             const response = await fetch('/generate-speech', {
                 method: 'POST',

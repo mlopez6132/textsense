@@ -79,13 +79,13 @@
                 <div class="mb-3">
                   <i class="fas fa-upload text-primary fs-1"></i>
                   <h6 class="mt-2">Upload Audio File</h6>
-                  <small class="text-muted">MP3, WAV, M4A, OGG</small>
+                  <small class="text-muted">MP3, WAV</small>
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="mb-3">
                   <i class="fas fa-brain text-primary fs-1"></i>
-                  <h6 class="mt-2">Whisper Technology</h6>
+                  <h6 class="mt-2">OpenAI Audio Technology</h6>
                   <small class="text-muted">Advanced speech recognition</small>
                 </div>
               </div>
@@ -123,7 +123,7 @@
                     <strong>Click to browse</strong> or drag & drop your audio file
                   </p>
                   <div class="supported-formats">
-                    <small class="text-muted">Supports: MP3, WAV, M4A, OGG, WebM</small>
+                    <small class="text-muted">Supports: MP3, WAV</small>
                   </div>
                 </div>
               </div>
@@ -271,19 +271,18 @@
         </div>
         <div class="card-body">
           <p class="mb-3">
-            Audio-to-text transcription is powered by <strong>OpenAI's Whisper distil-small.en</strong> model running via 
-            sherpa-onnx with INT8 quantization for efficient processing. The model automatically handles chunking for 
-            long audio files and provides segment-level timestamps.
+            Audio-to-text transcription is powered by <strong>OpenAI Audio</strong> models via OpenAI-compatible API endpoints. 
+            The system supports MP3 and WAV formats with optional timestamp generation for segment-level timing information.
           </p>
           <ul class="mb-3">
-            <li>Model: Whisper distil-small.en (244M parameters, quantized to INT8)</li>
-            <li>Framework: sherpa-onnx for efficient ONNX runtime inference</li>
-            <li>Audio processing: Automatic conversion to 16kHz mono WAV</li>
-            <li>Chunking: Automatic handling of long audio with overlap</li>
+            <li>Model: OpenAI Audio (openai-audio)</li>
+            <li>Supported formats: MP3, WAV</li>
+            <li>Features: High-accuracy transcription with optional timestamps</li>
+            <li>Processing: Base64-encoded audio via OpenAI-compatible API</li>
           </ul>
           <div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-outline-primary btn-sm" href="https://huggingface.co/openai/whisper-small.en" target="_blank" rel="noopener noreferrer">View whisper-small Space</a>
-            <a class="btn btn-outline-secondary btn-sm" href="https://huggingface.co/openai/whisper-small" target="_blank" rel="noopener noreferrer">Whisper Model</a>
+            <a class="btn btn-outline-primary btn-sm" href="https://openai.com/research/whisper" target="_blank" rel="noopener noreferrer">OpenAI Audio Research</a>
+            <a class="btn btn-outline-secondary btn-sm" href="https://platform.openai.com/docs/guides/speech-to-text" target="_blank" rel="noopener noreferrer">OpenAI Audio Docs</a>
           </div>
                 </div>
             </div>
