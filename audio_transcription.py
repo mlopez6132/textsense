@@ -21,6 +21,8 @@ class AudioTranscriber:
     def __init__(self) -> None:
         self.auth_token = os.getenv("OPENAI_SPEECH_TOKEN", "").strip()
         self.api_url = os.getenv("SPEECH_OPENAI_URL", "").strip()
+        # Allow provider-specific model override; default to provider's audio model name
+        self.model = os.getenv("OPENAI_TRANSCRIBE_MODEL", "openai-audio").strip() or "openai-audio"
 
         if self.auth_token:
             logger.info("STT initialized with authentication token")
@@ -68,26 +70,63 @@ class AudioTranscriber:
         filename = f"audio.{normalized_format}"
         mimetype = "audio/mpeg" if normalized_format == "mp3" else "audio/wav"
 
-        data: dict[str, str] = {"model": "whisper-1"}
+        data: dict[str, str] = {"model": self.model}
         if language:
             data["language"] = language
-
-        files = {"file": (filename, audio_bytes, mimetype)}
 
         headers = self._get_headers()  # no Content-Type; httpx sets multipart boundary
 
         async with httpx.AsyncClient(timeout=timeout_seconds) as client:
-            response = await client.post(self.api_url, headers=headers, data=data, files=files)
+            # Attempt 1: standard OpenAI-compatible field name
+            response = await client.post(
+                self.api_url,
+                headers=headers,
+                data=data,
+                files={"file": (filename, audio_bytes, mimetype)},
+            )
 
-        if response.status_code != 200:
-            try:
-                err_json = response.json()
-                err_msg = err_json.get("error") or err_json
-            except Exception:
-                err_msg = response.text
-            raise RuntimeError(f"Transcription API error ({response.status_code}): {err_msg}")
+            ok_json: dict | None = None
+            if response.status_code == 200:
+                try:
+                    first_json = response.json()
+                    # Accept if it contains a direct 'text' field
+                    if isinstance(first_json, dict) and (
+                        isinstance(first_json.get("text"), str) and first_json.get("text")
+                    ):
+                        ok_json = first_json
+                except Exception:
+                    ok_json = None
 
-        return response.json()
+            if ok_json is None:
+                # Attempt 2: provider-specific field name 'audio'
+                response = await client.post(
+                    self.api_url,
+                    headers=headers,
+                    data=data,
+                    files={"audio": (filename, audio_bytes, mimetype)},
+                )
+                if response.status_code == 200:
+                    try:
+                        second_json = response.json()
+                        if isinstance(second_json, dict) and (
+                            isinstance(second_json.get("text"), str) and second_json.get("text")
+                        ):
+                            ok_json = second_json
+                        else:
+                            # As a last resort, pass through whatever JSON we got
+                            ok_json = second_json
+                    except Exception:
+                        ok_json = None
+
+            if response.status_code != 200 and ok_json is None:
+                try:
+                    err_json = response.json()
+                    err_msg = err_json.get("error") or err_json
+                except Exception:
+                    err_msg = response.text
+                raise RuntimeError(f"Transcription API error ({response.status_code}): {err_msg}")
+
+        return ok_json if ok_json is not None else response.json()
 
 
 audio_transcriber = AudioTranscriber()
