@@ -559,13 +559,13 @@ textarea.form-control {
 
 /* Mobile Navigation Toggle Button */
 .navbar-toggler {
+    display: none; /* Hide by default on desktop */
     border: none;
     padding: 0.5rem;
     background: transparent;
     color: #212529;
     font-size: 1.5rem;
     cursor: pointer;
-    display: none !important; /* hidden by default (desktop) */
     flex-shrink: 0;
     margin-left: auto;
 }
@@ -586,7 +586,7 @@ textarea.form-control {
 
 /* Mobile Navigation Menu */
 .mobile-nav {
-    display: none !important; /* hidden by default */
+    display: none; /* hidden by default */
     position: absolute;
     top: 100%;
     left: 0;
@@ -600,7 +600,7 @@ textarea.form-control {
 }
 
 .mobile-nav.show {
-    display: block !important; /* explicit show state */
+    display: block; /* explicit show state */
 }
 
 .mobile-nav .nav-link {
@@ -677,11 +677,11 @@ textarea.form-control {
     }
     
     /* Hide desktop navigation on mobile */
-    .nav-links { display: none !important; }
-    .navbar-nav { display: none !important; }
+    .nav-links { display: none; }
+    .navbar-nav { display: none; }
     
     /* Show hamburger menu on mobile */
-    .navbar-toggler { display: block !important; }
+    .navbar-toggler { display: block; }
     
     .brand-logo-text {
         font-size: 1.5rem !important;
@@ -712,20 +712,15 @@ textarea.form-control {
 
 /* Ensure mobile dropdown is always hidden on desktop widths */
 @media (min-width: 769px) {
-    .mobile-nav { 
-        display: none !important; 
-        visibility: hidden !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
+    .nav-links {
+        display: flex !important;
     }
-    .mobile-nav.show {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
+    .mobile-nav,
+    .mobile-nav.show { 
+        display: none !important; 
     }
     .navbar-toggler {
         display: none !important;
-        visibility: hidden !important;
     }
 }
 
