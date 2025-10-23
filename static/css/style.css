@@ -213,7 +213,8 @@ body.index-page {
     margin-left: auto;
 }
 
-.navbar-nav .nav-link.icon-link i {
+/* Ensure icon-link icons are visible */
+.navbar-nav .nav-link.icon-link > i {
     display: inline-block;
     font-size: 1.1rem;
     color: #6c757d;
