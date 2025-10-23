@@ -51,8 +51,6 @@ http_client = httpx.AsyncClient(
     ),
     # Enable HTTP/2 for better performance
     http2=True,
-    # Add retry configuration
-    retries=3,
     # Set user agent for better compatibility
     headers={"User-Agent": "TextSense-Relay/1.0"}
 )
