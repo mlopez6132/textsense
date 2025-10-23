@@ -637,7 +637,21 @@ textarea.form-control {
 
 /* Ensure mobile dropdown is always hidden on desktop widths */
 @media (min-width: 769px) {
-    .mobile-nav { display: none !important; }
+    .mobile-nav { 
+        display: none !important; 
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    .mobile-nav.show {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
+    .navbar-toggler {
+        display: none !important;
+        visibility: hidden !important;
+    }
 }
 
 /* Scrollbar styling */
