@@ -208,6 +208,11 @@ body.index-page {
     transition: all 0.2s ease;
 }
 
+/* Push icon links to the right side */
+.navbar-nav .nav-link.icon-link:first-of-type {
+    margin-left: auto;
+}
+
 .navbar-nav .nav-link.icon-link i {
     display: inline-block;
     font-size: 1.1rem;
