@@ -1,7 +1,6 @@
 /* =============================================================================
    TextSense — Custom Styles
    Clean, GPTZero-inspired palette with modern glassmorphism design
-   Version: 2025-01-24 - Cache busting update
    ============================================================================= */
 
 /* -----------------------------------------------------------------------------
@@ -1024,13 +1023,6 @@ body:has(.navigation-page) .col-xl-8,
     .navbar-nav {
         flex-direction: row;
         gap: 0.25rem;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    
-    .navbar-nav .social-link {
-        margin-left: 0.5rem;
-        margin-right: 0.5rem;
     }
     
     .brand-logo-text {
@@ -1589,12 +1581,6 @@ main.container .card {
 
 .twitter-link {
     margin-left: 4rem;
-}
-
-@media (max-width: 768px) {
-    .twitter-link {
-        margin-left: 0rem;
-    }
 }
 
 .twitter-link:hover {

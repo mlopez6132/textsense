@@ -1,10 +1,7 @@
 
 import os
 import hashlib
-import asyncio
-import logging
 from typing import Optional, Annotated
-from urllib.parse import quote
 
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import (
@@ -31,8 +28,6 @@ DEFAULT_TIMEOUT_SECONDS = 120
 
 # Initialize cache for AI detection results (1 hour TTL, max 1000 entries)
 detection_cache = TTLCache(maxsize=1000, ttl=3600)
-# Thread-safe lock for cache access
-cache_lock = asyncio.Lock()
 
 # Initialize async HTTP client with connection pooling
 http_client = httpx.AsyncClient(
@@ -44,23 +39,6 @@ http_client = httpx.AsyncClient(
 # ----------------------
 # Helper utilities
 # ----------------------
-def sanitize_filename(filename: str) -> str:
-    """Sanitize filename for safe use in Content-Disposition header."""
-    if not filename:
-        return "download"
-    
-    # Remove path separators and control characters
-    safe_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_"
-    sanitized = "".join(c for c in filename if c in safe_chars)
-    
-    # Ensure it's not empty and has reasonable length
-    if not sanitized or len(sanitized) > 255:
-        sanitized = "download"
-    
-    # Quote the filename for safe use in headers
-    return quote(sanitized, safe="")
-
-
 def get_auth_headers() -> dict:
     """Build optional Authorization header from HF_API_KEY."""
     headers: dict = {}
@@ -87,12 +65,8 @@ async def prepare_text_from_inputs(
         total_size = 0
         
         try:
-            # Use async read() method to stream file in chunks
-            await file.seek(0)
-            while True:
-                chunk = await file.read(8192)  # Read 8KB chunks
-                if not chunk:
-                    break
+            # Stream file in chunks to avoid loading large files into memory
+            async for chunk in file.file:
                 total_size += len(chunk)
                 if total_size > max_file_size:
                     raise HTTPException(
@@ -139,16 +113,7 @@ async def forward_post_json(
             timeout=timeout
         )
         resp.raise_for_status()
-        
-        try:
-            result = resp.json()
-        except Exception as json_err:
-            # If JSON parsing fails, include response text for debugging
-            response_text = await resp.aread() if hasattr(resp, 'aread') else resp.text
-            raise HTTPException(
-                status_code=502, 
-                detail=f"{context} returned invalid JSON (status {resp.status_code}): {str(json_err)}. Response: {response_text[:500]}"
-            ) from json_err
+        result = resp.json()
         
         # Check if the response contains an error field
         if isinstance(result, dict) and "error" in result:
@@ -165,9 +130,7 @@ async def forward_post_json(
                 if isinstance(error_json, dict) and "error" in error_json:
                     error_detail = f"{context} failed: {error_json['error']}"
             except:
-                # Include status code for better debugging
-                status_code = getattr(req_err.response, 'status_code', 'unknown')
-                error_detail = f"{context} failed (status {status_code}): {str(req_err)}"
+                pass
         raise HTTPException(status_code=502, detail=error_detail) from req_err
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{context} failed: {str(e)}") from e
@@ -296,15 +259,9 @@ async def get_audio_bytes_and_format(
         except (HTTPError, TimeoutException, ConnectError) as req_err:
             raise HTTPException(status_code=502, detail=f"Failed to fetch audio URL: {str(req_err)}") from req_err
 
-        # Stream and count bytes instead of trusting content-length header
-        content = b""
-        total_size = 0
-        
-        async for chunk in r.aiter_bytes(chunk_size=8192):
-            total_size += len(chunk)
-            if total_size > max_audio_size:
-                raise HTTPException(status_code=413, detail="Audio file too large. Maximum size is 25MB.")
-            content += chunk
+        content_length = int(r.headers.get("content-length", 0))
+        if content_length and content_length > max_audio_size:
+            raise HTTPException(status_code=413, detail="Audio file too large. Maximum size is 25MB.")
 
         mime = r.headers.get("content-type", "application/octet-stream").split(";")[0].strip().lower()
         # Try infer format from URL extension if present
@@ -318,7 +275,7 @@ async def get_audio_bytes_and_format(
             fmt = "wav"
         else:
             fmt = ""
-        return content, fmt
+        return r.content, fmt
 
     raise HTTPException(status_code=400, detail="No audio provided.")
 
@@ -326,9 +283,8 @@ async def get_audio_bytes_and_format(
 def get_remote_url() -> str:
     remote = os.getenv(HF_INFERENCE_URL_ENV, "").strip()
     if not remote:
-        raise HTTPException(
-            status_code=500,
-            detail="No remote inference URL configured. Set HF_INFERENCE_URL to your Hugging Face Space /analyze endpoint."
+        raise RuntimeError(
+            "No remote inference URL configured. Set HF_INFERENCE_URL to your Hugging Face Space /analyze endpoint."
         )
     return remote
 
@@ -336,9 +292,8 @@ def get_remote_url() -> str:
 def get_ocr_url() -> str:
     remote = os.getenv(HF_OCR_URL_ENV, "").strip()
     if not remote:
-        raise HTTPException(
-            status_code=500,
-            detail="No OCR URL configured. Set HF_OCR_URL to your Hugging Face Space OCR endpoint."
+        raise RuntimeError(
+            "No OCR URL configured. Set HF_OCR_URL to your Hugging Face Space OCR endpoint."
         )
     return remote
 
@@ -346,65 +301,22 @@ def get_ocr_url() -> str:
 def get_audio_text_url() -> str:
     remote = os.getenv(HF_AUDIO_TEXT_URL_ENV, "").strip()
     if not remote:
-        raise HTTPException(
-            status_code=500,
-            detail="No AUDIO URL configured. Set HF_AUDIO_TEXT_URL to your Hugging Face Space AUDIO endpoint."
+        raise RuntimeError(
+            "No AUDIO URL configured. Set HF_AUDIO_TEXT_URL to your Hugging Face Space AUDIO endpoint."
         )
     return remote
 
 
-def validate_environment():
-    """Validate required environment variables on startup."""
-    missing_vars = []
-    
-    if not os.getenv(HF_INFERENCE_URL_ENV, "").strip():
-        missing_vars.append(f"{HF_INFERENCE_URL_ENV} (Hugging Face inference endpoint)")
-    
-    if not os.getenv(HF_OCR_URL_ENV, "").strip():
-        missing_vars.append(f"{HF_OCR_URL_ENV} (Hugging Face OCR endpoint)")
-    
-    if not os.getenv(HF_AUDIO_TEXT_URL_ENV, "").strip():
-        missing_vars.append(f"{HF_AUDIO_TEXT_URL_ENV} (Hugging Face audio endpoint)")
-    
-    if missing_vars:
-        error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
-        print(f"ERROR: {error_msg}")
-        raise RuntimeError(error_msg)
-
-
 app = FastAPI(title="TextSense Relay (FastAPI)")
-
-# Validate environment on startup
-validate_environment()
 
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
-
-# Custom rate limit error handler with headers
-async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    response = JSONResponse(
-        {"error": "Rate limit exceeded", "detail": str(exc.detail)},
-        status_code=429
-    )
-    # Add rate limit headers for frontend consumption
-    if hasattr(exc, 'retry_after'):
-        response.headers["Retry-After"] = str(exc.retry_after)
-    response.headers["X-RateLimit-Limit"] = str(getattr(exc, 'limit', 'unknown'))
-    response.headers["X-RateLimit-Remaining"] = "0"
-    return response
-
-app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Static and templates
-# SECURITY: templates/static is read-only and contains only trusted static assets
-# No user uploads are written to this directory - it's safe to expose
 app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 templates = Jinja2Templates(directory="templates")
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 # Middleware to add cache headers to static files
@@ -414,57 +326,21 @@ async def add_cache_and_cdn_headers(request: Request, call_next):
     
     # Add cache headers for static assets
     if request.url.path.startswith("/static/"):
-        # Check if file has version parameter (cache busting)
-        if "?v=" in str(request.url):
-            # Versioned files can be cached longer (1 week)
-            response.headers["Cache-Control"] = "public, max-age=604800"
-            response.headers["CDN-Cache-Control"] = "public, max-age=604800"
-        else:
-            # Non-versioned files should be cached shorter (1 hour)
-            response.headers["Cache-Control"] = "public, max-age=3600"
-            response.headers["CDN-Cache-Control"] = "public, max-age=3600"
-        
+        # Aggressive caching for static assets (1 year)
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         response.headers["X-Content-Type-Options"] = "nosniff"
         
         # CDN optimization headers
         response.headers["Vary"] = "Accept-Encoding"
+        
+        # Indicate that the resource can be cached by CDNs
+        if "private" not in response.headers.get("Cache-Control", ""):
+            response.headers["CDN-Cache-Control"] = "public, max-age=31536000"
     
-    # Add modern security headers for all responses
+    # Add security headers for all responses
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
-    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    
-    # Content Security Policy (restrictive but functional)
-    csp = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://pagead2.googlesyndication.com https://www.google.com; "
-        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-        "img-src 'self' data: https:; "
-        "font-src 'self' https://cdnjs.cloudflare.com; "
-        "connect-src 'self' https:; "
-        "frame-src https://www.google.com; "
-        "object-src 'none'; "
-        "base-uri 'self'; "
-        "form-action 'self'"
-    )
-    response.headers["Content-Security-Policy"] = csp
-    
-    # Strict Transport Security (if served over HTTPS)
-    if request.url.scheme == "https":
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    
-    # Permissions Policy (restrictive permissions)
-    permissions_policy = (
-        "camera=(), "
-        "microphone=(), "
-        "geolocation=(), "
-        "payment=(), "
-        "usb=(), "
-        "magnetometer=(), "
-        "gyroscope=(), "
-        "accelerometer=()"
-    )
-    response.headers["Permissions-Policy"] = permissions_policy
     
     return response
 
@@ -591,26 +467,14 @@ async def submit_contact(request: Request):
                 data={"secret": secret, "response": token},
                 timeout=10,
             )
-            
-            if verify.status_code != 200:
-                logging.warning(f"reCAPTCHA verification failed with status {verify.status_code}")
-                return JSONResponse({"ok": False, "error": "reCAPTCHA verification failed"}, status_code=400)
-            
-            result = verify.json()
-            if not result.get("success"):
-                error_codes = result.get("error-codes", [])
-                logging.warning(f"reCAPTCHA verification failed: {error_codes}")
-                return JSONResponse({"ok": False, "error": "reCAPTCHA verification failed"}, status_code=400)
-                
+            if verify.status_code == 200:
+                result = verify.json()
+                if not result.get("success"):
+                    return JSONResponse({"ok": False, "error": "reCAPTCHA verification failed"}, status_code=400)
         except (TimeoutException, ConnectError) as net_err:
-            logging.error(f"reCAPTCHA network error: {str(net_err)}")
             return JSONResponse({"ok": False, "error": f"reCAPTCHA network error: {str(net_err)}"}, status_code=400)
         except HTTPError as req_err:
-            logging.error(f"reCAPTCHA request error: {str(req_err)}")
             return JSONResponse({"ok": False, "error": f"reCAPTCHA request error: {str(req_err)}"}, status_code=400)
-        except Exception as e:
-            logging.error(f"reCAPTCHA unexpected error: {str(e)}")
-            return JSONResponse({"ok": False, "error": "reCAPTCHA verification failed"}, status_code=400)
 
     return JSONResponse({"ok": True, "received": {"name": name, "email": email, "message": message}})
 
@@ -636,13 +500,12 @@ async def analyze(
 ):
     submit_text = await prepare_text_from_inputs(text, file, max_length=50000)
     
-    # Check cache first with thread-safe access
+    # Check cache first
     cache_key = get_cache_key(submit_text)
-    async with cache_lock:
-        if cache_key in detection_cache:
-            cached_result = detection_cache[cache_key]
-            cached_result["cached"] = True
-            return JSONResponse(cached_result)
+    if cache_key in detection_cache:
+        cached_result = detection_cache[cache_key]
+        cached_result["cached"] = True
+        return JSONResponse(cached_result)
     
     # Call remote API
     remote_url = get_remote_url()
@@ -654,10 +517,9 @@ async def analyze(
         context="Analyze",
     )
     
-    # Cache the result with thread-safe access
+    # Cache the result
     result["cached"] = False
-    async with cache_lock:
-        detection_cache[cache_key] = result
+    detection_cache[cache_key] = result
     
     return JSONResponse(result)
 
@@ -811,9 +673,6 @@ async def download_image(request: Request, url: str, filename: str = "generated_
                 else:
                     filename += ".png"
 
-            # Sanitize filename for safe use in Content-Disposition
-            safe_filename = sanitize_filename(filename)
-
             async def stream_content():
                 async for chunk in response.aiter_bytes(chunk_size=8192):
                     yield chunk
@@ -821,10 +680,7 @@ async def download_image(request: Request, url: str, filename: str = "generated_
             return StreamingResponse(
                 stream_content(),
                 media_type=content_type,
-                headers={
-                    "Content-Disposition": f"attachment; filename=\"{safe_filename}\"",
-                    "Cache-Control": "no-cache"
-                }
+                headers={"Content-Disposition": f"attachment; filename={filename}", "Cache-Control": "no-cache"}
             )
     except HTTPException:
         raise
@@ -840,18 +696,6 @@ async def healthz():
 @app.get("/ping")
 async def ping():
     return {"status": "ok"}
-
-
-@app.get("/clear-cache")
-async def clear_cache():
-    """Clear CDN cache for static files (development/debugging only)."""
-    # This is a simple endpoint to help with cache issues during development
-    # In production, you might want to restrict access to this endpoint
-    return {
-        "message": "Cache headers updated. Please hard refresh your browser (Ctrl+F5 or Cmd+Shift+R)",
-        "timestamp": "2025-01-23",
-        "note": "Static files now have shorter cache times for easier development"
-    }
 
 
 @app.on_event("shutdown")
