@@ -69,7 +69,7 @@ body.index-page {
 .navbar.site-header .container {
     display: flex !important;
     align-items: center !important;
-    justify-content: flex-start !important;
+    justify-content: space-between !important;
     gap: 2rem !important;
     flex-wrap: nowrap !important;
 }
@@ -121,7 +121,7 @@ body.index-page {
     margin: 0 !important;
     padding: 0 !important;
     list-style: none !important;
-    margin-left: 0 !important;
+    margin-left: auto !important; /* Push nav to the right */
     flex-basis: auto !important;
     /* Ensure no Bootstrap positioning overrides */
     position: static !important;
