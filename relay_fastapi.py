@@ -3,8 +3,6 @@ import os
 import hashlib
 import asyncio
 import logging
-import tempfile
-import shutil
 from typing import Optional, Annotated
 from urllib.parse import quote
 
@@ -36,23 +34,10 @@ detection_cache = TTLCache(maxsize=1000, ttl=3600)
 # Thread-safe lock for cache access
 cache_lock = asyncio.Lock()
 
-# Initialize async HTTP client with optimized configuration
+# Initialize async HTTP client with connection pooling
 http_client = httpx.AsyncClient(
-    limits=httpx.Limits(
-        max_keepalive_connections=20, 
-        max_connections=100,
-        keepalive_expiry=30.0  # Keep connections alive for 30 seconds
-    ),
-    timeout=httpx.Timeout(
-        connect=10.0,      # Connection timeout
-        read=120.0,        # Read timeout (matches DEFAULT_TIMEOUT_SECONDS)
-        write=30.0,        # Write timeout
-        pool=5.0           # Pool timeout
-    ),
-    # Enable HTTP/2 for better performance
-    http2=True,
-    # Set user agent for better compatibility
-    headers={"User-Agent": "TextSense-Relay/1.0"}
+    limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
+    timeout=httpx.Timeout(DEFAULT_TIMEOUT_SECONDS)
 )
 
 
@@ -74,47 +59,6 @@ def sanitize_filename(filename: str) -> str:
     
     # Quote the filename for safe use in headers
     return quote(sanitized, safe="")
-
-
-async def stream_to_temp_file(
-    url: str, 
-    max_size: int, 
-    chunk_size: int = 8192,
-    timeout: int = 30
-) -> tuple[tempfile.NamedTemporaryFile, str]:
-    """
-    Stream a remote file to a temporary file with size limits.
-    Returns (temp_file, content_type) tuple.
-    """
-    temp_file = tempfile.NamedTemporaryFile(delete=False)
-    
-    try:
-        async with http_client.stream("GET", url, timeout=timeout) as response:
-            response.raise_for_status()
-            
-            content_type = response.headers.get("content-type", "application/octet-stream")
-            total_size = 0
-            
-            async for chunk in response.aiter_bytes(chunk_size):
-                total_size += len(chunk)
-                if total_size > max_size:
-                    raise HTTPException(
-                        status_code=413, 
-                        detail=f"File too large. Maximum size is {max_size:,} bytes."
-                    )
-                temp_file.write(chunk)
-            
-            temp_file.flush()
-            return temp_file, content_type
-            
-    except Exception as e:
-        # Clean up temp file on error
-        temp_file.close()
-        try:
-            os.unlink(temp_file.name)
-        except OSError:
-            pass
-        raise e
 
 
 def get_auth_headers() -> dict:
@@ -261,32 +205,17 @@ async def build_image_files(
         }
     if image_url:
         try:
-            # For large image files, stream to temp file instead of memory
-            temp_file, content_type = await stream_to_temp_file(
+            r = await http_client.get(
                 image_url.strip(), 
-                16 * 1024 * 1024,  # 16MB max for images
-                timeout=30
+                timeout=30, 
+                headers={"User-Agent": "TextSense-Relay/1.0"}
             )
-            
-            # Read the temp file content
-            temp_file.seek(0)
-            content = temp_file.read()
-            temp_file.close()
-            
-            # Clean up temp file
-            try:
-                os.unlink(temp_file.name)
-            except OSError:
-                pass
-            
-            mime = content_type.split(";")[0].strip()
-            name = image_url.split("?")[0].rstrip("/").split("/")[-1] or "remote.jpg"
-            return {"image": (name, content, mime)}
-            
-        except HTTPException:
-            raise
+            r.raise_for_status()
         except (HTTPError, TimeoutException, ConnectError) as req_err:
             raise HTTPException(status_code=502, detail=f"Failed to fetch image URL: {str(req_err)}") from req_err
+        mime = r.headers.get("content-type", "application/octet-stream").split(";")[0].strip()
+        name = image_url.split("?")[0].rstrip("/").split("/")[-1] or "remote.jpg"
+        return {"image": (name, r.content, mime)}
     raise HTTPException(status_code=400, detail="No image provided.")
 
 
@@ -362,42 +291,34 @@ async def get_audio_bytes_and_format(
 
     if audio_url:
         try:
-            # For large audio files, stream to temp file instead of memory
-            temp_file, content_type = await stream_to_temp_file(
-                audio_url.strip(), 
-                max_audio_size, 
-                timeout=30
-            )
-            
-            # Read the temp file content
-            temp_file.seek(0)
-            content = temp_file.read()
-            temp_file.close()
-            
-            # Clean up temp file
-            try:
-                os.unlink(temp_file.name)
-            except OSError:
-                pass
-
-            mime = content_type.split(";")[0].strip().lower()
-            # Try infer format from URL extension if present
-            name = audio_url.split("?")[0].rstrip("/").split("/")[-1]
-            ext = (name.rsplit(".", 1)[-1].lower() if "." in name else "").strip()
-            if ext in {"mp3", "wav"}:
-                fmt = ext
-            elif "mpeg" in mime or "mp3" in mime:
-                fmt = "mp3"
-            elif "wav" in mime:
-                fmt = "wav"
-            else:
-                fmt = ""
-            return content, fmt
-            
-        except HTTPException:
-            raise
+            r = await http_client.get(audio_url.strip(), timeout=30, headers={"User-Agent": "TextSense-Relay/1.0"})
+            r.raise_for_status()
         except (HTTPError, TimeoutException, ConnectError) as req_err:
             raise HTTPException(status_code=502, detail=f"Failed to fetch audio URL: {str(req_err)}") from req_err
+
+        # Stream and count bytes instead of trusting content-length header
+        content = b""
+        total_size = 0
+        
+        async for chunk in r.aiter_bytes(chunk_size=8192):
+            total_size += len(chunk)
+            if total_size > max_audio_size:
+                raise HTTPException(status_code=413, detail="Audio file too large. Maximum size is 25MB.")
+            content += chunk
+
+        mime = r.headers.get("content-type", "application/octet-stream").split(";")[0].strip().lower()
+        # Try infer format from URL extension if present
+        name = audio_url.split("?")[0].rstrip("/").split("/")[-1]
+        ext = (name.rsplit(".", 1)[-1].lower() if "." in name else "").strip()
+        if ext in {"mp3", "wav"}:
+            fmt = ext
+        elif "mpeg" in mime or "mp3" in mime:
+            fmt = "mp3"
+        elif "wav" in mime:
+            fmt = "wav"
+        else:
+            fmt = ""
+        return content, fmt
 
     raise HTTPException(status_code=400, detail="No audio provided.")
 
@@ -917,32 +838,7 @@ async def ping():
     return {"status": "ok"}
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize resources on startup."""
-    logging.info("TextSense Relay starting up...")
-    logging.info(f"HTTP client configured with {http_client.limits.max_connections} max connections")
-    logging.info(f"HTTP client timeout: {http_client.timeout}")
-    logging.info("Application ready to serve requests")
-
-
 @app.on_event("shutdown")
 async def shutdown_event():
     """Clean up resources on shutdown."""
-    try:
-        await http_client.aclose()
-        logging.info("HTTP client closed successfully")
-    except Exception as e:
-        logging.error(f"Error closing HTTP client: {e}")
-    
-    # Clean up any remaining temp files (safety measure)
-    try:
-        temp_dir = tempfile.gettempdir()
-        for filename in os.listdir(temp_dir):
-            if filename.startswith("tmp") and "textsense" in filename.lower():
-                try:
-                    os.unlink(os.path.join(temp_dir, filename))
-                except OSError:
-                    pass
-    except Exception as e:
-        logging.warning(f"Error cleaning up temp files: {e}")
+    await http_client.aclose()
