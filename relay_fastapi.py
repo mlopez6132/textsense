@@ -326,16 +326,34 @@ async def add_cache_and_cdn_headers(request: Request, call_next):
     
     # Add cache headers for static assets
     if request.url.path.startswith("/static/"):
-        # Aggressive caching for static assets (1 year)
-        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        # Check if it's a CSS file - use shorter cache for CSS to allow updates
+        if request.url.path.endswith(".css"):
+            # CSS files: shorter cache (1 hour) to allow updates
+            response.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
+        elif request.url.path.endswith((".js", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".svg")):
+            # Images and JS: longer cache (1 week) but not immutable
+            response.headers["Cache-Control"] = "public, max-age=604800"
+        else:
+            # Other static files: moderate cache (1 day)
+            response.headers["Cache-Control"] = "public, max-age=86400"
+        
         response.headers["X-Content-Type-Options"] = "nosniff"
         
         # CDN optimization headers
         response.headers["Vary"] = "Accept-Encoding"
         
-        # Indicate that the resource can be cached by CDNs
-        if "private" not in response.headers.get("Cache-Control", ""):
-            response.headers["CDN-Cache-Control"] = "public, max-age=31536000"
+        # Add ETag for better cache validation
+        if hasattr(response, 'body') and response.body:
+            import hashlib
+            etag = hashlib.md5(response.body).hexdigest()
+            response.headers["ETag"] = f'"{etag}"'
+    
+    # Add cache headers for HTML pages - prevent aggressive caching
+    elif response.headers.get("content-type", "").startswith("text/html"):
+        # HTML pages: no cache to ensure updates are immediate
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
     
     # Add security headers for all responses
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
@@ -348,6 +366,12 @@ async def add_cache_and_cdn_headers(request: Request, call_next):
 def get_cache_key(text: str) -> str:
     """Generate cache key from text content."""
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+
+def get_cache_bust_version() -> str:
+    """Generate cache busting version based on current date."""
+    from datetime import datetime
+    return datetime.now().strftime("%Y%m%d%H")
 
 
 @app.get("/favicon.ico")
@@ -388,25 +412,41 @@ async def android_chrome_512():
 @app.get("/", response_class=HTMLResponse)
 @app.head("/")
 async def index(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
     return templates.TemplateResponse("index.html", context)
 
 
 @app.get("/about", response_class=HTMLResponse)
 async def about(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
     return templates.TemplateResponse("about.html", context)
 
 
 @app.get("/privacy", response_class=HTMLResponse)
 async def privacy(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
     return templates.TemplateResponse("privacy.html", context)
 
 
 @app.get("/terms", response_class=HTMLResponse)
 async def terms(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
     return templates.TemplateResponse("terms.html", context)
 
 
@@ -416,37 +456,58 @@ async def contact(request: Request):
         "request": request,
         "contact_email": os.getenv("CONTACT_EMAIL", ""),
         "recaptcha_site_key": os.getenv("RECAPTCHA_SITE_KEY", ""),
+        "cache_version": get_cache_bust_version()
     }
     return templates.TemplateResponse("contact.html", context)
 
 
 @app.get("/ocr", response_class=HTMLResponse)
 async def ocr_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
     return templates.TemplateResponse("ocr.html", context)
 
 
 @app.get("/audio-text", response_class=HTMLResponse)
 async def audio_text_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
     return templates.TemplateResponse("audio-text.html", context)
 
 
 @app.get("/ai-detector", response_class=HTMLResponse)
 async def ai_detector_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
     return templates.TemplateResponse("ai-detector.html", context)
 
 
-@app.get("/generate-image-page", response_class=HTMLResponse)
+@app.get("/generate-image", response_class=HTMLResponse)
 async def generate_image_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
     return templates.TemplateResponse("generate-image.html", context)
 
 
 @app.get("/text-to-speech", response_class=HTMLResponse)
 async def text_to_speech_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
     return templates.TemplateResponse("text-to-speech.html", context)
 
 
@@ -481,7 +542,11 @@ async def submit_contact(request: Request):
 
 @app.get("/cookies", response_class=HTMLResponse)
 async def cookies(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
     return templates.TemplateResponse("cookies.html", context)
 
 

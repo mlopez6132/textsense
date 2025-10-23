@@ -1015,6 +1015,11 @@ body:has(.navigation-page) .col-xl-8,
         justify-content: flex-start;
     }
     
+    /* Remove margin from Twitter link in mobile view to match coffee link spacing */
+    .nav-link.social-link.twitter-link {
+        margin-left: 0;
+    }
+    
     .navbar-brand {
         margin-right: 0;
         margin-bottom: 0.5rem;
