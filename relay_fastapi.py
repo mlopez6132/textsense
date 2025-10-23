@@ -1,7 +1,12 @@
 
 import os
 import hashlib
+import asyncio
+import logging
+import tempfile
+import shutil
 from typing import Optional, Annotated
+from urllib.parse import quote
 
 from fastapi import FastAPI, Request, UploadFile, File, Form, HTTPException
 from fastapi.responses import (
@@ -28,17 +33,92 @@ DEFAULT_TIMEOUT_SECONDS = 120
 
 # Initialize cache for AI detection results (1 hour TTL, max 1000 entries)
 detection_cache = TTLCache(maxsize=1000, ttl=3600)
+# Thread-safe lock for cache access
+cache_lock = asyncio.Lock()
 
-# Initialize async HTTP client with connection pooling
+# Initialize async HTTP client with optimized configuration
 http_client = httpx.AsyncClient(
-    limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
-    timeout=httpx.Timeout(DEFAULT_TIMEOUT_SECONDS)
+    limits=httpx.Limits(
+        max_keepalive_connections=20, 
+        max_connections=100,
+        keepalive_expiry=30.0  # Keep connections alive for 30 seconds
+    ),
+    timeout=httpx.Timeout(
+        connect=10.0,      # Connection timeout
+        read=120.0,        # Read timeout (matches DEFAULT_TIMEOUT_SECONDS)
+        write=30.0,        # Write timeout
+        pool=5.0           # Pool timeout
+    ),
+    # Enable HTTP/2 for better performance
+    http2=True,
+    # Add retry configuration
+    retries=3,
+    # Set user agent for better compatibility
+    headers={"User-Agent": "TextSense-Relay/1.0"}
 )
 
 
 # ----------------------
 # Helper utilities
 # ----------------------
+def sanitize_filename(filename: str) -> str:
+    """Sanitize filename for safe use in Content-Disposition header."""
+    if not filename:
+        return "download"
+    
+    # Remove path separators and control characters
+    safe_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_"
+    sanitized = "".join(c for c in filename if c in safe_chars)
+    
+    # Ensure it's not empty and has reasonable length
+    if not sanitized or len(sanitized) > 255:
+        sanitized = "download"
+    
+    # Quote the filename for safe use in headers
+    return quote(sanitized, safe="")
+
+
+async def stream_to_temp_file(
+    url: str, 
+    max_size: int, 
+    chunk_size: int = 8192,
+    timeout: int = 30
+) -> tuple[tempfile.NamedTemporaryFile, str]:
+    """
+    Stream a remote file to a temporary file with size limits.
+    Returns (temp_file, content_type) tuple.
+    """
+    temp_file = tempfile.NamedTemporaryFile(delete=False)
+    
+    try:
+        async with http_client.stream("GET", url, timeout=timeout) as response:
+            response.raise_for_status()
+            
+            content_type = response.headers.get("content-type", "application/octet-stream")
+            total_size = 0
+            
+            async for chunk in response.aiter_bytes(chunk_size):
+                total_size += len(chunk)
+                if total_size > max_size:
+                    raise HTTPException(
+                        status_code=413, 
+                        detail=f"File too large. Maximum size is {max_size:,} bytes."
+                    )
+                temp_file.write(chunk)
+            
+            temp_file.flush()
+            return temp_file, content_type
+            
+    except Exception as e:
+        # Clean up temp file on error
+        temp_file.close()
+        try:
+            os.unlink(temp_file.name)
+        except OSError:
+            pass
+        raise e
+
+
 def get_auth_headers() -> dict:
     """Build optional Authorization header from HF_API_KEY."""
     headers: dict = {}
@@ -65,8 +145,12 @@ async def prepare_text_from_inputs(
         total_size = 0
         
         try:
-            # Stream file in chunks to avoid loading large files into memory
-            async for chunk in file.file:
+            # Use async read() method to stream file in chunks
+            await file.seek(0)
+            while True:
+                chunk = await file.read(8192)  # Read 8KB chunks
+                if not chunk:
+                    break
                 total_size += len(chunk)
                 if total_size > max_file_size:
                     raise HTTPException(
@@ -113,7 +197,16 @@ async def forward_post_json(
             timeout=timeout
         )
         resp.raise_for_status()
-        result = resp.json()
+        
+        try:
+            result = resp.json()
+        except Exception as json_err:
+            # If JSON parsing fails, include response text for debugging
+            response_text = await resp.aread() if hasattr(resp, 'aread') else resp.text
+            raise HTTPException(
+                status_code=502, 
+                detail=f"{context} returned invalid JSON (status {resp.status_code}): {str(json_err)}. Response: {response_text[:500]}"
+            ) from json_err
         
         # Check if the response contains an error field
         if isinstance(result, dict) and "error" in result:
@@ -130,7 +223,9 @@ async def forward_post_json(
                 if isinstance(error_json, dict) and "error" in error_json:
                     error_detail = f"{context} failed: {error_json['error']}"
             except:
-                pass
+                # Include status code for better debugging
+                status_code = getattr(req_err.response, 'status_code', 'unknown')
+                error_detail = f"{context} failed (status {status_code}): {str(req_err)}"
         raise HTTPException(status_code=502, detail=error_detail) from req_err
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"{context} failed: {str(e)}") from e
@@ -168,17 +263,32 @@ async def build_image_files(
         }
     if image_url:
         try:
-            r = await http_client.get(
+            # For large image files, stream to temp file instead of memory
+            temp_file, content_type = await stream_to_temp_file(
                 image_url.strip(), 
-                timeout=30, 
-                headers={"User-Agent": "TextSense-Relay/1.0"}
+                16 * 1024 * 1024,  # 16MB max for images
+                timeout=30
             )
-            r.raise_for_status()
+            
+            # Read the temp file content
+            temp_file.seek(0)
+            content = temp_file.read()
+            temp_file.close()
+            
+            # Clean up temp file
+            try:
+                os.unlink(temp_file.name)
+            except OSError:
+                pass
+            
+            mime = content_type.split(";")[0].strip()
+            name = image_url.split("?")[0].rstrip("/").split("/")[-1] or "remote.jpg"
+            return {"image": (name, content, mime)}
+            
+        except HTTPException:
+            raise
         except (HTTPError, TimeoutException, ConnectError) as req_err:
             raise HTTPException(status_code=502, detail=f"Failed to fetch image URL: {str(req_err)}") from req_err
-        mime = r.headers.get("content-type", "application/octet-stream").split(";")[0].strip()
-        name = image_url.split("?")[0].rstrip("/").split("/")[-1] or "remote.jpg"
-        return {"image": (name, r.content, mime)}
     raise HTTPException(status_code=400, detail="No image provided.")
 
 
@@ -254,28 +364,42 @@ async def get_audio_bytes_and_format(
 
     if audio_url:
         try:
-            r = await http_client.get(audio_url.strip(), timeout=30, headers={"User-Agent": "TextSense-Relay/1.0"})
-            r.raise_for_status()
+            # For large audio files, stream to temp file instead of memory
+            temp_file, content_type = await stream_to_temp_file(
+                audio_url.strip(), 
+                max_audio_size, 
+                timeout=30
+            )
+            
+            # Read the temp file content
+            temp_file.seek(0)
+            content = temp_file.read()
+            temp_file.close()
+            
+            # Clean up temp file
+            try:
+                os.unlink(temp_file.name)
+            except OSError:
+                pass
+
+            mime = content_type.split(";")[0].strip().lower()
+            # Try infer format from URL extension if present
+            name = audio_url.split("?")[0].rstrip("/").split("/")[-1]
+            ext = (name.rsplit(".", 1)[-1].lower() if "." in name else "").strip()
+            if ext in {"mp3", "wav"}:
+                fmt = ext
+            elif "mpeg" in mime or "mp3" in mime:
+                fmt = "mp3"
+            elif "wav" in mime:
+                fmt = "wav"
+            else:
+                fmt = ""
+            return content, fmt
+            
+        except HTTPException:
+            raise
         except (HTTPError, TimeoutException, ConnectError) as req_err:
             raise HTTPException(status_code=502, detail=f"Failed to fetch audio URL: {str(req_err)}") from req_err
-
-        content_length = int(r.headers.get("content-length", 0))
-        if content_length and content_length > max_audio_size:
-            raise HTTPException(status_code=413, detail="Audio file too large. Maximum size is 25MB.")
-
-        mime = r.headers.get("content-type", "application/octet-stream").split(";")[0].strip().lower()
-        # Try infer format from URL extension if present
-        name = audio_url.split("?")[0].rstrip("/").split("/")[-1]
-        ext = (name.rsplit(".", 1)[-1].lower() if "." in name else "").strip()
-        if ext in {"mp3", "wav"}:
-            fmt = ext
-        elif "mpeg" in mime or "mp3" in mime:
-            fmt = "mp3"
-        elif "wav" in mime:
-            fmt = "wav"
-        else:
-            fmt = ""
-        return r.content, fmt
 
     raise HTTPException(status_code=400, detail="No audio provided.")
 
@@ -283,8 +407,9 @@ async def get_audio_bytes_and_format(
 def get_remote_url() -> str:
     remote = os.getenv(HF_INFERENCE_URL_ENV, "").strip()
     if not remote:
-        raise RuntimeError(
-            "No remote inference URL configured. Set HF_INFERENCE_URL to your Hugging Face Space /analyze endpoint."
+        raise HTTPException(
+            status_code=500,
+            detail="No remote inference URL configured. Set HF_INFERENCE_URL to your Hugging Face Space /analyze endpoint."
         )
     return remote
 
@@ -292,8 +417,9 @@ def get_remote_url() -> str:
 def get_ocr_url() -> str:
     remote = os.getenv(HF_OCR_URL_ENV, "").strip()
     if not remote:
-        raise RuntimeError(
-            "No OCR URL configured. Set HF_OCR_URL to your Hugging Face Space OCR endpoint."
+        raise HTTPException(
+            status_code=500,
+            detail="No OCR URL configured. Set HF_OCR_URL to your Hugging Face Space OCR endpoint."
         )
     return remote
 
@@ -301,22 +427,65 @@ def get_ocr_url() -> str:
 def get_audio_text_url() -> str:
     remote = os.getenv(HF_AUDIO_TEXT_URL_ENV, "").strip()
     if not remote:
-        raise RuntimeError(
-            "No AUDIO URL configured. Set HF_AUDIO_TEXT_URL to your Hugging Face Space AUDIO endpoint."
+        raise HTTPException(
+            status_code=500,
+            detail="No AUDIO URL configured. Set HF_AUDIO_TEXT_URL to your Hugging Face Space AUDIO endpoint."
         )
     return remote
 
 
+def validate_environment():
+    """Validate required environment variables on startup."""
+    missing_vars = []
+    
+    if not os.getenv(HF_INFERENCE_URL_ENV, "").strip():
+        missing_vars.append(f"{HF_INFERENCE_URL_ENV} (Hugging Face inference endpoint)")
+    
+    if not os.getenv(HF_OCR_URL_ENV, "").strip():
+        missing_vars.append(f"{HF_OCR_URL_ENV} (Hugging Face OCR endpoint)")
+    
+    if not os.getenv(HF_AUDIO_TEXT_URL_ENV, "").strip():
+        missing_vars.append(f"{HF_AUDIO_TEXT_URL_ENV} (Hugging Face audio endpoint)")
+    
+    if missing_vars:
+        error_msg = f"Missing required environment variables: {', '.join(missing_vars)}"
+        print(f"ERROR: {error_msg}")
+        raise RuntimeError(error_msg)
+
+
 app = FastAPI(title="TextSense Relay (FastAPI)")
+
+# Validate environment on startup
+validate_environment()
 
 # Initialize rate limiter
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Custom rate limit error handler with headers
+async def custom_rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    response = JSONResponse(
+        {"error": "Rate limit exceeded", "detail": str(exc.detail)},
+        status_code=429
+    )
+    # Add rate limit headers for frontend consumption
+    if hasattr(exc, 'retry_after'):
+        response.headers["Retry-After"] = str(exc.retry_after)
+    response.headers["X-RateLimit-Limit"] = str(getattr(exc, 'limit', 'unknown'))
+    response.headers["X-RateLimit-Remaining"] = "0"
+    return response
+
+app.add_exception_handler(RateLimitExceeded, custom_rate_limit_handler)
 
 # Static and templates
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# SECURITY: templates/static is read-only and contains only trusted static assets
+# No user uploads are written to this directory - it's safe to expose
+app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 # Middleware to add cache headers to static files
@@ -337,10 +506,42 @@ async def add_cache_and_cdn_headers(request: Request, call_next):
         if "private" not in response.headers.get("Cache-Control", ""):
             response.headers["CDN-Cache-Control"] = "public, max-age=31536000"
     
-    # Add security headers for all responses
+    # Add modern security headers for all responses
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    
+    # Content Security Policy (restrictive but functional)
+    csp = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://pagead2.googlesyndication.com https://www.google.com; "
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+        "img-src 'self' data: https:; "
+        "font-src 'self' https://cdnjs.cloudflare.com; "
+        "connect-src 'self' https:; "
+        "frame-src https://www.google.com; "
+        "object-src 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'"
+    )
+    response.headers["Content-Security-Policy"] = csp
+    
+    # Strict Transport Security (if served over HTTPS)
+    if request.url.scheme == "https":
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    
+    # Permissions Policy (restrictive permissions)
+    permissions_policy = (
+        "camera=(), "
+        "microphone=(), "
+        "geolocation=(), "
+        "payment=(), "
+        "usb=(), "
+        "magnetometer=(), "
+        "gyroscope=(), "
+        "accelerometer=()"
+    )
+    response.headers["Permissions-Policy"] = permissions_policy
     
     return response
 
@@ -352,61 +553,61 @@ def get_cache_key(text: str) -> str:
 
 @app.get("/favicon.ico")
 async def favicon():
-    return FileResponse("static/favicon.ico")
+    return FileResponse("templates/static/favicon.ico")
 
 
 @app.get("/site.webmanifest")
 async def site_webmanifest():
-    return FileResponse("static/site.webmanifest", media_type="application/manifest+json")
+    return FileResponse("templates/static/site.webmanifest", media_type="application/manifest+json")
 
 
 @app.get("/apple-touch-icon.png")
 async def apple_touch_icon():
-    return FileResponse("static/apple-touch-icon.png")
+    return FileResponse("templates/static/apple-touch-icon.png")
 
 
 @app.get("/favicon-32x32.png")
 async def favicon_32x32():
-    return FileResponse("static/favicon-32x32.png")
+    return FileResponse("templates/static/favicon-32x32.png")
 
 
 @app.get("/favicon-16x16.png")
 async def favicon_16x16():
-    return FileResponse("static/favicon-16x16.png")
+    return FileResponse("templates/static/favicon-16x16.png")
 
 
 @app.get("/android-chrome-192x192.png")
 async def android_chrome_192():
-    return FileResponse("static/android-chrome-192x192.png")
+    return FileResponse("templates/static/android-chrome-192x192.png")
 
 
 @app.get("/android-chrome-512x512.png")
 async def android_chrome_512():
-    return FileResponse("static/android-chrome-512x512.png")
+    return FileResponse("templates/static/android-chrome-512x512.png")
 
 
 @app.get("/", response_class=HTMLResponse)
 @app.head("/")
 async def index(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
     return templates.TemplateResponse("index.html", context)
 
 
 @app.get("/about", response_class=HTMLResponse)
 async def about(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
     return templates.TemplateResponse("about.html", context)
 
 
 @app.get("/privacy", response_class=HTMLResponse)
 async def privacy(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
     return templates.TemplateResponse("privacy.html", context)
 
 
 @app.get("/terms", response_class=HTMLResponse)
 async def terms(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
     return templates.TemplateResponse("terms.html", context)
 
 
@@ -414,7 +615,7 @@ async def terms(request: Request):
 async def contact(request: Request):
     context = {
         "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
         "recaptcha_site_key": os.getenv("RECAPTCHA_SITE_KEY", ""),
     }
     return templates.TemplateResponse("contact.html", context)
@@ -422,31 +623,31 @@ async def contact(request: Request):
 
 @app.get("/ocr", response_class=HTMLResponse)
 async def ocr_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
     return templates.TemplateResponse("ocr.html", context)
 
 
 @app.get("/audio-text", response_class=HTMLResponse)
 async def audio_text_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
     return templates.TemplateResponse("audio-text.html", context)
 
 
 @app.get("/ai-detector", response_class=HTMLResponse)
 async def ai_detector_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
     return templates.TemplateResponse("ai-detector.html", context)
 
 
 @app.get("/generate-image-page", response_class=HTMLResponse)
 async def generate_image_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
     return templates.TemplateResponse("generate-image.html", context)
 
 
 @app.get("/text-to-speech", response_class=HTMLResponse)
 async def text_to_speech_page(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
     return templates.TemplateResponse("text-to-speech.html", context)
 
 
@@ -467,21 +668,33 @@ async def submit_contact(request: Request):
                 data={"secret": secret, "response": token},
                 timeout=10,
             )
-            if verify.status_code == 200:
-                result = verify.json()
-                if not result.get("success"):
-                    return JSONResponse({"ok": False, "error": "reCAPTCHA verification failed"}, status_code=400)
+            
+            if verify.status_code != 200:
+                logging.warning(f"reCAPTCHA verification failed with status {verify.status_code}")
+                return JSONResponse({"ok": False, "error": "reCAPTCHA verification failed"}, status_code=400)
+            
+            result = verify.json()
+            if not result.get("success"):
+                error_codes = result.get("error-codes", [])
+                logging.warning(f"reCAPTCHA verification failed: {error_codes}")
+                return JSONResponse({"ok": False, "error": "reCAPTCHA verification failed"}, status_code=400)
+                
         except (TimeoutException, ConnectError) as net_err:
+            logging.error(f"reCAPTCHA network error: {str(net_err)}")
             return JSONResponse({"ok": False, "error": f"reCAPTCHA network error: {str(net_err)}"}, status_code=400)
         except HTTPError as req_err:
+            logging.error(f"reCAPTCHA request error: {str(req_err)}")
             return JSONResponse({"ok": False, "error": f"reCAPTCHA request error: {str(req_err)}"}, status_code=400)
+        except Exception as e:
+            logging.error(f"reCAPTCHA unexpected error: {str(e)}")
+            return JSONResponse({"ok": False, "error": "reCAPTCHA verification failed"}, status_code=400)
 
     return JSONResponse({"ok": True, "received": {"name": name, "email": email, "message": message}})
 
 
 @app.get("/cookies", response_class=HTMLResponse)
 async def cookies(request: Request):
-    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com")}
+    context = {"request": request, "contact_email": os.getenv("CONTACT_EMAIL", "")}
     return templates.TemplateResponse("cookies.html", context)
 
 
@@ -500,12 +713,13 @@ async def analyze(
 ):
     submit_text = await prepare_text_from_inputs(text, file, max_length=50000)
     
-    # Check cache first
+    # Check cache first with thread-safe access
     cache_key = get_cache_key(submit_text)
-    if cache_key in detection_cache:
-        cached_result = detection_cache[cache_key]
-        cached_result["cached"] = True
-        return JSONResponse(cached_result)
+    async with cache_lock:
+        if cache_key in detection_cache:
+            cached_result = detection_cache[cache_key]
+            cached_result["cached"] = True
+            return JSONResponse(cached_result)
     
     # Call remote API
     remote_url = get_remote_url()
@@ -517,9 +731,10 @@ async def analyze(
         context="Analyze",
     )
     
-    # Cache the result
+    # Cache the result with thread-safe access
     result["cached"] = False
-    detection_cache[cache_key] = result
+    async with cache_lock:
+        detection_cache[cache_key] = result
     
     return JSONResponse(result)
 
@@ -673,6 +888,9 @@ async def download_image(request: Request, url: str, filename: str = "generated_
                 else:
                     filename += ".png"
 
+            # Sanitize filename for safe use in Content-Disposition
+            safe_filename = sanitize_filename(filename)
+
             async def stream_content():
                 async for chunk in response.aiter_bytes(chunk_size=8192):
                     yield chunk
@@ -680,7 +898,10 @@ async def download_image(request: Request, url: str, filename: str = "generated_
             return StreamingResponse(
                 stream_content(),
                 media_type=content_type,
-                headers={"Content-Disposition": f"attachment; filename={filename}", "Cache-Control": "no-cache"}
+                headers={
+                    "Content-Disposition": f"attachment; filename=\"{safe_filename}\"",
+                    "Cache-Control": "no-cache"
+                }
             )
     except HTTPException:
         raise
@@ -698,7 +919,32 @@ async def ping():
     return {"status": "ok"}
 
 
+@app.on_event("startup")
+async def startup_event():
+    """Initialize resources on startup."""
+    logging.info("TextSense Relay starting up...")
+    logging.info(f"HTTP client configured with {http_client.limits.max_connections} max connections")
+    logging.info(f"HTTP client timeout: {http_client.timeout}")
+    logging.info("Application ready to serve requests")
+
+
 @app.on_event("shutdown")
 async def shutdown_event():
     """Clean up resources on shutdown."""
-    await http_client.aclose()
+    try:
+        await http_client.aclose()
+        logging.info("HTTP client closed successfully")
+    except Exception as e:
+        logging.error(f"Error closing HTTP client: {e}")
+    
+    # Clean up any remaining temp files (safety measure)
+    try:
+        temp_dir = tempfile.gettempdir()
+        for filename in os.listdir(temp_dir):
+            if filename.startswith("tmp") and "textsense" in filename.lower():
+                try:
+                    os.unlink(os.path.join(temp_dir, filename))
+                except OSError:
+                    pass
+    except Exception as e:
+        logging.warning(f"Error cleaning up temp files: {e}")

@@ -306,11 +306,5 @@ async def transcribe(
 
 @app.get("/healthz")
 async def healthz():
-    return {
-        "ok": True,
-        "engine": "sherpa-onnx",
-        "variant": WHISPER_VARIANT,
-        "max_chunk_seconds": MAX_CHUNK_SECONDS,
-        "chunk_overlap_seconds": CHUNK_OVERLAP_SECONDS,
-        "supports_long_audio": True,
-    }
+    """Health check endpoint"""
+    return {"ok": True}
