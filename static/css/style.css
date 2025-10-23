@@ -70,16 +70,17 @@ body.index-page {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 2rem !important;
+    gap: 1rem !important;
     flex-wrap: nowrap !important;
+    padding: 0 2rem;
 }
 
 /* Legacy support for container-fluid in header */
 .navbar.site-header > .container-fluid {
     display: flex !important;
     align-items: center !important;
-    justify-content: flex-start !important;
-    gap: 2rem !important;
+    justify-content: space-between !important;
+    gap: 1rem !important;
     flex-wrap: nowrap !important;
     padding: 0 2rem;
     max-width: 1200px;
@@ -113,17 +114,85 @@ body.index-page {
     margin: 0;
 }
 
+/* Navigation Links - Centered */
+.nav-links {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 1.5rem !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    list-style: none !important;
+    flex-wrap: nowrap !important;
+    flex-grow: 1 !important;
+    justify-content: center !important;
+    /* Ensure no Bootstrap positioning overrides */
+    position: static !important;
+    float: none !important;
+}
+
+.nav-links .nav-link {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    margin: 0;
+    color: #212529 !important;
+    font-weight: 600;
+    letter-spacing: 0.1px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.nav-links .nav-link:hover {
+    background-color: #f8f9fa;
+    color: #0d6efd !important;
+    transform: translateY(-1px);
+}
+
+.nav-links .nav-link.active {
+    background-color: #e7f1ff;
+    color: #0d6efd !important;
+    font-weight: 700;
+}
+
+.nav-links .nav-link i { display: none; }
+
+/* Icon-only nav links (tweet, coffee) - avoid :has for compatibility */
+.nav-links .nav-link.icon-link {
+    padding: 0.5rem !important;
+    min-width: 2.5rem;
+    text-align: center;
+    border-radius: 50% !important;
+}
+
+.nav-links .nav-link.icon-link i {
+    display: inline-block !important;
+    font-size: 1.1rem;
+}
+
+.nav-links .nav-link.icon-twitter:hover {
+    background-color: #1da1f2 !important;
+    color: white !important;
+}
+
+.nav-links .nav-link.icon-coffee:hover {
+    background-color: #ff6b35 !important;
+    color: white !important;
+}
+
+/* Legacy support for .navbar-nav class */
 .navbar-nav {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    gap: 0.25rem !important;
-    margin: 0 !important;
+    gap: 1.5rem !important;
+    margin: 0 auto !important;
     padding: 0 !important;
     list-style: none !important;
-    margin-left: auto !important; /* Push nav to the right */
-    flex-basis: auto !important;
-    /* Ensure no Bootstrap positioning overrides */
+    flex-wrap: nowrap !important;
+    flex-grow: 1 !important;
+    justify-content: center !important;
     position: static !important;
     float: none !important;
 }
@@ -137,6 +206,8 @@ body.index-page {
     font-weight: 600;
     letter-spacing: 0.1px;
     font-size: 0.9rem;
+    white-space: nowrap;
+    text-decoration: none;
 }
 
 .navbar-nav .nav-link:hover {
@@ -153,7 +224,6 @@ body.index-page {
 
 .navbar-nav .nav-link i { display: none; }
 
-/* Icon-only nav links (tweet, coffee) - avoid :has for compatibility */
 .navbar-nav .nav-link.icon-link {
     padding: 0.5rem !important;
     min-width: 2.5rem;
@@ -490,16 +560,19 @@ textarea.form-control {
 /* Mobile Navigation Toggle Button */
 .navbar-toggler {
     border: none;
-    padding: 0.25rem 0.5rem;
+    padding: 0.5rem;
     background: transparent;
     color: #212529;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     cursor: pointer;
     display: none !important; /* hidden by default (desktop) */
+    flex-shrink: 0;
+    margin-left: auto;
 }
 
 .navbar-toggler:focus {
     box-shadow: none;
+    outline: none;
 }
 
 .navbar-toggler-icon {
@@ -507,10 +580,8 @@ textarea.form-control {
     width: 1.5em;
     height: 1.5em;
     vertical-align: middle;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2833, 37, 41, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 100%;
+    font-style: normal;
+    line-height: 1;
 }
 
 /* Mobile Navigation Menu */
@@ -605,7 +676,11 @@ textarea.form-control {
         flex-shrink: 0;
     }
     
-    .navbar-nav { display: none !important; } /* Hide desktop nav on mobile */
+    /* Hide desktop navigation on mobile */
+    .nav-links { display: none !important; }
+    .navbar-nav { display: none !important; }
+    
+    /* Show hamburger menu on mobile */
     .navbar-toggler { display: block !important; }
     
     .brand-logo-text {

@@ -40,18 +40,18 @@
 </head>
 <body>
   <div class="container-fluid">
-      <nav class="navbar site-header">
+      <header class="navbar site-header">
         <div class="container">
           <div class="navbar-brand">
             <a href="/" class="d-flex align-items-center text-decoration-none">
-                                      <img src="{{ url_for('static', path='textsense_logo.png') }}" alt="TextSense Logo" height="48" class="me-1">
+              <img src="{{ url_for('static', path='textsense_logo.png') }}" alt="TextSense Logo" height="48" class="me-1">
               <div>
                 <span class="brand-logo-text fw-bold fs-3">TextSense</span>
                 <span class="brand-tagline text-muted small d-block">open text tools for everyone</span>
               </div>
             </a>
           </div>
-          <div class="navbar-nav">
+          <nav class="nav-links">
             <a href="/ai-detector" class="nav-link fw-bold">AI Text Detector</a>
             <a href="/ocr" class="nav-link fw-bold">Image-Text to Text</a>
             <a href="/audio-text" class="nav-link fw-bold">Audio to Text</a>
@@ -63,9 +63,9 @@
             <a href="https://buymeacoffee.com/mlopezbrini" target="_blank" rel="noopener noreferrer" class="nav-link icon-link icon-coffee" title="Buy me a coffee">
               <i class="fas fa-coffee"></i>
             </a>
-          </div>
+          </nav>
           <button class="navbar-toggler" type="button" onclick="toggleMobileNav()">
-              <span class="navbar-toggler-icon"></span>
+            <span class="navbar-toggler-icon">☰</span>
           </button>
         </div>
         <div class="mobile-nav" id="mobileNav">
@@ -81,8 +81,7 @@
             <i class="fas fa-coffee"></i>
           </a>
         </div>
-        </div>
-      </nav>
+      </header>
 
     <!-- Page Header -->
     <main class="container">
