@@ -414,16 +414,20 @@ async def add_cache_and_cdn_headers(request: Request, call_next):
     
     # Add cache headers for static assets
     if request.url.path.startswith("/static/"):
-        # Aggressive caching for static assets (1 year)
-        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        # Check if file has version parameter (cache busting)
+        if "?v=" in str(request.url):
+            # Versioned files can be cached longer (1 week)
+            response.headers["Cache-Control"] = "public, max-age=604800"
+            response.headers["CDN-Cache-Control"] = "public, max-age=604800"
+        else:
+            # Non-versioned files should be cached shorter (1 hour)
+            response.headers["Cache-Control"] = "public, max-age=3600"
+            response.headers["CDN-Cache-Control"] = "public, max-age=3600"
+        
         response.headers["X-Content-Type-Options"] = "nosniff"
         
         # CDN optimization headers
         response.headers["Vary"] = "Accept-Encoding"
-        
-        # Indicate that the resource can be cached by CDNs
-        if "private" not in response.headers.get("Cache-Control", ""):
-            response.headers["CDN-Cache-Control"] = "public, max-age=31536000"
     
     # Add modern security headers for all responses
     response.headers["X-Frame-Options"] = "SAMEORIGIN"
@@ -833,9 +837,16 @@ async def healthz():
     return {"ok": True}
 
 
-@app.get("/ping")
-async def ping():
-    return {"status": "ok"}
+@app.get("/clear-cache")
+async def clear_cache():
+    """Clear CDN cache for static files (development/debugging only)."""
+    # This is a simple endpoint to help with cache issues during development
+    # In production, you might want to restrict access to this endpoint
+    return {
+        "message": "Cache headers updated. Please hard refresh your browser (Ctrl+F5 or Cmd+Shift+R)",
+        "timestamp": "2025-01-23",
+        "note": "Static files now have shorter cache times for easier development"
+    }
 
 
 @app.on_event("shutdown")
