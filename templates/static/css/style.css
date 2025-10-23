@@ -709,17 +709,19 @@ main.container .card {
     margin-right: auto;
 }
 
-/* Make all navigation pages content wider */
-body:has(.navigation-page) .col-lg-9,
-.navigation-page .col-lg-9 {
-    max-width: 60% !important;
-    flex: 0 0 60% !important;
-}
+/* Make all navigation pages content wider on desktop/tablet */
+@media (min-width: 992px) {
+    body:has(.navigation-page) .col-lg-9,
+    .navigation-page .col-lg-9 {
+        max-width: 80% !important;
+        flex: 0 0 80% !important;
+    }
 
-body:has(.navigation-page) .col-xl-8,
-.navigation-page .col-xl-8 {
-    max-width: 60% !important;
-    flex: 0 0 60% !important;
+    body:has(.navigation-page) .col-xl-8,
+    .navigation-page .col-xl-8 {
+        max-width: 80% !important;
+        flex: 0 0 80% !important;
+    }
 }
 
 .main-content,
@@ -1151,6 +1153,50 @@ body:has(.navigation-page) .col-xl-8,
         flex-direction: column;
         gap: 0.5rem;
     }
+    
+    /* Navigation page specific mobile improvements */
+    .navigation-page .card {
+        margin-bottom: 1.5rem;
+        border-radius: 12px;
+    }
+    
+    .navigation-page .card-header {
+        padding: 1rem;
+        font-size: 1.1rem;
+    }
+    
+    .navigation-page .card-body {
+        padding: 1.5rem;
+    }
+    
+    /* Make form elements more mobile-friendly */
+    .navigation-page .form-control,
+    .navigation-page .form-select {
+        font-size: 1rem;
+        padding: 0.75rem;
+    }
+    
+    /* Improve button spacing on mobile */
+    .navigation-page .btn {
+        padding: 0.75rem 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Ensure better card proportions on mobile */
+    .navigation-page .card-body .row {
+        margin-left: -0.5rem;
+        margin-right: -0.5rem;
+    }
+    
+    .navigation-page .card-body .row > * {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    /* Better spacing for form sections */
+    .navigation-page .mb-4 {
+        margin-bottom: 1.5rem !important;
+    }
 }
 
 /* -----------------------------------------------------------------------------
@@ -1532,13 +1578,13 @@ main.container {
     padding-top: calc(var(--header-height) - 2rem);
 }
 
-/* Reduce content width for better centering - especially for terms page */
-.col-lg-9 {
+/* Reduce content width for better centering - especially for terms page (non-navigation pages) */
+body:not(.navigation-page) .col-lg-9 {
     max-width: 40% !important;
     flex: 0 0 40% !important;
 }
 
-.col-xl-8 {
+body:not(.navigation-page) .col-xl-8 {
     max-width: 50% !important;
     flex: 0 0 50% !important;
 }
@@ -1564,6 +1610,31 @@ main.container .card {
     
     main.container .card {
         max-width: 100%;
+    }
+}
+
+/* Mobile-specific adjustments for navigation pages */
+@media (max-width: 768px) {
+    /* Make navigation page cards wider on mobile */
+    body.navigation-page .col-lg-9,
+    body.navigation-page .col-xl-8 {
+        max-width: 100% !important;
+        flex: 0 0 100% !important;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    /* Ensure cards take full width on mobile */
+    body.navigation-page .card {
+        margin-left: 0;
+        margin-right: 0;
+        width: 100%;
+    }
+    
+    /* Adjust main container padding on mobile for navigation pages */
+    body.navigation-page main.container {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
     }
 }
 
