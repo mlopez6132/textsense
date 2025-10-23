@@ -1,211 +1,149 @@
 /* =============================================================================
-   Index Page Specific Styles
-   Mobile-First Approach
+   Index Page Specific Styles - Full Width Layout
    ============================================================================= */
 
-/* Hero Section */
-.hero-section {
-    width: 100%;
-    margin: calc(var(--header-height-mobile) * -1) 0 0 0;
-    padding: calc(80px + var(--header-height-mobile)) 0 60px;
-    background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
-    color: white;
+/* Full width body and container for index page */
+body {
+    min-height: 100vh;
+    padding-top: var(--header-height);
+    margin: 0;
     position: relative;
-    overflow: hidden;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
 }
 
-.hero-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1.5" fill="white" opacity="0.08"/><circle cx="50" cy="10" r="0.8" fill="white" opacity="0.06"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-    pointer-events: none;
+.container-fluid {
+    max-width: 100%;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* Full width page container */
+.page-container {
+    max-width: 100%;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+}
+
+/* Remove top padding to eliminate gap between header and hero */
+.index-page .page-container {
+    padding-top: 0;
+}
+
+/* Keep body padding-top for index page to prevent header overlap */
+body.index-page {
+    padding-top: var(--header-height);
+}
+
+/* -----------------------------------------------------------------------------
+   Hero Section - Simplified Approach
+   Full width background with negative top margin to touch the header
+   ----------------------------------------------------------------------------- */
+
+.hero-section {
+    width: 100vw;
+    max-width: 100vw;
+    margin: 0;
+    /* Negative margin pulls hero up behind fixed header */
+    margin-top: calc(var(--header-height) * -1);
+    /* Padding compensates for negative margin + adds visual spacing */
+    padding: calc(100px + var(--header-height)) 0 100px;
+    position: relative;
+    /* Full width viewport technique */
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
 }
 
 .hero-section .container {
-    max-width: var(--max-content-width);
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 0 var(--spacing-sm);
+    padding: 0 2rem;
     position: relative;
     z-index: 2;
 }
 
-.hero-feature {
-    text-align: center;
-    padding: var(--spacing-sm);
-}
+/* -----------------------------------------------------------------------------
+   About Section - Full Width
+   ----------------------------------------------------------------------------- */
 
-.hero-feature i {
-    color: rgba(255, 255, 255, 0.9);
-}
-
-.hero-feature h5 {
-    color: white;
-    margin-bottom: 0.5rem;
-}
-
-.hero-feature p {
-    color: rgba(255, 255, 255, 0.8);
-    margin: 0;
-}
-
-/* Stats Section */
-.stats-section {
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    padding: 60px 0;
-    margin: 0;
-}
-
-.stat-item {
-    text-align: center;
-    padding: var(--spacing-md) var(--spacing-sm);
-}
-
-.stat-number {
-    font-size: 2rem;
-    font-weight: bold;
-    background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.stat-item h5 {
-    margin: var(--spacing-xs) 0;
-}
-
-/* Products Section */
-.products-section {
-    margin: 0;
-    padding: 60px 0;
-}
-
-.product-card {
-    background: white;
-    border-radius: 15px;
-    padding: var(--spacing-md);
-    margin-bottom: var(--spacing-md);
-    box-shadow: var(--shadow-md);
-    transition: var(--transition);
-    border: none;
-    height: 100%;
-}
-
-.product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-lg);
-}
-
-.feature-icon {
-    width: 70px;
-    height: 70px;
-    background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 1.75rem;
-    margin: 0 auto var(--spacing-md);
-}
-
-.feature-card {
-    transition: var(--transition);
-    height: 100%;
-    border: none;
-    box-shadow: var(--shadow-md);
-}
-
-.feature-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-lg);
-}
-
-/* About Section */
 .about-section {
-    width: 100%;
+    width: 100vw;
+    max-width: 100vw;
     margin: 0;
-    padding: 60px 0;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    padding: 80px 0;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
 }
 
 .about-section .container {
-    max-width: var(--max-content-width);
+    max-width: 1200px;
     margin: 0 auto;
-    padding: 0 var(--spacing-sm);
+    padding: 0 2rem;
+    position: relative;
+    z-index: 2;
 }
 
-.creator-badge {
-    background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
-    color: white;
-    padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: 50px;
-    display: inline-block;
-    margin-top: var(--spacing-md);
-    text-decoration: none;
-    transition: var(--transition);
-    cursor: pointer;
-}
+/* -----------------------------------------------------------------------------
+   Products Section - Contained Width
+   ----------------------------------------------------------------------------- */
 
-.creator-badge:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(13, 110, 253, 0.3);
-    color: white;
-    text-decoration: none;
-}
-
-/* CTA Section */
-.cta-section {
-    background: linear-gradient(135deg, #0d6efd 0%, #0d47a1 100%);
-    color: white;
-    padding: 60px 0;
+.products-section {
     margin: 0;
+    padding: 80px 0;
 }
 
-/* Responsive Adjustments */
-@media (min-width: 768px) {
+.products-section .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 2;
+}
+
+/* -----------------------------------------------------------------------------
+   Content Flow with Sticky Footer
+   ----------------------------------------------------------------------------- */
+
+main, .main-content, .page-container {
+    flex: 1 0 auto;
+    position: relative;
+    z-index: 1;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* -----------------------------------------------------------------------------
+   Mobile Responsive Adjustments
+   ----------------------------------------------------------------------------- */
+
+@media (max-width: 768px) {
     .hero-section {
-        padding: calc(100px + var(--header-height-desktop)) 0 100px;
+        padding: calc(80px + var(--header-height)) 0 60px;
     }
-    
-    .stat-number {
-        font-size: 3rem;
-    }
-    
-    .stats-section {
-        padding: 80px 0;
-    }
-    
-    .products-section {
-        padding: 80px 0;
-    }
-    
+
     .about-section {
-        padding: 80px 0;
+        padding: 60px 0;
     }
-    
+
+    .products-section {
+        padding: 60px 0;
+    }
+
     .hero-section .container,
     .about-section .container,
     .products-section .container {
-        padding: 0 var(--spacing-md);
-    }
-    
-    .feature-icon {
-        width: 80px;
-        height: 80px;
-        font-size: 2rem;
-    }
-}
-
-@media (min-width: 992px) {
-    .hero-section {
-        margin-top: calc(var(--header-height-desktop) * -1);
+        width: 100%;
+        max-width: 100%;
+        padding: 0 1rem;
     }
 }
