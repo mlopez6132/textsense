@@ -153,27 +153,25 @@ body.index-page {
 
 .navbar-nav .nav-link i { display: none; }
 
-/* Tweet and coffee links styling */
-.navbar-nav .nav-link:has(.fab.fa-twitter),
-.navbar-nav .nav-link:has(.fas.fa-coffee) {
+/* Icon-only nav links (tweet, coffee) - avoid :has for compatibility */
+.navbar-nav .nav-link.icon-link {
     padding: 0.5rem !important;
     min-width: 2.5rem;
     text-align: center;
     border-radius: 50% !important;
 }
 
-.navbar-nav .nav-link:has(.fab.fa-twitter) i,
-.navbar-nav .nav-link:has(.fas.fa-coffee) i {
+.navbar-nav .nav-link.icon-link i {
     display: inline-block !important;
     font-size: 1.1rem;
 }
 
-.navbar-nav .nav-link:has(.fab.fa-twitter):hover {
+.navbar-nav .nav-link.icon-twitter:hover {
     background-color: #1da1f2 !important;
     color: white !important;
 }
 
-.navbar-nav .nav-link:has(.fas.fa-coffee):hover {
+.navbar-nav .nav-link.icon-coffee:hover {
     background-color: #ff6b35 !important;
     color: white !important;
 }
