@@ -414,7 +414,7 @@ async def terms(request: Request):
 async def contact(request: Request):
     context = {
         "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", "hi@textsense.com"),
+        "contact_email": os.getenv("CONTACT_EMAIL", "textsense2@gmail.com"),
         "recaptcha_site_key": os.getenv("RECAPTCHA_SITE_KEY", ""),
     }
     return templates.TemplateResponse("contact.html", context)
