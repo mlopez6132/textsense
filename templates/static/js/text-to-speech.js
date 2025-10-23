@@ -104,19 +104,34 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.detail || `HTTP ${response.status}: ${response.statusText}`);
+                let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                try {
+                    const errorData = await response.json().catch(() => ({}));
+                    errorMessage = errorData.detail || errorMessage;
+                } catch (e) {
+                    // If JSON parsing fails, try to get text
+                    try {
+                        const errorText = await response.text();
+                        errorMessage = errorText || errorMessage;
+                    } catch (e2) {
+                        // Use default error message
+                    }
+                }
+                throw new Error(errorMessage);
             }
 
             // Get the audio blob
             currentAudioBlob = await response.blob();
+            console.log('Audio blob received:', currentAudioBlob.size, 'bytes, type:', currentAudioBlob.type);
 
             // Create object URL for the audio
             currentAudioUrl = URL.createObjectURL(currentAudioBlob);
+            console.log('Audio URL created:', currentAudioUrl);
 
             // Set audio source and show preview
             generatedAudio.src = currentAudioUrl;
             audioPreviewSection.style.display = 'block';
+            console.log('Audio preview section shown');
 
             // Auto-play the audio (optional)
             generatedAudio.play().catch(e => {

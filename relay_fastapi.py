@@ -837,6 +837,11 @@ async def healthz():
     return {"ok": True}
 
 
+@app.get("/ping")
+async def ping():
+    return {"status": "ok"}
+
+
 @app.get("/clear-cache")
 async def clear_cache():
     """Clear CDN cache for static files (development/debugging only)."""

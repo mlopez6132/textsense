@@ -24,6 +24,10 @@ class SpeechGenerator:
         self.auth_token = os.getenv("OPENAI_SPEECH_TOKEN", "").strip()
         self.tts_url_template = os.getenv("OPENAI_SPEECH_API_KEY", "").strip()
         
+        if not self.tts_url_template:
+            logger.error("OPENAI_SPEECH_API_KEY not set - TTS URL template is required")
+            raise RuntimeError("TTS URL template not configured")
+        
         if self.auth_token:
             logger.info("TTS initialized with authentication token")
         else:
@@ -121,11 +125,7 @@ class SpeechGenerator:
             try:
                 seed = random.randint(1, 1000000)
 
-                api_url = self.tts_url_template.format(
-                    prompt=encoded_prompt,
-                    voice=voice,
-                    seed=seed
-                )
+                api_url = f"{self.tts_url_template}?prompt={encoded_prompt}&voice={voice}&seed={seed}"
                 logger.info(f"Attempt {attempt + 1}: Requesting TTS from {api_url[:80]}...")
 
                 headers = self._get_headers()
@@ -146,6 +146,13 @@ class SpeechGenerator:
                             async for chunk in response.aiter_bytes(chunk_size=8192):
                                 audio_data += chunk
                             
+                            # Validate audio data
+                            if len(audio_data) == 0:
+                                last_error = "Received empty audio data"
+                                continue
+                            
+                            logger.info(f"Received {len(audio_data)} bytes of audio data")
+                            
                             # Return as streaming response
                             async def stream_audio():
                                 yield audio_data
@@ -158,7 +165,8 @@ class SpeechGenerator:
                                     "Cache-Control": "no-cache",
                                     "X-Speech-Provider": "openai",
                                     "X-Speech-Voice": voice,
-                                    "X-Speech-Vibe": vibe or ""
+                                    "X-Speech-Vibe": vibe or "",
+                                    "Content-Length": str(len(audio_data))
                                 }
                             )
 
