@@ -117,7 +117,7 @@ body.index-page {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
-    gap: 0.5rem !important;
+    gap: 0.25rem !important;
     margin: 0 !important;
     padding: 0 !important;
     list-style: none !important;
@@ -129,7 +129,7 @@ body.index-page {
 }
 
 .navbar-nav .nav-link {
-    padding: 0.75rem 1.25rem;
+    padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
     transition: all 0.2s ease;
     margin: 0;
@@ -152,6 +152,31 @@ body.index-page {
 }
 
 .navbar-nav .nav-link i { display: none; }
+
+/* Tweet and coffee links styling */
+.navbar-nav .nav-link:has(.fab.fa-twitter),
+.navbar-nav .nav-link:has(.fas.fa-coffee) {
+    padding: 0.5rem !important;
+    min-width: 2.5rem;
+    text-align: center;
+    border-radius: 50% !important;
+}
+
+.navbar-nav .nav-link:has(.fab.fa-twitter) i,
+.navbar-nav .nav-link:has(.fas.fa-coffee) i {
+    display: inline-block !important;
+    font-size: 1.1rem;
+}
+
+.navbar-nav .nav-link:has(.fab.fa-twitter):hover {
+    background-color: #1da1f2 !important;
+    color: white !important;
+}
+
+.navbar-nav .nav-link:has(.fas.fa-coffee):hover {
+    background-color: #ff6b35 !important;
+    color: white !important;
+}
 
 /* Header styling */
 header h1 {
