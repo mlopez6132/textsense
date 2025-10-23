@@ -635,14 +635,14 @@ footer {
 /* Footer uses Bootstrap .container by default - Updated for compact layout */
 
 footer .container {
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
     gap: 0.5rem;
     max-width: 1000px;
     margin: 0 auto;
@@ -653,6 +653,7 @@ footer .footer-left {
     align-items: center;
     flex-wrap: wrap;
     gap: 1rem;
+    margin-left: -6.5rem;
 }
 
 footer .footer-nav {
@@ -1093,6 +1094,11 @@ body:has(.navigation-page) .col-xl-8,
     footer .footer-right {
         margin-left: 0;
         order: 3;
+    }
+    
+    /* Remove negative margin on mobile to keep footer centered */
+    footer .footer-left {
+        margin-left: 0;
     }
     
     /* OCR Responsive */
