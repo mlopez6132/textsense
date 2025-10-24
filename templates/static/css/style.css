@@ -709,18 +709,18 @@ main.container .card {
     margin-right: auto;
 }
 
-/* Make all navigation pages content wider on desktop/tablet */
+/* Make all navigation pages content narrower on desktop/tablet */
 @media (min-width: 992px) {
     body:has(.navigation-page) .col-lg-9,
     .navigation-page .col-lg-9 {
-        max-width: 80% !important;
-        flex: 0 0 80% !important;
+        max-width: 60% !important;
+        flex: 0 0 60% !important;
     }
 
     body:has(.navigation-page) .col-xl-8,
     .navigation-page .col-xl-8 {
-        max-width: 80% !important;
-        flex: 0 0 80% !important;
+        max-width: 60% !important;
+        flex: 0 0 60% !important;
     }
 }
 
