@@ -127,6 +127,11 @@ main, .main-content, .page-container {
     font-weight: 300;
 }
 
+.products-section .product-card h3 {
+    font-size: 1.3rem;
+    font-weight: 300;
+}
+
 .about-section .col-6 h3 {
     font-size: 1.3rem;
     font-weight: 300;
