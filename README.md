@@ -1,180 +1,258 @@
-# AI Text Detector Web Application
+# TextSense - AI-Powered Text Analysis Platform
 
-A modern web application that analyzes text documents to detect AI-generated content with detailed highlighting and percentage analysis.
+A comprehensive web application that provides multiple AI-powered text analysis tools including AI detection, OCR, audio transcription, image generation, and text-to-speech capabilities.
 
 ## Features
 
+### 🔍 **AI Text Detection**
 - **Text Analysis**: Paste text directly into the web interface
 - **File Upload**: Upload text files (.txt, .md, .doc, .docx) for analysis
 - **AI Detection**: Uses advanced transformer models to detect AI-generated content
 - **Detailed Highlighting**: Highlights AI-generated portions with probability percentages
 - **Statistics Dashboard**: Shows overall AI vs human content percentages
-- **Responsive Design**: Works on desktop and mobile devices
-- **Real-time Analysis**: Fast processing with loading indicators
 
-## Screenshots
+### 📷 **OCR (Optical Character Recognition)**
+- **Image Upload**: Upload images containing text
+- **URL Support**: Process images from URLs
+- **Multi-language Support**: Extract text in various languages
+- **Real-time Processing**: Fast text extraction with loading indicators
 
-The application features a modern, gradient-based design with:
-- Clean, intuitive interface
-- Color-coded highlighting (red for AI, green for human)
-- Interactive tooltips showing probability percentages
-- Responsive statistics cards
-- Smooth animations and transitions
+### 🎵 **Audio Transcription**
+- **Audio Upload**: Upload audio files (MP3, WAV)
+- **URL Support**: Process audio from URLs
+- **Multiple Formats**: Support for various audio formats
+- **Language Detection**: Automatic language detection and transcription
 
-## Installation
+### 🎨 **AI Image Generation**
+- **Text-to-Image**: Generate images from text prompts
+- **Customizable Settings**: Adjust aspect ratio, number of images, safety settings
+- **Prompt Optimization**: Automatic prompt enhancement
+- **Safety Features**: Built-in content safety checks
+
+### 🔊 **Text-to-Speech**
+- **Multiple Voices**: Choose from various AI voices
+- **Customizable Settings**: Adjust voice parameters and vibe
+- **High Quality**: Generate natural-sounding speech
+- **Download Support**: Download generated audio files
+
+### 🎨 **Modern UI/UX**
+- **Responsive Design**: Works seamlessly on desktop and mobile
+- **Clean Interface**: Intuitive, gradient-based design
+- **Real-time Feedback**: Loading indicators and progress updates
+- **Accessibility**: WCAG compliant design
+
+## Architecture
+
+### **Backend**: FastAPI with Relay Pattern
+- **Main Application**: `relay_fastapi.py` - FastAPI server
+- **Hugging Face Integration**: Connects to HF Spaces for AI processing
+- **Rate Limiting**: Built-in rate limiting for API protection
+- **Caching**: Intelligent caching for improved performance
+
+### **Frontend**: Modern Web Technologies
+- **HTML5/CSS3**: Semantic markup with modern styling
+- **JavaScript (ES6+)**: Interactive client-side functionality
+- **Bootstrap 5**: Responsive framework
+- **Custom CSS**: Gradient-based design system
+
+### **AI Services**: Hugging Face Spaces
+- **AI Detection**: Custom transformer models
+- **OCR Processing**: Advanced text extraction
+- **Audio Processing**: Speech recognition and generation
+- **Image Generation**: State-of-the-art text-to-image models
+
+## Installation & Setup
 
 ### Prerequisites
-
-- Python 3.8 or higher
+- Python 3.10+
 - pip (Python package installer)
 
-### Setup Instructions
+### Local Development
 
-1. **Clone or download the project files**
+1. **Clone the repository**:
+   ```bash
+   git clone <repository-url>
+   cd textsense
+   ```
 
-2. **Install Python dependencies**:
+2. **Install dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Download the AI detection model**:
-   The application uses the `desklib/ai-text-detector-v1.01` model. You'll need to download this model or have it available in your project directory.
+3. **Set up environment variables**:
+   ```bash
+   export HF_INFERENCE_URL="https://your-space.hf.space/analyze"
+   export HF_OCR_URL="https://your-ocr-space.hf.space/extract"
+   export OPENAI_SPEECH_API_KEY="your-openai-key"
+   export FLUX_API_KEY="your-flux-key"
+   ```
 
 4. **Run the application**:
    ```bash
-   python app.py
+   uvicorn relay_fastapi:app --host 0.0.0.0 --port 8000
    ```
 
 5. **Access the web interface**:
-   Open your browser and go to `http://localhost:5000`
-
-## Usage
-
-### Text Input
-1. Click on the "Text Input" tab
-2. Paste or type your text in the textarea
-3. Click "Analyze Text"
-4. View the results with highlighted segments
-
-### File Upload
-1. Click on the "File Upload" tab
-2. Select a supported file (.txt, .md, .doc, .docx)
-3. Click "Upload & Analyze"
-4. View the analysis results
-
-### Understanding Results
-
-- **Overall Assessment**: Shows whether the entire document is classified as AI-generated or human-written
-- **AI Percentage**: Percentage of text identified as AI-generated
-- **Human Percentage**: Percentage of text identified as human-written
-- **Average AI Probability**: Average confidence score across all segments
-- **Highlighted Text**: 
-  - Red highlighting = AI-generated content
-  - Green highlighting = Human-written content
-  - Hover over highlights to see probability percentages
-
-## Technical Details
-
-### Architecture
-- **Backend**: Flask web framework (Render relay can run FastAPI)
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **AI Model**: Transformer-based text classification
-- **Styling**: Bootstrap 5 + custom CSS
-
-### AI Detection Method
-The application uses a sophisticated approach:
-1. Breaks text into overlapping segments (200 characters with 50-character overlap)
-2. Analyzes each segment using the AI detection model
-3. Combines results to provide overall assessment
-4. Highlights individual segments based on their classification
-
-### File Support
-- **Text files** (.txt): Direct text content
-- **Markdown** (.md): Markdown-formatted text
-- **Word documents** (.doc, .docx): Microsoft Word documents
-
-## Configuration
-
-### Model Settings
-You can modify the AI detection parameters in `app.py`:
-- `segment_length`: Length of text segments (default: 200)
-- `overlap`: Overlap between segments (default: 50)
-- `threshold`: Classification threshold (default: 0.5)
-
-### Web Server Settings
-Modify the Flask app configuration in `app.py`:
-- `SECRET_KEY`: Change for production use
-- `MAX_CONTENT_LENGTH`: Maximum file upload size
-- Port and host settings in the `app.run()` call
+   Open your browser and go to `http://localhost:8000`
 
 ## Deployment
 
-Render (relay): the app can run a lightweight FastAPI relay that forwards `/analyze` to a GPU-backed Hugging Face Space. Start command:
+### Render.com Deployment
+
+The application is configured for deployment on Render.com:
+
+1. **Connect your GitHub repository** to Render
+2. **Set environment variables**:
+   - `HF_INFERENCE_URL`: Your Hugging Face Space `/analyze` endpoint
+   - `HF_OCR_URL`: Your OCR Space endpoint
+   - `OPENAI_SPEECH_API_KEY`: OpenAI API key for speech generation
+   - `FLUX_API_KEY`: Flux API key for image generation
+   - `RECAPTCHA_SITE_KEY` & `RECAPTCHA_SECRET_KEY`: For contact form
+   - `CONTACT_EMAIL`: Contact email address
+
+3. **Deploy**: Render will automatically build and deploy using `render.yaml`
+
+### Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `HF_INFERENCE_URL` | Hugging Face Space for AI detection | Yes |
+| `HF_OCR_URL` | Hugging Face Space for OCR | Yes |
+| `OPENAI_SPEECH_API_KEY` | OpenAI API key for TTS | Yes |
+| `FLUX_API_KEY` | Flux API key for image generation | Yes |
+| `RECAPTCHA_SITE_KEY` | reCAPTCHA site key | No |
+| `RECAPTCHA_SECRET_KEY` | reCAPTCHA secret key | No |
+| `CONTACT_EMAIL` | Contact email address | No |
+
+## Usage
+
+### AI Text Detection
+1. Navigate to the AI Detector page
+2. Paste text or upload a file
+3. Click "Analyze Text"
+4. View highlighted results with AI probability percentages
+
+### OCR Processing
+1. Go to the OCR page
+2. Upload an image or provide an image URL
+3. Select language (optional)
+4. Click "Extract Text"
+5. View extracted text results
+
+### Audio Transcription
+1. Visit the Audio-to-Text page
+2. Upload an audio file or provide URL
+3. Select audio type and language
+4. Click "Transcribe"
+5. View transcribed text
+
+### Image Generation
+1. Go to the Generate Image page
+2. Enter your text prompt
+3. Adjust settings (aspect ratio, number of images)
+4. Click "Generate Images"
+5. Download generated images
+
+### Text-to-Speech
+1. Navigate to the Text-to-Speech page
+2. Enter your text
+3. Select voice and settings
+4. Click "Generate Speech"
+5. Play or download the audio
+
+## Project Structure
 
 ```
-uvicorn relay_fastapi:app --host 0.0.0.0 --port $PORT
+textsense/
+├── relay_fastapi.py          # Main FastAPI application
+├── audio_transcription.py    # Audio processing module
+├── image_generation.py       # Image generation module
+├── speech_generation.py      # Speech generation module
+├── requirements.txt          # Python dependencies
+├── runtime.txt              # Python version specification
+├── render.yaml              # Render deployment config
+├── templates/               # HTML templates
+│   ├── index.html           # Homepage
+│   ├── ai-detector.html     # AI detection page
+│   ├── ocr.html             # OCR page
+│   ├── audio-text.html      # Audio transcription page
+│   ├── generate-image.html  # Image generation page
+│   ├── text-to-speech.html  # TTS page
+│   └── static/              # Static assets
+│       ├── css/             # Stylesheets
+│       ├── js/              # JavaScript files
+│       └── images/          # Images and icons
+└── uploads/                 # Temporary file storage
 ```
 
-Set environment variables on Render:
-- `HF_INFERENCE_URL`: your Space `/analyze` endpoint, e.g. `https://<org>-<space>.hf.space/analyze`
-- `HF_API_KEY` (optional, if the Space is private)
+## API Endpoints
 
-## Troubleshooting
+### Core Endpoints
+- `POST /analyze` - AI text detection
+- `POST /ocr` - OCR text extraction
+- `POST /audio-transcribe` - Audio transcription
+- `POST /generate-image` - Image generation
+- `POST /generate-speech` - Text-to-speech
 
-### Common Issues
+### Utility Endpoints
+- `GET /healthz` - Health check
+- `GET /ping` - Ping endpoint
+- `POST /contact` - Contact form submission
 
-1. **Model not found error**:
-   - Ensure the AI model is downloaded and available
-   - Check the model directory path in `app.py`
+## Rate Limiting
 
-2. **Memory issues with large files**:
-   - Reduce `segment_length` in the configuration
-   - Increase system memory or use smaller files
+The application includes built-in rate limiting:
+- AI Detection: 20 requests/minute
+- OCR: 15 requests/minute
+- Audio Transcription: 10 requests/minute
+- Image Generation: 5 requests/minute
+- Speech Generation: 8 requests/minute
+- Contact Form: 5 requests/minute
 
-3. **Slow processing**:
-   - The first analysis may be slow as the model loads
-   - Subsequent analyses will be faster
-   - Consider using GPU if available
+## Security Features
 
-### Performance Tips
+- **Rate Limiting**: Prevents API abuse
+- **File Size Limits**: Prevents large file uploads
+- **Content Validation**: Validates uploaded content
+- **CORS Protection**: Secure cross-origin requests
+- **Security Headers**: Comprehensive security headers
+- **reCAPTCHA**: Spam protection for contact forms
 
-- Use GPU acceleration if available (CUDA-compatible)
-- Limit file sizes for faster processing
-- Close other applications to free up memory
+## Performance Optimizations
 
-## Development
-
-### Project Structure
-```
-ai-text-police/
-├── app.py                 # Main Flask application
-├── test-detector.py       # Original test script
-├── requirements.txt       # Python dependencies
-├── README.md             # This file
-├── templates/
-│   └── index.html        # Main web template
-├── static/
-│   ├── css/
-│   │   └── style.css     # Custom styles
-│   └── js/
-│       └── script.js     # Frontend JavaScript
-└── uploads/              # Temporary file storage
-```
-
-### Adding Features
-- Modify `app.py` for backend functionality
-- Update `templates/index.html` for UI changes
-- Edit `static/css/style.css` for styling
-- Modify `static/js/script.js` for frontend behavior
-
-## License
-
-This project is for educational and research purposes. Please ensure you have proper licenses for any AI models used.
+- **Caching**: Intelligent caching for AI detection results
+- **Connection Pooling**: HTTP connection reuse
+- **Streaming**: Efficient file processing
+- **CDN Headers**: Optimized static asset delivery
+- **Compression**: Gzip compression for responses
 
 ## Contributing
 
-Feel free to submit issues, feature requests, or pull requests to improve the application.
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+This project is for educational and research purposes. Please ensure you have proper licenses for any AI models and services used.
 
 ## Support
 
-For technical support or questions, please check the troubleshooting section or create an issue in the project repository. 
+For technical support or questions:
+- Check the troubleshooting section
+- Create an issue in the project repository
+- Contact via the built-in contact form
+
+## Changelog
+
+### Latest Updates
+- ✅ Comprehensive AI text analysis platform
+- ✅ Multi-modal AI capabilities (text, image, audio)
+- ✅ Modern FastAPI backend with relay pattern
+- ✅ Responsive web interface
+- ✅ Production-ready deployment configuration
+- ✅ Built-in security and rate limiting
+- ✅ Performance optimizations and caching 
