@@ -16,8 +16,8 @@ class ImageGenerator:
     """Handles AI image generation using Pollinations Flux model with prompt enhancement."""
     
     def __init__(self):
-        self.text_api_url = os.getenv("FLUX_TEXT_URL").strip()
-        self.image_api_base = os.getenv("FLUX_IMAGE_BASE").strip()
+        self.text_api_url = os.getenv("FLUX_TEXT_URL", "").strip()
+        self.image_api_base = os.getenv("FLUX_IMAGE_BASE", "").strip()
         self.auth_token = os.getenv("FLUX_API_KEY", "").strip()
         self.enhancement_system_prompt = self._get_enhancement_prompt()
     
