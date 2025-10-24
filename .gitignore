@@ -67,3 +67,20 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
+
+# Hugging Face Space folders (keep local but don't push to git)
+hf_space/
+textsense-audio-text/
+textsense-imagen/
+textsense-inference/
+textsense-ocr/
+clean-hf-space/
+header-refactor/
+
+# Development and test files
+test*.py
+test*.mp3
+*_analysis_result.txt
+install_spacy.py
+Sharing.fy
+=3.5.0

@@ -24,12 +24,6 @@ class SpeechGenerator:
         self.auth_token = os.getenv("OPENAI_SPEECH_TOKEN", "").strip()
         self.tts_url_template = os.getenv("OPENAI_SPEECH_API_KEY", "").strip()
         
-        if not self.tts_url_template:
-            logger.error("OPENAI_SPEECH_API_KEY not set - TTS URL template is required")
-            raise RuntimeError("TTS URL template not configured")
-        
-        logger.info(f"TTS URL template configured: {self.tts_url_template[:50]}...")
-        
         if self.auth_token:
             logger.info("TTS initialized with authentication token")
         else:
@@ -67,9 +61,7 @@ class SpeechGenerator:
 
     def _handle_api_error(self, response: httpx.Response) -> Tuple[bool, str]:
         """Handle API errors and determine if retry is possible."""
-        if response.status_code == 400:
-            return False, f"Bad Request (400): Invalid URL or parameters. Check URL template configuration."
-        elif response.status_code == 402:
+        if response.status_code == 402:
             return True, "TTS API requires authentication. Please visit https://auth.pollinations.ai to get a token or upgrade your tier."
         elif response.status_code == 429:
             return True, "Rate limit exceeded. Please try again later."
@@ -129,18 +121,11 @@ class SpeechGenerator:
             try:
                 seed = random.randint(1, 1000000)
 
-                # Construct the API URL properly
-                if "{prompt}" in self.tts_url_template:
-                    # If template has placeholders, use format method
-                    api_url = self.tts_url_template.format(
-                        prompt=encoded_prompt,
-                        voice=voice,
-                        seed=seed
-                    )
-                else:
-                    # If it's a base URL, append query parameters
-                    api_url = f"{self.tts_url_template}?prompt={encoded_prompt}&voice={voice}&seed={seed}"
-                
+                api_url = self.tts_url_template.format(
+                    prompt=encoded_prompt,
+                    voice=voice,
+                    seed=seed
+                )
                 logger.info(f"Attempt {attempt + 1}: Requesting TTS from {api_url[:80]}...")
 
                 headers = self._get_headers()
@@ -161,13 +146,6 @@ class SpeechGenerator:
                             async for chunk in response.aiter_bytes(chunk_size=8192):
                                 audio_data += chunk
                             
-                            # Validate audio data
-                            if len(audio_data) == 0:
-                                last_error = "Received empty audio data"
-                                continue
-                            
-                            logger.info(f"Received {len(audio_data)} bytes of audio data")
-                            
                             # Return as streaming response
                             async def stream_audio():
                                 yield audio_data
@@ -180,8 +158,7 @@ class SpeechGenerator:
                                     "Cache-Control": "no-cache",
                                     "X-Speech-Provider": "openai",
                                     "X-Speech-Voice": voice,
-                                    "X-Speech-Vibe": vibe or "",
-                                    "Content-Length": str(len(audio_data))
+                                    "X-Speech-Vibe": vibe or ""
                                 }
                             )
 
