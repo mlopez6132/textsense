@@ -21,7 +21,7 @@ class SpeechGenerator:
 
     def __init__(self):
         self.api_base_url = "https://gen.pollinations.ai"
-        self.auth_token = os.getenv("POLLINATIONS_API_KEY", "sk_pWuBiNAFXyKDcPrZOuoT6io25ySyj1VD").strip()
+        self.auth_token = os.getenv("POLLINATIONS_API_KEY", "").strip()
 
         if self.auth_token:
             logger.info("TTS initialized with Pollinations API key")
