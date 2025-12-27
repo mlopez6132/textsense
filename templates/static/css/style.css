@@ -618,7 +618,7 @@ footer {
     width: 100vw;
     margin: 0;
     margin-top: auto;
-    padding: 2rem 0;
+    padding: 1.5rem 0;
     border-top: 1px solid var(--color-border);
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
@@ -632,55 +632,140 @@ footer {
     z-index: 1020;
 }
 
-/* Footer uses Bootstrap .container by default - Updated for compact layout */
+/* Footer uses Bootstrap .container by default - Updated for vertical columns layout */
 
 footer .container {
-    display: flex !important;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
+    padding-top: 2rem;
+    padding-bottom: 1.5rem;
     padding-left: 2rem !important;
     padding-right: 2rem !important;
-    gap: 0.5rem;
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
 }
 
-footer .footer-left {
-    display: flex;
-    align-items: center;
+footer .footer-columns {
+    margin-bottom: 1.5rem;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: flex-start;
+    gap: 3rem;
     flex-wrap: wrap;
-    gap: 1rem;
-    margin-left: -6.5rem;
 }
 
-footer .footer-nav {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+footer .footer-columns .footer-column {
+    margin-bottom: 1.5rem;
+    flex: 0 0 auto;
+    min-width: 150px;
 }
 
-footer .container a {
-    white-space: nowrap;
+footer .footer-column-title {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+footer .footer-links-list {
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin: 0;
+}
+
+footer .footer-links-list li::marker {
+    content: none;
+}
+
+footer .footer-links-list li {
+    margin-bottom: 0.5rem;
+}
+
+footer .footer-links-list a {
     text-decoration: none;
-    padding: 0.125rem 0.25rem;
-    border-radius: 0.25rem;
-    transition: all 0.2s ease;
     color: #6c757d;
-    font-size: 0.8rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    display: inline-block;
 }
 
-footer .container a:hover {
-    background-color: rgba(13, 110, 253, 0.1);
+footer .footer-links-list a:hover {
     color: var(--color-primary);
     text-decoration: underline;
+    padding-left: 0.25rem;
 }
 
-footer .footer-right {
+footer .footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    padding-top: 1.5rem;
+    border-top: 1px solid #dee2e6;
+    gap: 1rem;
+}
+
+footer .footer-bottom span {
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+footer .footer-email {
     white-space: nowrap;
     margin-left: auto;
+}
+
+/* Responsive footer adjustments */
+@media (max-width: 991.98px) {
+    footer .footer-columns {
+        margin-bottom: 2rem;
+        justify-content: flex-end !important;
+        gap: 2rem;
+    }
+    
+    footer .footer-column {
+        margin-bottom: 1rem;
+        flex: 0 0 auto;
+    }
+}
+
+@media (max-width: 767.98px) {
+    footer .container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        padding-top: 1.5rem;
+        padding-bottom: 1rem;
+    }
+    
+    footer .footer-columns {
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    footer .footer-column {
+        width: auto;
+        margin-bottom: 0;
+        text-align: center;
+    }
+    
+    footer .footer-bottom {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.75rem;
+        padding-top: 1.5rem;
+    }
+    
+    footer .footer-bottom span {
+        font-size: 0.9rem;
+    }
+    
+    footer .footer-email {
+        margin-top: 0;
+        margin-left: 0;
+    }
 }
 
 /* Main content area to push footer down */
@@ -1081,28 +1166,6 @@ main.container .card {
         padding-right: 0.5rem;
     }
     
-    footer .footer-left {
-        flex-direction: column;
-        align-items: center;
-        gap: 0.25rem;
-    }
-    
-    footer .footer-nav {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 0.5rem;
-    }
-    
-    footer .footer-right {
-        margin-left: 0;
-        order: 3;
-    }
-    
-    /* Remove negative margin on mobile to keep footer centered */
-    footer .footer-left {
-        margin-left: 0;
-    }
-    
     /* OCR Responsive */
     .dropzone-enhanced {
         padding: 1.5rem;
@@ -1197,6 +1260,48 @@ main.container .card {
     .navigation-page .mb-4 {
         margin-bottom: 1.5rem !important;
     }
+    
+    /* Make intensity options stack on mobile */
+    .custom-radio-card {
+        flex: 1 1 100% !important;
+    }
+}
+
+/* Custom radio card styling for intensity options */
+.custom-radio-card {
+    border: 2px solid var(--color-border);
+    border-radius: 10px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.custom-radio-card:hover {
+    border-color: var(--color-primary);
+    background: rgba(13, 110, 253, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.1);
+}
+
+.custom-radio-card .form-check-input:checked ~ .form-check-label {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+.custom-radio-card .form-check-input:checked {
+    border-color: var(--color-primary);
+    background-color: var(--color-primary);
+}
+
+.custom-radio-card .form-check-input {
+    margin-top: 0.25rem;
+}
+
+.custom-radio-card .form-check-label {
+    cursor: pointer;
+    width: 100%;
+    display: block;
 }
 
 /* -----------------------------------------------------------------------------
@@ -1662,7 +1767,7 @@ main.container .card {
 }
 
 .twitter-link {
-    margin-left: 4rem;
+    margin-left: 0;
 }
 
 .twitter-link:hover {
@@ -1706,6 +1811,12 @@ main.container .card {
         padding: 0;
         gap: var(--nav-gap-tablet);
         margin: 0;
+        justify-content: flex-end;
+        width: 100%;
+    }
+    
+    .twitter-link {
+        margin-left: auto;
     }
     
     .nav-link {

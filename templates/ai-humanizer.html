@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Text Humanizer — TextSense</title>
+    <meta name="description" content="Rewrite AI-generated text to be undetectable and human-like. Bypass AI detectors with our advanced humanizer tool.">
+    <meta name="keywords" content="AI text humanizer, undetectable AI, bypass AI detector, rewrite AI text, humanize content">
+    <meta name="author" content="TextSense">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="AI Text Humanizer — TextSense">
+    <meta property="og:description" content="Rewrite AI-generated text to be undetectable and human-like.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://textsense.org/ai-humanizer">
+    <meta property="og:image" content="https://textsense.org/textsense_logo.png">
+    <meta property="og:site_name" content="TextSense">
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="AI Text Humanizer — TextSense">
+    <meta name="twitter:description" content="Rewrite AI-generated text to be undetectable and human-like.">
+    <meta name="twitter:image" content="https://textsense.org/textsense_logo.png">
+    <!-- Additional SEO -->
+    <meta name="canonicalURL" content="https://textsense.org/ai-humanizer">
+    <link rel="canonical" href="https://textsense.org/ai-humanizer">
+    <!-- Google AdSense verification -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2409576003450898" crossorigin="anonymous"></script>
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="static/favicon-16x16.png">
+    <link rel="manifest" href="static/site.webmanifest">
+    <meta name="msapplication-TileColor" content="#0d6efd">
+    <meta name="theme-color" content="#ffffff">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="static/css/style.css?v={{ cache_version }}" rel="stylesheet">
+</head>
+<body class="navigation-page">
+    <div class="container-fluid">
+        <!-- Header -->
+        <header class="site-header">
+            <div class="container">
+                <a href="/" class="logo">
+                    <img src="static/textsense_logo.png" alt="TextSense Logo" class="logo-img">
+                    <div class="logo-text">
+                        <span class="brand-name">TextSense</span>
+                        <span class="brand-tagline">open text tools for everyone</span>
+                    </div>
+                </a>
+                
+                <button class="menu-toggle" aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+                
+                <nav id="site-nav" class="site-nav" role="navigation">
+                    <ul class="nav-list">
+                        <li><a href="/ai-detector" class="nav-link">AI Detector</a></li>
+                        <li><a href="/ai-humanizer" class="nav-link active">AI Humanizer</a></li>
+                        <li><a href="/ocr" class="nav-link">OCR</a></li>
+                        <li><a href="/audio-text" class="nav-link">Audio to Text</a></li>
+                        <li><a href="/text-to-speech" class="nav-link">Text to Speech</a></li>
+                        <li><a href="/generate-image" class="nav-link">Text to Image</a></li>
+                        <li><a href="https://twitter.com/intent/tweet?text=Check%20out%20TextSense%20-%20Free%20online%20text%20tools%20including%20AI%20text%20detector%2C%20audio%20transcription%2C%20OCR%2C%20text-to-speech%2C%20and%20image%20generation!&url=https://textsense.org" target="_blank" rel="noopener noreferrer" class="nav-link social-link twitter-link" title="Tweet about TextSense">
+                            <i class="fab fa-twitter"></i>
+                        </a></li>
+                        <li><a href="https://buymeacoffee.com/mlopezbrini" target="_blank" rel="noopener noreferrer" class="nav-link social-link coffee-link" title="Buy me a coffee">
+                            <i class="fas fa-coffee"></i>
+                        </a></li>
+                    </ul>
+                </nav>
+            </div>
+        </header>
+
+        <!-- Page Header -->
+        <main class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-9 col-xl-8">
+                <header class="text-center mb-4">
+                    <h1 class="display-5 fw-bold text-primary mb-3">
+                        <i class="fas fa-magic me-2"></i>AI Text Humanizer
+                    </h1>
+                    <p class="lead text-muted mb-4">
+                        Transform AI-generated content into natural, human-like text. 
+                        Bypass detectors and improve readability instantly.
+                    </p>
+                </header>
+
+                <!-- Input Section -->
+                <div class="card shadow-lg mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Humanize Content</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="humanizerForm">
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="textInput" class="form-label">Paste your AI text here:</label>
+                                    <div class="position-relative">
+                                        <textarea class="form-control" id="textInput" rows="10" placeholder="Paste text generated by ChatGPT, Claude, Gemini, etc..." maxlength="5000"></textarea>
+                                        <div id="inputLoadingOverlay" class="input-loading-overlay d-none">
+                                            <div class="text-center">
+                                                <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;"></div>
+                                                <div class="mt-2 text-muted small">Humanizing...</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-1">
+                                        <small class="text-muted">Max 5,000 characters</small>
+                                        <small id="charCounter" class="char-counter text-muted">0 / 5,000</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Humanization Intensity:</label>
+                                <div class="d-flex gap-3 flex-nowrap">
+                                    <div class="form-check custom-radio-card flex-fill">
+                                        <input class="form-check-input" type="radio" name="intensity" id="intensityLight" value="light">
+                                        <label class="form-check-label" for="intensityLight">
+                                            <strong>Light</strong>
+                                            <br><small class="text-muted">Conservative changes, keeps structure.</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check custom-radio-card flex-fill">
+                                        <input class="form-check-input" type="radio" name="intensity" id="intensityStandard" value="standard" checked>
+                                        <label class="form-check-label" for="intensityStandard">
+                                            <strong>Standard</strong>
+                                            <br><small class="text-muted">Balanced rewrite (Recommended).</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check custom-radio-card flex-fill">
+                                        <input class="form-check-input" type="radio" name="intensity" id="intensityHeavy" value="heavy">
+                                        <label class="form-check-label" for="intensityHeavy">
+                                            <strong>Heavy</strong>
+                                            <br><small class="text-muted">Aggressive changes, maximum bypass.</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg px-5">
+                                    <i class="fas fa-wand-magic-sparkles me-2"></i>Humanize Text
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Error Section -->
+                <div id="errorSection" class="alert alert-danger d-none" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="errorMessage"></span>
+                </div>
+
+                <!-- Results Section -->
+                <div id="resultsSection" class="d-none">
+                    <div class="card shadow-lg mb-4">
+                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-check-circle me-2"></i>Humanized Result
+                            </h5>
+                            <button class="btn btn-light btn-sm text-success" onclick="copyToClipboard()">
+                                <i class="fas fa-copy me-1"></i>Copy
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <textarea class="form-control bg-light" id="resultText" rows="10" readonly></textarea>
+                            </div>
+                            
+                            <!-- Metrics -->
+                            <div class="row mt-4">
+                                <div class="col-md-12">
+                                    <h6 class="text-muted mb-3">Analysis Metrics</h6>
+                                    <div class="row g-3">
+                                        <div class="col-6 col-md-3">
+                                            <div class="border rounded p-3 text-center h-100">
+                                                <div class="small text-muted">Readability</div>
+                                                <div class="h5 mb-0 mt-1" id="metricScore">-</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <div class="border rounded p-3 text-center h-100">
+                                                <div class="small text-muted">Grade Level</div>
+                                                <div class="h5 mb-0 mt-1" id="metricGrade">-</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <div class="border rounded p-3 text-center h-100">
+                                                <div class="small text-muted">Word Count</div>
+                                                <div class="h5 mb-0 mt-1" id="metricWords">-</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6 col-md-3">
+                                            <div class="border rounded p-3 text-center h-100">
+                                                <div class="small text-muted">Sentences</div>
+                                                <div class="h5 mb-0 mt-1" id="metricSentences">-</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4 mb-5">
+                        <p class="text-muted">Want to check if it passes?</p>
+                        <a href="/ai-detector" class="btn btn-outline-primary">
+                            <i class="fas fa-search me-2"></i>Test with AI Detector
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Features/About -->
+                <div class="row mt-5 mb-5">
+                    <div class="col-md-4 mb-4">
+                        <div class="text-center">
+                            <i class="fas fa-robot text-primary fa-2x mb-3"></i>
+                            <h5>Advanced Bypass</h5>
+                            <p class="text-muted small">Uses multi-pass processing to remove AI patterns and fingerprints.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="text-center">
+                            <i class="fas fa-feather text-primary fa-2x mb-3"></i>
+                            <h5>Natural Flow</h5>
+                            <p class="text-muted small">Improves sentence variation and adds human-like nuance.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="text-center">
+                            <i class="fas fa-shield-alt text-primary fa-2x mb-3"></i>
+                            <h5>Safe & Secure</h5>
+                            <p class="text-muted small">Your text is processed securely and not stored permanently.</p>
+                        </div>
+                    </div>
+                </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="small text-muted">
+        <div class="container">
+            <div class="row footer-columns">
+                <div class="col-md-4 col-lg-3 footer-column">
+                    <h6 class="footer-column-title">Contact</h6>
+                    <ul class="footer-links-list">
+                        <li><a href="/about">About</a></li>
+                        <li><a href="/privacy">Privacy</a></li>
+                        <li><a href="/terms">Terms</a></li>
+                        <li><a href="/contact">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4 col-lg-3 footer-column">
+                    <h6 class="footer-column-title">Technology</h6>
+                    <ul class="footer-links-list">
+                        <li><a href="/ai-detector">AI Detector</a></li>
+                        <li><a href="/ai-humanizer">AI Humanizer</a></li>
+                        <li><a href="/ocr">OCR</a></li>
+                        <li><a href="/audio-text">Audio Transcription</a></li>
+                        <li><a href="/text-to-speech">Text-to-Speech</a></li>
+                        <li><a href="/generate-image">Text-to-Image</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
+                <span class="footer-email">Contact: hi@textsense.com</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="static/js/site.js?v={{ cache_version }}"></script>
+    <script src="static/js/humanizer.js?v={{ cache_version }}"></script>
+</body>
+</html>
+

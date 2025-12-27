@@ -180,11 +180,11 @@ Avoid glamour bias unless explicitly requested.
             except ImportError:
                 seed = random.randint(1, 10_000_000)
             
-            # Add nologo=true to remove watermark
-            url = (
-                f"{self.image_api_base.rstrip('/')}/prompt/{encoded_prompt}"
-                f"?model={model}&width={width}&height={height}&seed={seed}&nologo=true"
-            )
+            params = f"model={model}&width={width}&height={height}&seed={seed}&nologo=true"
+            if self.auth_token:
+                params += f"&key={self.auth_token}"
+
+            url = f"{self.image_api_base.rstrip('/')}/{encoded_prompt}?{params}"
             images.append(url)
         
         return images

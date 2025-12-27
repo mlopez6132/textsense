@@ -163,19 +163,42 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Display analysis results
     function displayResults(data, originalSubmittedText) {
-        // Update statistics
-        overallAssessment.textContent = data.overall_assessment;
-        aiPercentage.textContent = data.statistics.ai_percentage + '%';
-        humanPercentage.textContent = data.statistics.human_percentage + '%';
+        // Validate response structure
+        if (!data || typeof data !== 'object') {
+            showError('Invalid response from server.');
+            return;
+        }
+        
+        // Update statistics with validation
+        if (data.overall_assessment) {
+            overallAssessment.textContent = data.overall_assessment;
+        } else {
+            overallAssessment.textContent = 'Analysis Complete';
+        }
+        
+        if (data.statistics && typeof data.statistics.ai_percentage === 'number') {
+            aiPercentage.textContent = Math.round(data.statistics.ai_percentage) + '%';
+        } else {
+            aiPercentage.textContent = '0%';
+        }
+        
+        if (data.statistics && typeof data.statistics.human_percentage === 'number') {
+            humanPercentage.textContent = Math.round(data.statistics.human_percentage) + '%';
+        } else {
+            humanPercentage.textContent = '0%';
+        }
         
         // Create highlighted text
         const sourceText = data.cleaned_text || originalSubmittedText;
         originalText = sourceText;
-        const highlightedContent = createHighlightedText(sourceText, data.segments);
+        
+        // Validate segments array
+        const segments = Array.isArray(data.segments) ? data.segments : [];
+        const highlightedContent = createHighlightedText(sourceText, segments);
         highlightedText.innerHTML = highlightedContent;
         
         // Add sentence-level statistics
-        updateSentenceStats(data.segments);
+        updateSentenceStats(segments);
         
         // Show results
         hideError();
@@ -198,25 +221,42 @@ document.addEventListener('DOMContentLoaded', function() {
         let lastEnd = 0;
         
         segments.forEach(segment => {
-            // Add text before this segment
-            if (segment.start > lastEnd) {
-                result += escapeHtml(text.substring(lastEnd, segment.start));
+            // Validate segment indices
+            if (typeof segment.start !== 'number' || typeof segment.end !== 'number' || 
+                segment.start < 0 || segment.end > text.length || segment.start >= segment.end) {
+                console.warn('Invalid segment:', segment);
+                return; // Skip invalid segments
             }
             
-            // Add highlighted segment - use the exact text from the original
-            const originalSegmentText = text.substring(segment.start, segment.end);
-            const segmentText = escapeHtml(originalSegmentText);
-            const probability = Math.round(segment.probability * 100);
+            // Handle overlapping segments by adjusting start position
+            const segmentStart = Math.max(segment.start, lastEnd);
+            const segmentEnd = Math.min(segment.end, text.length);
             
-            // Create heatmap color based on AI probability
-            const heatmapColor = getHeatmapColor(segment.probability);
-            const textColor = getContrastColor(segment.probability);
+            // Add text before this segment
+            if (segmentStart > lastEnd) {
+                result += escapeHtml(text.substring(lastEnd, segmentStart));
+            }
             
-            result += `<span class="heatmap-highlight" 
-                           style="background-color: ${heatmapColor}; color: ${textColor};" 
-                           data-probability="${probability}% AI Probability">${segmentText}</span>`;
-            
-            lastEnd = segment.end;
+            // Only add segment if it has valid content
+            if (segmentEnd > segmentStart) {
+                // Add highlighted segment - use the exact text from the original
+                const originalSegmentText = text.substring(segmentStart, segmentEnd);
+                const segmentText = escapeHtml(originalSegmentText);
+                
+                // Validate probability is a number between 0 and 1
+                const probability = Math.max(0, Math.min(1, segment.probability || 0));
+                const probabilityPercent = Math.round(probability * 100);
+                
+                // Create heatmap color based on AI probability
+                const heatmapColor = getHeatmapColor(probability);
+                const textColor = getContrastColor(probability);
+                
+                result += `<span class="heatmap-highlight" 
+                               style="background-color: ${heatmapColor}; color: ${textColor};" 
+                               data-probability="${probabilityPercent}% AI Probability">${segmentText}</span>`;
+                
+                lastEnd = segmentEnd;
+            }
         });
         
         // Add remaining text
@@ -260,6 +300,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update sentence-level statistics
     function updateSentenceStats(segments) {
         const totalSentences = segments.length;
+        
+        // Handle empty segments case
+        if (totalSentences === 0) {
+            const totalSentencesEl = document.getElementById('totalSentences');
+            const aiSentencesEl = document.getElementById('aiSentences');
+            const humanSentencesEl = document.getElementById('humanSentences');
+            const avgProbabilityEl = document.getElementById('avgProbability');
+            
+            if (totalSentencesEl) totalSentencesEl.textContent = '0';
+            if (aiSentencesEl) aiSentencesEl.textContent = '0';
+            if (humanSentencesEl) humanSentencesEl.textContent = '0';
+            if (avgProbabilityEl) avgProbabilityEl.textContent = '0%';
+            return;
+        }
+        
         const aiSentences = segments.filter(s => s.is_ai).length;
         const humanSentences = totalSentences - aiSentences;
         

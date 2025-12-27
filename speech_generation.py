@@ -9,25 +9,24 @@ import os
 import random
 import urllib.parse
 import logging
+import base64
 from typing import Any, Tuple
 from fastapi.responses import StreamingResponse
 import httpx
 
-# Set up logging
 logger = logging.getLogger(__name__)
-
 
 class SpeechGenerator:
     """Handles AI text-to-speech generation with optional vibe customization."""
 
     def __init__(self):
-        self.auth_token = os.getenv("OPENAI_SPEECH_TOKEN", "").strip()
-        self.tts_url_template = os.getenv("OPENAI_SPEECH_API_KEY", "").strip()
-        
+        self.api_base_url = "https://gen.pollinations.ai"
+        self.auth_token = os.getenv("POLLINATIONS_API_KEY", "sk_pWuBiNAFXyKDcPrZOuoT6io25ySyj1VD").strip()
+
         if self.auth_token:
-            logger.info("TTS initialized with authentication token")
+            logger.info("TTS initialized with Pollinations API key")
         else:
-            logger.warning("OPENAI_SPEECH_TOKEN not set - API may require authentication")
+            logger.warning("POLLINATIONS_API_KEY not set - API may require authentication")
 
     def _construct_prompt(self, text: str, vibe: str = "") -> str:
         """Construct the full prompt with vibe context."""
@@ -46,11 +45,10 @@ class SpeechGenerator:
             )
 
     def _get_headers(self) -> dict[str, str]:
-        """Get headers for TTS API requests."""
+        """Get headers for Pollinations API requests."""
         headers = {
             'User-Agent': 'TextSense-TTS/1.0',
-            'Referer': 'https://pollinations.ai',
-            'Accept': 'audio/mpeg, audio/*;q=0.8, */*;q=0.5'
+            'Content-Type': 'application/json'
         }
 
         if self.auth_token:
@@ -60,15 +58,22 @@ class SpeechGenerator:
 
 
     def _handle_api_error(self, response: httpx.Response) -> Tuple[bool, str]:
-        """Handle API errors and determine if retry is possible."""
-        if response.status_code == 402:
-            return True, "TTS API requires authentication. Please visit https://auth.pollinations.ai to get a token or upgrade your tier."
+        """Handle Pollinations API errors and determine if retry is possible."""
+        if response.status_code == 401:
+            return False, "Authentication required. Please set POLLINATIONS_API_KEY environment variable."
+        elif response.status_code == 402:
+            return True, "API quota exceeded. Please upgrade your Pollinations tier."
         elif response.status_code == 429:
             return True, "Rate limit exceeded. Please try again later."
         elif response.status_code >= 500:
-            return True, "TTS service temporarily unavailable. Please try again."
+            return True, "Pollinations service temporarily unavailable. Please try again."
         else:
-            return False, f"TTS API error: {response.text}"
+            try:
+                error_data = response.json()
+                error_msg = error_data.get("error", {}).get("message", response.text)
+            except:
+                error_msg = response.text
+            return False, f"Pollinations API error: {error_msg}"
 
     async def generate_speech(
         self,
@@ -110,68 +115,82 @@ class SpeechGenerator:
         vibe: str,
         max_retries: int
     ) -> StreamingResponse:
-        """Generate speech"""
-        full_prompt = self._construct_prompt(text, vibe)
-
-        encoded_prompt = urllib.parse.quote(full_prompt)
+        """Generate speech using Pollinations /v1/chat/completions API with openai-audio model"""
+        # Construct system instruction for emotion/vibe control
+        if vibe.strip():
+            system_instruction = (
+                f"Only repeat what I say. "
+                f"Now say with proper emphasis in a \"{vibe.strip()}\" emotion this statement."
+            )
+        else:
+            system_instruction = "Only repeat what I say exactly as written, with natural speech patterns."
 
         last_error = ""
 
         for attempt in range(max_retries):
             try:
-                seed = random.randint(1, 1000000)
+                api_url = f"{self.api_base_url}/v1/chat/completions"
+                logger.info(f"Attempt {attempt + 1}: Requesting TTS from {api_url}")
 
-                api_url = self.tts_url_template.format(
-                    prompt=encoded_prompt,
-                    voice=voice,
-                    seed=seed
-                )
-                logger.info(f"Attempt {attempt + 1}: Requesting TTS from {api_url[:80]}...")
+                payload = {
+                    "model": "openai-audio",
+                    "modalities": ["text", "audio"], 
+                    "audio": {
+                        "voice": voice,
+                        "format": "mp3"
+                    },
+                    "messages": [
+                        {"role": "system", "content": system_instruction},
+                        {"role": "user", "content": text.strip()}
+                    ],
+                    "seed": random.randint(1, 1000000) if attempt == 0 else random.randint(1, 1000000)
+                }
 
                 headers = self._get_headers()
 
                 async with httpx.AsyncClient(timeout=120.0) as client:
-                    async with client.stream("GET", api_url, headers=headers) as response:
-                        logger.info(f"Response status: {response.status_code}")
-                        if response.status_code == 200:
-                            content_type_header = response.headers.get("content-type", "audio/mpeg").lower()
-                            if "audio" not in content_type_header:
-                                last_error = f"Unexpected content type: {content_type_header}"
+                    response = await client.post(api_url, json=payload, headers=headers)
+                    logger.info(f"Response status: {response.status_code}")
+
+                    if response.status_code == 200:
+                        response_data = response.json()
+                        try:
+                            # Extract base64 audio data from response
+                            audio_b64 = response_data['choices'][0]['message']['audio']['data']
+                            audio_bytes = base64.b64decode(audio_b64)
+
+                            if len(audio_bytes) == 0:
+                                last_error = "Empty audio data in response"
                                 continue
-                            
-                            media_type = content_type_header.split(";")[0]
-                            
-                            # Collect the audio data first to avoid streaming issues
-                            audio_data = b""
-                            async for chunk in response.aiter_bytes(chunk_size=8192):
-                                audio_data += chunk
-                            
+
                             # Return as streaming response
                             async def stream_audio():
-                                yield audio_data
-                            
+                                yield audio_bytes
+
                             return StreamingResponse(
                                 stream_audio(),
-                                media_type=media_type,
+                                media_type="audio/mpeg",
                                 headers={
                                     "Content-Disposition": "attachment; filename=generated_speech.mp3",
                                     "Cache-Control": "no-cache",
-                                    "X-Speech-Provider": "openai",
+                                    "X-Speech-Provider": "pollinations",
                                     "X-Speech-Voice": voice,
                                     "X-Speech-Vibe": vibe or ""
                                 }
                             )
+                        except KeyError as e:
+                            last_error = f"Missing expected field in response: {e}. Response: {response_data}"
+                            logger.warning(f"Response structure: {response_data}")
+                            continue
 
-                        # Handle specific error codes
-                        can_retry, error_message = self._handle_api_error(response)
-                        last_error = error_message
-                        logger.error(f"API error: {error_message}")
+                    can_retry, error_message = self._handle_api_error(response)
+                    last_error = error_message or f"API error: {response.text}"
+                    logger.error(f"API error: {last_error}")
 
-                # If we got here we failed this attempt; decide to retry
                 if attempt == max_retries - 1:
                     logger.error(f"All retries exhausted. Last error: {last_error}")
                     raise RuntimeError(last_error or "TTS service error")
-                
+
                 logger.info(f"Retrying after 2 second delay...")
                 import asyncio
                 await asyncio.sleep(2)
@@ -180,17 +199,16 @@ class SpeechGenerator:
                 error_str = str(e)
                 last_error = f"Request failed: {error_str}"
                 logger.error(f"HTTP request error: {last_error}")
-                logger.error(f"Failed URL was: {api_url}")
-                
+
                 # DNS error - check domain configuration
                 if "Name or service not known" in error_str or "getaddrinfo failed" in error_str:
                     logger.critical(f"DNS resolution failure for speech API")
                     raise RuntimeError(f"DNS resolution failed. Cannot reach speech API. Check server DNS configuration.")
-                    
+
                 if attempt == max_retries - 1:
                     logger.error(f"All retries exhausted after connection errors")
                     raise RuntimeError(f"TTS request failed after {max_retries} attempts: {last_error}")
-                
+
                 import asyncio
                 await asyncio.sleep(2)
 

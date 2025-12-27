@@ -60,8 +60,9 @@
                 
                 <nav id="site-nav" class="site-nav" role="navigation">
                     <ul class="nav-list">
-                        <li><a href="/ai-detector" class="nav-link">AI Text Detector</a></li>
-                        <li><a href="/ocr" class="nav-link">Image-Text to Text</a></li>
+                        <li><a href="/ai-detector" class="nav-link">AI Detector</a></li>
+                        <li><a href="/ai-humanizer" class="nav-link">AI Humanizer</a></li>
+                        <li><a href="/ocr" class="nav-link">OCR</a></li>
                         <li><a href="/audio-text" class="nav-link">Audio to Text</a></li>
                         <li><a href="/text-to-speech" class="nav-link">Text to Speech</a></li>
                         <li><a href="/generate-image" class="nav-link">Text to Image</a></li>
@@ -200,6 +201,29 @@
                                 </ul>
                                 <a href="/ai-detector" class="btn btn-primary-gradient">
                                     <i class="fas fa-search me-2"></i>Try AI Detector
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- AI Humanizer -->
+                        <div class="col-lg-6 mb-4">
+                            <div class="product-card h-100">
+                                <div class="feature-icon">
+                                    <i class="fas fa-magic"></i>
+                                </div>
+                                <h3 class="fw-bold mb-3">AI Text Humanizer</h3>
+                                <p class="text-muted mb-4">
+                                    Transform AI-generated content into natural, human-like text. 
+                                    Bypass detectors and improve readability with advanced rewriting.
+                                </p>
+                                <ul class="list-unstyled mb-4">
+                                    <li><i class="fas fa-check text-success me-2"></i>Bypass AI detectors</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Natural flow & tone</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Multiple intensity levels</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Preserves meaning</li>
+                                </ul>
+                                <a href="/ai-humanizer" class="btn btn-primary-gradient">
+                                    <i class="fas fa-magic me-2"></i>Try AI Humanizer
                                 </a>
                             </div>
                         </div>
@@ -362,17 +386,33 @@
         <!-- Footer -->
         <footer class="small text-muted">
             <div class="container">
-                <div class="footer-left">
-                    <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
-                    <nav class="footer-nav">
-                        <a href="/about">About</a>
-                        <a href="/privacy">Privacy</a>
-                        <a href="/terms">Terms</a>
-                        <a href="/cookies">Cookies</a>
-                        <a href="/contact">Contact</a>
-                    </nav>
+                <div class="row footer-columns">
+                    <div class="col-md-4 col-lg-3 footer-column">
+                        <h6 class="footer-column-title">Contact</h6>
+                        <ul class="footer-links-list">
+                            <li><a href="/about">About</a></li>
+                            <li><a href="/privacy">Privacy</a></li>
+                            <li><a href="/terms">Terms</a></li>
+                            <li><a href="/cookies">Cookies</a></li>
+                            <li><a href="/contact">Contact Us</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4 col-lg-3 footer-column">
+                        <h6 class="footer-column-title">Technology</h6>
+                        <ul class="footer-links-list">
+                            <li><a href="/technology/ai-detector">AI Detector</a></li>
+                            <li><a href="/ai-humanizer">AI Humanizer</a></li>
+                            <li><a href="/technology/ocr">OCR</a></li>
+                            <li><a href="/technology/audio-text">Audio Transcription</a></li>
+                            <li><a href="/technology/text-to-speech">Text-to-Speech</a></li>
+                            <li><a href="/technology/text-to-image">Text-to-Image</a></li>
+                        </ul>
+                    </div>
                 </div>
-                <span class="footer-right">Contact: hi@textsense.com</span>
+                <div class="footer-bottom">
+                    <span>&copy; textsense.org 2025 &mdash; open text tools for everyone</span>
+                    <span class="footer-email">Contact: hi@textsense.com</span>
+                </div>
             </div>
         </footer>
     </div>

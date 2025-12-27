@@ -40,6 +40,33 @@ body.index-page {
     padding-top: var(--header-height);
 }
 
+/* Ensure header container spacing matches navigation pages */
+.index-page .site-header .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding: 0 1rem;
+    max-width: 100%;
+    margin: 0 auto;
+    gap: 1rem;
+}
+
+@media (min-width: 768px) {
+    .index-page .site-header .container {
+        padding: 0 2rem;
+        justify-content: space-between;
+    }
+}
+
+@media (min-width: 1024px) {
+    .index-page .site-header .container {
+        padding: 0 2rem;
+        max-width: 1200px;
+        justify-content: space-between;
+    }
+}
+
 /* -----------------------------------------------------------------------------
    Hero Section - Simplified Approach
    Full width background with negative top margin to touch the header

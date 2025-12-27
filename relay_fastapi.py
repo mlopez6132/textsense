@@ -20,6 +20,7 @@ from slowapi.errors import RateLimitExceeded
 from image_generation import image_generator
 from speech_generation import speech_generator
 from audio_transcription import audio_transcriber
+from text_humanizer import text_humanizer
 
 HF_INFERENCE_URL_ENV = "HF_INFERENCE_URL"
 HF_OCR_URL_ENV = "HF_OCR_URL"
@@ -491,6 +492,16 @@ async def ai_detector_page(request: Request):
     return templates.TemplateResponse("ai-detector.html", context)
 
 
+@app.get("/ai-humanizer", response_class=HTMLResponse)
+async def ai_humanizer_page(request: Request):
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
+    return templates.TemplateResponse("ai-humanizer.html", context)
+
+
 @app.get("/generate-image", response_class=HTMLResponse)
 async def generate_image_page(request: Request):
     context = {
@@ -550,6 +561,66 @@ async def cookies(request: Request):
     return templates.TemplateResponse("cookies.html", context)
 
 
+@app.get("/technology/ai-detector", response_class=HTMLResponse)
+async def technology_ai_detector(request: Request):
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
+    return templates.TemplateResponse("technology-ai-detector.html", context)
+
+
+@app.get("/technology/ocr", response_class=HTMLResponse)
+async def technology_ocr(request: Request):
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
+    return templates.TemplateResponse("technology-ocr.html", context)
+
+
+@app.get("/technology/audio-text", response_class=HTMLResponse)
+async def technology_audio_text(request: Request):
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
+    return templates.TemplateResponse("technology-audio-text.html", context)
+
+
+@app.get("/technology/text-to-speech", response_class=HTMLResponse)
+async def technology_text_to_speech(request: Request):
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
+    return templates.TemplateResponse("technology-text-to-speech.html", context)
+
+
+@app.get("/technology/text-to-image", response_class=HTMLResponse)
+async def technology_text_to_image(request: Request):
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
+    return templates.TemplateResponse("technology-text-to-image.html", context)
+
+
+@app.get("/technology/ai-humanizer", response_class=HTMLResponse)
+async def technology_ai_humanizer(request: Request):
+    context = {
+        "request": request, 
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version()
+    }
+    return templates.TemplateResponse("technology-ai-humanizer.html", context)
+
+
 @app.get("/ads.txt", response_class=PlainTextResponse)
 async def ads_txt():
     pub_id = os.getenv("ADSENSE_PUB_ID", "pub-2409576003450898").strip()
@@ -587,6 +658,24 @@ async def analyze(
     detection_cache[cache_key] = result
     
     return JSONResponse(result)
+
+
+@app.post("/humanize-text")
+@limiter.limit("10/minute")  # Rate limit: 10 humanization requests per minute
+async def humanize_text(
+    request: Request,
+    text: Annotated[str, Form()],
+    intensity: Annotated[str, Form()] = "standard",
+):
+    """Humanize text to reduce AI detection likelihood."""
+    try:
+        result, metrics = await text_humanizer.humanize_text(text, intensity)
+        return JSONResponse({
+            "humanized_text": result,
+            "metrics": metrics
+        })
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/ocr")
