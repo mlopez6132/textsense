@@ -661,7 +661,7 @@ async def analyze(
 
 
 @app.post("/humanize-text")
-@limiter.limit("10/minute")  # Rate limit: 10 humanization requests per minute
+@limiter.limit("5/minute")  # Rate limit: 5 humanization requests per minute
 async def humanize_text(
     request: Request,
     text: Annotated[str, Form()],
@@ -679,7 +679,7 @@ async def humanize_text(
 
 
 @app.post("/ocr")
-@limiter.limit("15/minute")  # Rate limit: 15 OCR requests per minute
+@limiter.limit("5/minute")  # Rate limit: 5 OCR requests per minute
 async def ocr(
     request: Request,
     image_url: Annotated[Optional[str], Form()] = None,
@@ -704,7 +704,7 @@ async def ocr(
 
 
 @app.post("/audio-transcribe")
-@limiter.limit("10/minute")  # Rate limit: 10 audio transcription requests per minute
+@limiter.limit("5/minute")  # Rate limit: 5 audio transcription requests per minute
 async def audio_transcribe(
     request: Request,
     audio: Annotated[UploadFile | None, File()] = None,
@@ -753,7 +753,7 @@ async def audio_transcribe(
 
 
 @app.post("/generate-image")
-@limiter.limit("5/minute")  # Rate limit: 5 image generation requests per minute (expensive operation)
+@limiter.limit("3/minute")  # Rate limit: 3 image generation requests per minute (expensive operation)
 async def generate_image(
     request: Request,
     prompt: str = Form(...),
@@ -781,7 +781,7 @@ async def generate_image(
 
 
 @app.post("/generate-speech")
-@limiter.limit("8/minute")  # Rate limit: 8 speech generation requests per minute (expensive operation)
+@limiter.limit("3/minute")  # Rate limit: 3 speech generation requests per minute (expensive operation)
 async def generate_speech(
     request: Request,
     text: str = Form(...),
@@ -804,7 +804,7 @@ async def generate_speech(
 
 
 @app.get("/download-image")
-@limiter.limit("10/minute")  # Rate limit: 10 image downloads per minute (prevent bandwidth abuse)
+@limiter.limit("5/minute")  # Rate limit: 5 image downloads per minute (prevent bandwidth abuse)
 async def download_image(request: Request, url: str, filename: str = "generated_image.png"):
     if not url.startswith("https://image.pollinations.ai/"):
         raise HTTPException(status_code=400, detail="Invalid image URL")
