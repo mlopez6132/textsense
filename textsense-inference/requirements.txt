@@ -1,0 +1,9 @@
+# PyTorch is already installed in the base image (pytorch/pytorch:2.1.2)
+# transformers>=4.35.0 requires PyTorch 2.2+, so we pin to compatible version
+transformers>=4.30.0,<4.35.0
+tokenizers>=0.13.0,<0.20.0
+sentencepiece>=0.1.99
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+python-multipart>=0.0.6
+
