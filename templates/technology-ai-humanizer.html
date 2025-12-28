@@ -91,20 +91,33 @@
           <section class="card shadow-lg mb-4">
             <div class="card-body">
               <h2 class="h4 fw-bold mb-3"><i class="fas fa-microchip me-2 text-primary"></i>Overview</h2>
-              <p class="mb-0">TextSense's AI Humanizer uses advanced natural language processing techniques to transform AI-generated text into natural, human-like content. The system employs multi-pass rewriting strategies to remove AI patterns and fingerprints while maintaining the original meaning and improving readability.</p>
+              <p class="mb-0">TextSense's AI Humanizer uses advanced natural language processing techniques to transform AI-generated text into natural, human-like content. The system employs multi-pass rewriting strategies, pattern recognition, and statistical analysis to remove AI patterns and fingerprints while maintaining the original meaning and improving readability.</p>
+            </div>
+          </section>
+
+          <section class="card shadow-lg mb-4">
+            <div class="card-body">
+              <h2 class="h4 fw-bold mb-3"><i class="fas fa-brain me-2 text-primary"></i>Core Technologies</h2>
+              <ul class="mb-0">
+                <li><strong>NLTK (Natural Language Toolkit):</strong> Used for advanced tokenization, sentence segmentation, and linguistic analysis</li>
+                <li><strong>TextStat:</strong> Calculates readability metrics including Flesch Reading Ease and Flesch-Kincaid Grade Level</li>
+                <li><strong>Regex Pattern Matching:</strong> Identifies and replaces AI-specific linguistic patterns using compiled regular expressions</li>
+                <li><strong>Statistical Analysis:</strong> Computes perplexity and burstiness metrics to measure text naturalness</li>
+              </ul>
             </div>
           </section>
 
           <section class="card shadow-lg mb-4">
             <div class="card-body">
               <h2 class="h4 fw-bold mb-3"><i class="fas fa-cogs me-2 text-primary"></i>How It Works</h2>
-              <p>The humanization process involves several stages:</p>
+              <p>The humanization process involves several sophisticated stages:</p>
               <ol class="mb-0">
-                <li><strong>Text Analysis:</strong> The input text is analyzed to identify AI-generated patterns and structures</li>
-                <li><strong>Pattern Removal:</strong> AI-specific linguistic patterns are detected and flagged for modification</li>
-                <li><strong>Rewriting:</strong> Text is rewritten using natural language variations while preserving meaning</li>
-                <li><strong>Intensity Control:</strong> Different intensity levels (Light, Standard, Heavy) control the degree of modification</li>
-                <li><strong>Quality Enhancement:</strong> Readability metrics are calculated and improved through natural sentence variation</li>
+                <li><strong>Multi-Pass Pattern Replacement:</strong> The system performs multiple passes to identify and replace AI-flagged patterns (e.g., "delve into", "meticulous", "paradigm", "synergy") with natural alternatives</li>
+                <li><strong>Contraction Application:</strong> Applies natural contractions probabilistically based on intensity level (e.g., "it is" → "it's", "cannot" → "can't")</li>
+                <li><strong>Human Touches:</strong> Adds natural sentence starters and transitions when NLTK is available</li>
+                <li><strong>AI-Powered Rewriting:</strong> Optionally uses OPENAI API for advanced rewriting (for texts under 4,000 characters)</li>
+                <li><strong>Quality Metrics Calculation:</strong> Computes perplexity (vocabulary diversity), burstiness (sentence length variation), and readability scores</li>
+                <li><strong>Final Cleanup:</strong> Ensures proper capitalization, spacing, and punctuation</li>
               </ol>
             </div>
           </section>
@@ -112,11 +125,65 @@
           <section class="card shadow-lg mb-4">
             <div class="card-body">
               <h2 class="h4 fw-bold mb-3"><i class="fas fa-sliders-h me-2 text-primary"></i>Intensity Levels</h2>
-              <p>The humanizer offers three intensity levels for different use cases:</p>
+              <p>The humanizer offers three intensity levels with different probability thresholds:</p>
               <ul class="mb-0">
-                <li><strong>Light:</strong> Conservative changes that maintain the original structure while making subtle improvements</li>
-                <li><strong>Standard:</strong> Balanced rewriting that removes AI patterns while preserving content quality (Recommended)</li>
-                <li><strong>Heavy:</strong> Aggressive modifications for maximum AI pattern removal and human-like variation</li>
+                <li><strong>Light (70% replacement probability):</strong> Conservative changes that maintain the original structure while making subtle improvements. Contraction probability: 40%</li>
+                <li><strong>Standard (85% replacement probability):</strong> Balanced rewriting that removes AI patterns while preserving content quality. Contraction probability: 60% (Recommended)</li>
+                <li><strong>Heavy (95% replacement probability):</strong> Aggressive modifications for maximum AI pattern removal. Includes additional refinement passes. Contraction probability: 80%</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="card shadow-lg mb-4">
+            <div class="card-body">
+              <h2 class="h4 fw-bold mb-3"><i class="fas fa-chart-bar me-2 text-primary"></i>Metrics & Analysis</h2>
+              <p>The system calculates several advanced metrics to assess text quality:</p>
+              <ul class="mb-0">
+                <li><strong>Perplexity:</strong> Measures vocabulary diversity and unpredictability. Higher values (40-80) indicate more human-like text</li>
+                <li><strong>Burstiness:</strong> Measures variation in sentence length. Human text typically has burstiness > 0.5</li>
+                <li><strong>Readability Score:</strong> Flesch Reading Ease score (0-100) indicating text difficulty</li>
+                <li><strong>Grade Level:</strong> Flesch-Kincaid Grade Level indicating the U.S. school grade level required to understand the text</li>
+                <li><strong>Semantic Similarity:</strong> Jaccard similarity coefficient measuring how much the original meaning is preserved</li>
+                <li><strong>Detector Score Estimates:</strong> Provides estimates for various AI detection services based on perplexity and burstiness metrics</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="card shadow-lg mb-4">
+            <div class="card-body">
+              <h2 class="h4 fw-bold mb-3"><i class="fas fa-search me-2 text-primary"></i>Pattern Detection</h2>
+              <p>The system identifies and replaces over 30 common AI-generated patterns including:</p>
+              <div class="row">
+                <div class="col-md-6">
+                  <ul class="mb-0">
+                    <li>Academic phrases ("furthermore", "moreover", "therefore")</li>
+                    <li>Formal connectors ("in order to", "due to the fact that")</li>
+                    <li>Business jargon ("synergy", "leverage", "paradigm")</li>
+                    <li>Overly formal terms ("meticulous", "intricate", "myriad")</li>
+                  </ul>
+                </div>
+                <div class="col-md-6">
+                  <ul class="mb-0">
+                    <li>Technical phrases ("navigating", "facilitate", "optimize")</li>
+                    <li>Redundant expressions ("a testament to", "landscape of")</li>
+                    <li>AI-typical transitions ("embark upon", "delve into")</li>
+                    <li>Formal alternatives replaced with contractions</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card shadow-lg mb-4">
+            <div class="card-body">
+              <h2 class="h4 fw-bold mb-3"><i class="fas fa-code me-2 text-primary"></i>Technical Implementation</h2>
+              <ul class="mb-0">
+                <li><strong>Regex-Based Pattern Matching:</strong> Uses compiled regular expressions with word boundaries for precise pattern detection</li>
+                <li><strong>Probabilistic Replacement:</strong> Each pattern replacement is probabilistic based on intensity level to maintain natural variation</li>
+                <li><strong>Multi-Pass Architecture:</strong> Performs 3-4 passes depending on intensity level for thorough processing</li>
+                <li><strong>Fallback Mechanisms:</strong> Gracefully handles missing NLTK dependencies with regex-based alternatives</li>
+                <li><strong>Async Processing:</strong> Uses async/await for efficient API calls and non-blocking operations</li>
+                <li><strong>Error Handling:</strong> Comprehensive error handling ensures robust operation even when external services fail</li>
               </ul>
             </div>
           </section>
@@ -129,7 +196,8 @@
                 <li><strong>Readability Improvement:</strong> Enhances sentence variation and natural flow</li>
                 <li><strong>Pattern Detection:</strong> Identifies and removes common AI-generated text patterns</li>
                 <li><strong>Meaning Preservation:</strong> Maintains the original intent and meaning while improving naturalness</li>
-                <li><strong>Metrics Analysis:</strong> Provides readability scores, grade level, word count, and sentence analysis</li>
+                <li><strong>Comprehensive Metrics:</strong> Provides readability scores, grade level, word count, sentence analysis, perplexity, and burstiness</li>
+                <li><strong>Detector Score Estimates:</strong> Estimates how text might perform against various AI detection services</li>
               </ul>
             </div>
           </section>
@@ -140,9 +208,6 @@
               <div class="d-flex flex-wrap gap-2 mb-0">
                 <a class="btn btn-outline-info btn-sm" href="/ai-humanizer">
                   <i class="fas fa-magic me-1"></i>Try AI Humanizer Tool
-                </a>
-                <a class="btn btn-outline-primary btn-sm" href="/ai-detector">
-                  <i class="fas fa-search me-1"></i>Test with AI Detector
                 </a>
               </div>
             </div>

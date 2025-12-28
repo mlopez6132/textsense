@@ -16,7 +16,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-# Import our generation modules
+# Import generation modules
 from image_generation import image_generator
 from speech_generation import speech_generator
 from audio_transcription import audio_transcriber

@@ -2049,3 +2049,122 @@ main.container .card {
         font-size: 0.875rem;
     }
 }
+
+/* =============================================================================
+   Detector Score Cards - Enhanced Design
+   ============================================================================= */
+
+.detector-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+    border: 1px solid rgba(0, 122, 255, 0.15);
+    border-radius: 12px;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    height: 100%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.detector-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-primary), var(--color-primary-dark));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.detector-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 122, 255, 0.15);
+    border-color: rgba(0, 122, 255, 0.3);
+}
+
+.detector-card:hover::before {
+    opacity: 1;
+}
+
+.detector-icon {
+    font-size: 1.75rem;
+    color: var(--color-primary);
+    margin-bottom: 0.75rem;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.detector-card:hover .detector-icon {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.detector-name {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 0.75rem;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    line-height: 1.4;
+    min-height: 2.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 0.25rem;
+}
+
+.detector-score {
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.4;
+    min-height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+/* Color states for detector scores */
+.detector-score.text-success {
+    color: #30D158;
+}
+
+.detector-score.text-warning {
+    color: #FF9500;
+}
+
+.detector-score.text-danger {
+    color: #FF3B30;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .detector-card {
+        padding: 1.25rem 0.75rem;
+    }
+    
+    .detector-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .detector-name {
+        font-size: 0.65rem;
+        margin-bottom: 0.5rem;
+        min-height: 1.8rem;
+        line-height: 1.2;
+    }
+    
+    .detector-score {
+        font-size: 0.9rem;
+    }
+}

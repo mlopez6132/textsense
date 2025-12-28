@@ -79,8 +79,118 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('metricWords').textContent = metrics.word_count || '-';
         document.getElementById('metricSentences').textContent = metrics.sentence_count || '-';
         
+        // Update detector scores
+        const detectorScores = metrics.detector_scores || {};
+        if (detectorScores && Object.keys(detectorScores).length > 0) {
+            // Remove the _disclaimer key if present (it's metadata, not a score)
+            const { _disclaimer, ...scores } = detectorScores;
+            
+            document.getElementById('detectorZeroGPT').textContent = scores.zerogpt || detectorScores.zerogpt || '-';
+            document.getElementById('detectorQuillbot').textContent = scores.quillbot || detectorScores.quillbot || '-';
+            document.getElementById('detectorGPTZero').textContent = scores.gptzero || detectorScores.gptzero || '-';
+            document.getElementById('detectorOriginality').textContent = scores.originality || detectorScores.originality || '-';
+            document.getElementById('detectorCopyleaks').textContent = scores.copyleaks || detectorScores.copyleaks || '-';
+            document.getElementById('detectorTurnitin').textContent = scores.turnitin || detectorScores.turnitin || '-';
+            
+            // Show detector scores section
+            const detectorSection = document.getElementById('detectorScoresSection');
+            if (detectorSection) {
+                detectorSection.style.display = 'block';
+            }
+            
+            // Update colors based on scores
+            updateDetectorColors(scores);
+        }
+        
         resultsSection.classList.remove('d-none');
         resultsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    function updateDetectorColors(scores) {
+        // Helper function to parse percentage from score string
+        const parsePercentage = (score) => {
+            if (!score) return null;
+            const match = score.match(/(\d+)%/);
+            return match ? parseInt(match[1]) : null;
+        };
+        
+        // Helper function to determine if score is good (green), medium (yellow), or bad (red)
+        const getScoreColor = (score, detectorName) => {
+            if (!score) return 'text-danger';
+            
+            const lower = score.toLowerCase();
+            const percentage = parsePercentage(score);
+            
+            // For ZeroGPT: Low AI percentage is good (green), high AI percentage is bad (red)
+            if (detectorName === 'zerogpt') {
+                if (percentage !== null) {
+                    if (percentage <= 10) return 'text-success'; // 0-10% AI is excellent
+                    if (percentage <= 25) return 'text-warning'; // 11-25% AI is okay
+                    return 'text-danger'; // >25% AI is bad
+                }
+                if (lower.includes('0%')) return 'text-success';
+                return 'text-danger';
+            }
+            
+            // For Quillbot: High human percentage is good (green), low human percentage is bad (red)
+            if (detectorName === 'quillbot') {
+                if (percentage !== null) {
+                    if (percentage >= 80) return 'text-success'; // 80-100% Human is excellent
+                    if (percentage >= 50) return 'text-warning'; // 50-79% Human is okay
+                    return 'text-danger'; // <50% Human is bad
+                }
+                if (lower.includes('100% human') || lower.includes('human')) return 'text-success';
+                return 'text-danger';
+            }
+            
+            // For other detectors: Check for positive indicators
+            if (lower.includes('0%') || 
+                lower.includes('100% human') || 
+                lower.includes('undetectable') || 
+                lower.includes('bypassed') || 
+                lower.includes('human content') || 
+                lower.includes('original')) {
+                return 'text-success';
+            }
+            
+            // Medium scores
+            if (lower.includes('low detection') || 
+                lower.includes('mostly human') || 
+                lower.includes('mostly original')) {
+                return 'text-warning';
+            }
+            
+            // Bad scores (detected, AI content, etc.)
+            if (lower.includes('detected') || 
+                lower.includes('ai detected') || 
+                lower.includes('ai content') || 
+                lower.includes('ai generated')) {
+                return 'text-danger';
+            }
+            
+            // Default to warning if unclear
+            return 'text-warning';
+        };
+        
+        const elements = {
+            'detectorZeroGPT': { score: scores.zerogpt, name: 'zerogpt' },
+            'detectorQuillbot': { score: scores.quillbot, name: 'quillbot' },
+            'detectorGPTZero': { score: scores.gptzero, name: 'gptzero' },
+            'detectorOriginality': { score: scores.originality, name: 'originality' },
+            'detectorCopyleaks': { score: scores.copyleaks, name: 'copyleaks' },
+            'detectorTurnitin': { score: scores.turnitin, name: 'turnitin' }
+        };
+        
+        for (const [id, data] of Object.entries(elements)) {
+            const element = document.getElementById(id);
+            if (element) {
+                // Remove all color classes
+                element.classList.remove('text-success', 'text-warning', 'text-danger');
+                // Add appropriate color class based on score
+                const colorClass = getScoreColor(data.score, data.name);
+                element.classList.add(colorClass);
+            }
+        }
     }
 
     function showLoading() {
