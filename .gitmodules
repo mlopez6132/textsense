@@ -1,0 +1,8 @@
+[submodule "textsense-inference"]
+	path = textsense-inference
+	url = https://huggingface.co/spaces/mlopez6132/textsense-inference
+
+[submodule "textsense-ocr"]
+	path = textsense-ocr
+	url = https://huggingface.co/spaces/mlopez6132/textsense-ocr
+

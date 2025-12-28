@@ -189,8 +189,10 @@ class AdvancedAIHumanizer:
             headers = {}
             if self.api_key:
                 headers["Authorization"] = f"Bearer {self.api_key}"
-            elif os.getenv("OPENAI_API_KEY"):  # Fallback to OpenAI key if available
-                headers["Authorization"] = f"Bearer {os.getenv('OPENAI_API_KEY')}"
+            else:
+                # If no API key, don't make the request
+                logger.warning("Pollinations API key not available, skipping API call")
+                return text
 
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.get(url, headers=headers)
@@ -220,7 +222,7 @@ class AdvancedAIHumanizer:
             current_text = self.multiple_pass_humanization(current_text, intensity_level)
             
             # Step 2: Pollinations AI (if enabled and available)
-            if use_pollinations:
+            if use_pollinations and self.api_key:
                 # Only send to Pollinations if text isn't too huge
                 if len(current_text) < 4000:  # Reasonable limit for URL param
                     pollinated_text = await self.call_pollinations_api(
