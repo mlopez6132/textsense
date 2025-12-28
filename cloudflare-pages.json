@@ -1,6 +1,6 @@
 {
   "build": {
-    "command": "git submodule update --init --recursive || true && pip install -r requirements.txt && echo 'Build complete'",
+    "command": "pip install -r requirements.txt && echo 'Build complete'",
     "cwd": "."
   },
   "functions": {

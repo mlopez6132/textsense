@@ -98,9 +98,39 @@ A comprehensive web application that provides multiple AI-powered text analysis 
 
 ## Deployment
 
-### Render.com Deployment
+### Cloudflare Workers for Platforms (Recommended)
 
-The application is configured for deployment on Render.com:
+The application is configured for deployment on Cloudflare using Workers for Platforms:
+
+1. **Install Wrangler CLI**:
+   ```bash
+   npm install -g wrangler
+   ```
+
+2. **Authenticate with Cloudflare**:
+   ```bash
+   wrangler login
+   ```
+
+3. **Set environment variables as secrets**:
+   ```bash
+   wrangler secret put HF_INFERENCE_URL
+   wrangler secret put HF_OCR_URL
+   wrangler secret put OPENAI_SPEECH_API_KEY
+   wrangler secret put FLUX_API_KEY
+   # ... (see CLOUDFLARE_DEPLOYMENT.md for full list)
+   ```
+
+4. **Deploy**:
+   ```bash
+   wrangler deploy
+   ```
+
+For detailed Cloudflare deployment instructions, see [CLOUDFLARE_DEPLOYMENT.md](CLOUDFLARE_DEPLOYMENT.md).
+
+### Render.com Deployment (Alternative)
+
+The application can also be deployed on Render.com:
 
 1. **Connect your GitHub repository** to Render
 2. **Set environment variables**:
@@ -172,6 +202,9 @@ textsense/
 ├── requirements.txt          # Python dependencies
 ├── runtime.txt              # Python version specification
 ├── render.yaml              # Render deployment config
+├── wrangler.toml           # Cloudflare Workers configuration
+├── _worker.py              # Cloudflare Workers entry point
+├── CLOUDFLARE_DEPLOYMENT.md # Cloudflare deployment guide
 ├── templates/               # HTML templates
 │   ├── index.html           # Homepage
 │   ├── ai-detector.html     # AI detection page
