@@ -35,6 +35,8 @@ The `wrangler.toml` file is already configured. You may need to update:
 - `name`: Your worker name (currently "textsense")
 - Routes: Configure in Cloudflare dashboard after deployment
 
+**Important**: Python dependencies must be specified in `cf-requirements.txt` (not just `requirements.txt`) for Cloudflare Workers deployment. The `cf-requirements.txt` file is used by Cloudflare to bundle dependencies with your Worker.
+
 **Note**: Cloudflare Workers for Platforms is currently in beta/early access. If you don't have access:
 1. Request access through Cloudflare dashboard
 2. Or use the alternative deployment method (see Option 2 below)
@@ -179,8 +181,10 @@ wrangler dev
 - Check that `compatibility_flags = ["python_workers"]` is in `wrangler.toml`
 
 ### Issue: "Module not found"
-- Ensure all dependencies are in `requirements.txt`
+- Ensure all dependencies are in `cf-requirements.txt` (required for Cloudflare Workers)
+- Keep `requirements.txt` for local development
 - Check that the build process installs dependencies correctly
+- Note: Some packages may not be available in Pyodide (Cloudflare's Python runtime)
 
 ### Issue: "Timeout errors"
 - Check execution time limits
