@@ -37,6 +37,8 @@ The `wrangler.toml` file is already configured. You may need to update:
 
 **Important**: Python dependencies must be specified in `cf-requirements.txt` (not just `requirements.txt`) for Cloudflare Workers deployment. The `cf-requirements.txt` file is used by Cloudflare to bundle dependencies with your Worker.
 
+**Note**: `cf-requirements.txt` should contain only package names without version specifiers (e.g., `fastapi` not `fastapi>=0.110.0`). Version specifiers are not supported by Cloudflare Workers deployment.
+
 **Note**: Cloudflare Workers for Platforms is currently in beta/early access. If you don't have access:
 1. Request access through Cloudflare dashboard
 2. Or use the alternative deployment method (see Option 2 below)
