@@ -1,0 +1,29 @@
+name = "textsense"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["python_workers"]
+
+# Python runtime configuration
+# For Cloudflare Workers for Platforms, specify the Python entry point
+main = "_worker.py"
+
+# Environment variables (set these in Cloudflare dashboard or via wrangler)
+# Note: Sensitive variables should be set via Cloudflare dashboard secrets
+[vars]
+TOKENIZERS_PARALLELISM = "true"
+
+# Production environment
+[env.production]
+name = "textsense"
+
+# Development environment (optional)
+[env.development]
+name = "textsense-dev"
+
+# Limits and settings
+[limits]
+cpu_ms = 50000  # 50 seconds CPU time per request
+
+# Routes configuration
+# Configure your domain routes in Cloudflare dashboard
+# For workers.dev subdomain, routes are automatic
+
