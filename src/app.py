@@ -17,10 +17,10 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 # Import generation modules
-from image_generation import image_generator
-from speech_generation import speech_generator
-from audio_transcription import audio_transcriber
-from text_humanizer import text_humanizer
+from .modules.image_generation import image_generator
+from .modules.speech_generation import speech_generator
+from .modules.audio_transcription import audio_transcriber
+from .modules.text_humanizer import text_humanizer
 
 HF_INFERENCE_URL_ENV = "HF_INFERENCE_URL"
 HF_OCR_URL_ENV = "HF_OCR_URL"
@@ -30,11 +30,18 @@ DEFAULT_TIMEOUT_SECONDS = 120
 # Initialize cache for AI detection results (1 hour TTL, max 1000 entries)
 detection_cache = TTLCache(maxsize=1000, ttl=3600)
 
-# Initialize async HTTP client with connection pooling
-http_client = httpx.AsyncClient(
-    limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
-    timeout=httpx.Timeout(DEFAULT_TIMEOUT_SECONDS)
-)
+# Initialize async HTTP client with connection pooling (lazy initialization)
+http_client = None
+
+async def get_http_client():
+    """Get or create the HTTP client lazily to avoid sandbox issues during import."""
+    global http_client
+    if http_client is None:
+        http_client = httpx.AsyncClient(
+            limits=httpx.Limits(max_keepalive_connections=20, max_connections=100),
+            timeout=httpx.Timeout(DEFAULT_TIMEOUT_SECONDS)
+        )
+    return http_client
 
 
 # ----------------------
@@ -106,7 +113,8 @@ async def forward_post_json(
 ) -> dict:
     """POST to upstream and return parsed JSON or raise HTTPException with useful status."""
     try:
-        resp = await http_client.post(
+        client = await get_http_client()
+        resp = await client.post(
             remote_url, 
             data=data, 
             files=files, 
@@ -169,7 +177,8 @@ async def build_image_files(
         }
     if image_url:
         try:
-            r = await http_client.get(
+            client = await get_http_client()
+            r = await client.get(
                 image_url.strip(), 
                 timeout=30, 
                 headers={"User-Agent": "TextSense-Relay/1.0"}
@@ -255,7 +264,8 @@ async def get_audio_bytes_and_format(
 
     if audio_url:
         try:
-            r = await http_client.get(audio_url.strip(), timeout=30, headers={"User-Agent": "TextSense-Relay/1.0"})
+            client = await get_http_client()
+            r = await client.get(audio_url.strip(), timeout=30, headers={"User-Agent": "TextSense-Relay/1.0"})
             r.raise_for_status()
         except (HTTPError, TimeoutException, ConnectError) as req_err:
             raise HTTPException(status_code=502, detail=f"Failed to fetch audio URL: {str(req_err)}") from req_err
@@ -316,8 +326,8 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Static and templates
-app.mount("/static", StaticFiles(directory="templates/static"), name="static")
-templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="src/templates/static"), name="static")
+templates = Jinja2Templates(directory="src/templates")
 
 
 # Middleware to add cache headers to static files
@@ -377,37 +387,37 @@ def get_cache_bust_version() -> str:
 
 @app.get("/favicon.ico")
 async def favicon():
-    return FileResponse("templates/static/favicon.ico")
+    return FileResponse("src/templates/static/favicon.ico")
 
 
 @app.get("/site.webmanifest")
 async def site_webmanifest():
-    return FileResponse("templates/static/site.webmanifest", media_type="application/manifest+json")
+    return FileResponse("src/templates/static/site.webmanifest", media_type="application/manifest+json")
 
 
 @app.get("/apple-touch-icon.png")
 async def apple_touch_icon():
-    return FileResponse("templates/static/apple-touch-icon.png")
+    return FileResponse("src/templates/static/apple-touch-icon.png")
 
 
 @app.get("/favicon-32x32.png")
 async def favicon_32x32():
-    return FileResponse("templates/static/favicon-32x32.png")
+    return FileResponse("src/templates/static/favicon-32x32.png")
 
 
 @app.get("/favicon-16x16.png")
 async def favicon_16x16():
-    return FileResponse("templates/static/favicon-16x16.png")
+    return FileResponse("src/templates/static/favicon-16x16.png")
 
 
 @app.get("/android-chrome-192x192.png")
 async def android_chrome_192():
-    return FileResponse("templates/static/android-chrome-192x192.png")
+    return FileResponse("src/templates/static/android-chrome-192x192.png")
 
 
 @app.get("/android-chrome-512x512.png")
 async def android_chrome_512():
-    return FileResponse("templates/static/android-chrome-512x512.png")
+    return FileResponse("src/templates/static/android-chrome-512x512.png")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -534,7 +544,8 @@ async def submit_contact(request: Request):
     secret = os.getenv("RECAPTCHA_SECRET_KEY", "").strip()
     if secret:
         try:
-            verify = await http_client.post(
+            client = await get_http_client()
+            verify = await client.post(
                 "https://www.google.com/recaptcha/api/siteverify",
                 data={"secret": secret, "response": token},
                 timeout=10,
@@ -810,7 +821,8 @@ async def download_image(request: Request, url: str, filename: str = "generated_
         raise HTTPException(status_code=400, detail="Invalid image URL")
 
     try:
-        async with http_client.stream("GET", url, timeout=30) as response:
+        client = await get_http_client()
+        async with client.stream("GET", url, timeout=30) as response:
             response.raise_for_status()
             
             # Check file size to prevent abuse (max 100MB)
@@ -855,4 +867,9 @@ async def ping():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Clean up resources on shutdown."""
-    await http_client.aclose()
+    try:
+        if http_client is not None:
+            await http_client.aclose()
+    except Exception as e:
+        # Ignore cleanup errors during shutdown
+        pass

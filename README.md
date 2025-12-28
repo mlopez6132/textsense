@@ -44,7 +44,7 @@ A comprehensive web application that provides multiple AI-powered text analysis 
 ## Architecture
 
 ### **Backend**: FastAPI with Relay Pattern
-- **Main Application**: `relay_fastapi.py` - FastAPI server
+- **Main Application**: `src/app.py` - FastAPI server
 - **Hugging Face Integration**: Connects to HF Spaces for AI processing
 - **Rate Limiting**: Built-in rate limiting for API protection
 - **Caching**: Intelligent caching for improved performance
@@ -90,7 +90,7 @@ A comprehensive web application that provides multiple AI-powered text analysis 
 
 4. **Run the application**:
    ```bash
-   uvicorn relay_fastapi:app --host 0.0.0.0 --port 8000
+   uvicorn src.app:app --host 0.0.0.0 --port 8000
    ```
 
 5. **Access the web interface**:
@@ -98,37 +98,7 @@ A comprehensive web application that provides multiple AI-powered text analysis 
 
 ## Deployment
 
-### Cloudflare Workers for Platforms (Recommended)
-
-The application is configured for deployment on Cloudflare using Workers for Platforms:
-
-1. **Install Wrangler CLI**:
-   ```bash
-   npm install -g wrangler
-   ```
-
-2. **Authenticate with Cloudflare**:
-   ```bash
-   wrangler login
-   ```
-
-3. **Set environment variables as secrets**:
-   ```bash
-   wrangler secret put HF_INFERENCE_URL
-   wrangler secret put HF_OCR_URL
-   wrangler secret put OPENAI_SPEECH_API_KEY
-   wrangler secret put FLUX_API_KEY
-   # ... (see CLOUDFLARE_DEPLOYMENT.md for full list)
-   ```
-
-4. **Deploy**:
-   ```bash
-   wrangler deploy
-   ```
-
-For detailed Cloudflare deployment instructions, see [CLOUDFLARE_DEPLOYMENT.md](CLOUDFLARE_DEPLOYMENT.md).
-
-### Render.com Deployment (Alternative)
+### Render.com Deployment
 
 The application can also be deployed on Render.com:
 
@@ -195,28 +165,31 @@ The application can also be deployed on Render.com:
 
 ```
 textsense/
-├── relay_fastapi.py          # Main FastAPI application
-├── audio_transcription.py    # Audio processing module
-├── image_generation.py       # Image generation module
-├── speech_generation.py      # Speech generation module
-├── requirements.txt          # Python dependencies
-├── runtime.txt              # Python version specification
-├── render.yaml              # Render deployment config
-├── wrangler.toml           # Cloudflare Workers configuration
-├── _worker.py              # Cloudflare Workers entry point
-├── CLOUDFLARE_DEPLOYMENT.md # Cloudflare deployment guide
-├── templates/               # HTML templates
-│   ├── index.html           # Homepage
-│   ├── ai-detector.html     # AI detection page
-│   ├── ocr.html             # OCR page
-│   ├── audio-text.html      # Audio transcription page
-│   ├── generate-image.html  # Image generation page
-│   ├── text-to-speech.html  # TTS page
-│   └── static/              # Static assets
-│       ├── css/             # Stylesheets
-│       ├── js/              # JavaScript files
-│       └── images/          # Images and icons
-└── uploads/                 # Temporary file storage
+├── src/                     # Main application source code
+│   ├── app.py              # Main FastAPI application
+│   ├── modules/            # Utility modules
+│   │   ├── audio_transcription.py    # Audio processing module
+│   │   ├── image_generation.py       # Image generation module
+│   │   ├── speech_generation.py      # Speech generation module
+│   │   └── text_humanizer.py         # Text humanization module
+│   ├── templates/          # HTML templates
+│   │   ├── index.html      # Homepage
+│   │   ├── ai-detector.html     # AI detection page
+│   │   ├── ocr.html             # OCR page
+│   │   ├── audio-text.html      # Audio transcription page
+│   │   ├── generate-image.html  # Image generation page
+│   │   ├── text-to-speech.html  # TTS page
+│   │   └── static/              # Static assets
+│   │       ├── css/             # Stylesheets
+│   │       ├── js/              # JavaScript files
+│   │       └── images/          # Images and icons
+│   └── services/           # Microservices
+│       ├── textsense-inference/     # AI detection service
+│       └── textsense-ocr/           # OCR service
+├── requirements.txt         # Python dependencies
+├── runtime.txt             # Python version specification
+├── render.yaml             # Render deployment config
+└── README.md               # Project documentation
 ```
 
 ## API Endpoints
