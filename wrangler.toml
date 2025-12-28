@@ -20,8 +20,9 @@ name = "textsense"
 name = "textsense-dev"
 
 # Limits and settings
-[limits]
-cpu_ms = 50000  # 50 seconds CPU time per request
+# Note: CPU limits are only available on paid plans
+# [limits]
+# cpu_ms = 50000  # 50 seconds CPU time per request
 
 # Routes configuration
 # Configure your domain routes in Cloudflare dashboard
