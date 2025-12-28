@@ -56,7 +56,13 @@ tmp/
 # Uploads (if any are created)
 uploads/
 
+# Audio files
+*.mp3
+*.wav
+*.m4a
+*.aac
+*.ogg
+*.flac
+
 # Test files
 test_*.*
-*test.mp3
-*test.wav
