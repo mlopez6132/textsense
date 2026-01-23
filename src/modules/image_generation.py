@@ -17,9 +17,11 @@ class ImageGenerator:
     
     def __init__(self):
         self.text_api_url = os.getenv("FLUX_TEXT_URL", "").strip()
-        self.image_api_base = os.getenv("FLUX_IMAGE_BASE", "").strip()
+        # Use new gen.pollinations.ai API base URL
+        self.image_api_base = os.getenv("FLUX_IMAGE_BASE", "https://gen.pollinations.ai").strip()
         self.auth_token = os.getenv("FLUX_API_KEY", "").strip()
         self.enhancement_system_prompt = self._get_enhancement_prompt()
+        self._available_models_cache = None
     
     def _get_enhancement_prompt(self) -> str:
         """Get the system prompt for AI-powered prompt enhancement."""
@@ -160,7 +162,35 @@ Avoid glamour bias unless explicitly requested.
         
         return enhanced_prompt
     
-    def generate_image_urls(
+    async def get_available_models(self) -> list[dict[str, Any]]:
+        """Get list of available image generation models from Pollinations API."""
+        if self._available_models_cache is not None:
+            return self._available_models_cache
+        
+        try:
+            headers = {"Content-Type": "application/json"}
+            if self.auth_token:
+                headers["Authorization"] = f"Bearer {self.auth_token}"
+            
+            async with httpx.AsyncClient() as client:
+                response = await client.get(
+                    f"{self.image_api_base.rstrip('/')}/image/models",
+                    headers=headers,
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    models = response.json()
+                    self._available_models_cache = models
+                    return models
+                else:
+                    print(f"Failed to fetch models: {response.status_code} - {response.text}")
+                    return []
+        except (httpx.HTTPError, ValueError) as e:
+            print(f"Error fetching available models: {e}")
+            return []
+    
+    async def generate_image_urls(
         self, 
         prompt: str, 
         num_images: int = 1,
@@ -168,23 +198,71 @@ Avoid glamour bias unless explicitly requested.
         height: int = 1024,
         model: str = "flux"
     ) -> list[str]:
-        """Generate image URLs using Flux model without watermarks."""
-        encoded_prompt = urllib.parse.quote(prompt)
+        """Generate image URLs using new Pollinations API format with authenticated requests."""
         images = []
         
-        for _ in range(num_images):
-            # Use secrets for better randomness if available, fallback to random
-            try:
-                import secrets
-                seed = secrets.randbelow(10_000_000) + 1
-            except ImportError:
-                seed = random.randint(1, 10_000_000)
-            
-            url = (
-                f"{self.image_api_base.rstrip('/')}/prompt/{encoded_prompt}"
-                f"?model={model}&width={width}&height={height}&seed={seed}&nologo=true"
-            )
-            images.append(url)
+        # Prepare headers with Bearer token authentication
+        headers = {}
+        if self.auth_token:
+            headers["Authorization"] = f"Bearer {self.auth_token}"
+        
+        async with httpx.AsyncClient() as client:
+            for _ in range(num_images):
+                # Use secrets for better randomness if available, fallback to random
+                try:
+                    import secrets
+                    seed = secrets.randbelow(10_000_000) + 1
+                except ImportError:
+                    seed = random.randint(1, 10_000_000)
+                
+                # Try new POST API format first
+                if self.auth_token:
+                    try:
+                        payload = {
+                            "prompt": prompt,
+                            "model": model,
+                            "width": width,
+                            "height": height,
+                            "seed": seed,
+                            "nologo": True
+                        }
+                        
+                        response = await client.post(
+                            f"{self.image_api_base.rstrip('/')}/image",
+                            json=payload,
+                            headers=headers,
+                            timeout=60
+                        )
+                        
+                        if response.status_code == 200:
+                            content_type = response.headers.get("content-type", "")
+                            # Check if response is JSON with URL
+                            if "application/json" in content_type:
+                                data = response.json()
+                                image_url = data.get("url") or data.get("image_url") or data.get("image")
+                                if image_url:
+                                    images.append(image_url)
+                                    continue
+                            # Check if response is direct image binary (would need different handling)
+                            elif "image" in content_type:
+                                # For binary images, we'd need to upload or convert to URL
+                                # For now, fall through to URL-based method
+                                pass
+                    except httpx.HTTPError as e:
+                        print(f"POST API error: {e}, falling back to URL format")
+                
+                # Fallback to URL-based format (works with or without auth)
+                encoded_prompt = urllib.parse.quote(prompt)
+                url = (
+                    f"{self.image_api_base.rstrip('/')}/prompt/{encoded_prompt}"
+                    f"?model={model}&width={width}&height={height}&seed={seed}&nologo=true"
+                )
+                # Add auth token to URL if using old format and token exists
+                if self.auth_token and "?" in url:
+                    url += f"&key={self.auth_token}"
+                elif self.auth_token:
+                    url += f"?key={self.auth_token}"
+                images.append(url)
         
         return images
     
@@ -242,8 +320,8 @@ Avoid glamour bias unless explicitly requested.
             if neg:
                 final_prompt = f"{prompt.strip()}. avoid: {neg}"
         
-        # Generate image URLs
-        image_urls = self.generate_image_urls(
+        # Generate image URLs (now async)
+        image_urls = await self.generate_image_urls(
             prompt=final_prompt,
             num_images=num_images,
             width=width,
