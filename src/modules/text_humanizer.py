@@ -175,29 +175,47 @@ class AdvancedAIHumanizer:
             )
             full_prompt = f"{system_prompt} Text: {text}"
 
-            # Use the correct Pollinations API endpoint
-            encoded_prompt = urllib.parse.quote(full_prompt)
-
-            # Build query parameters
-            params = f"model={model}&temperature={temperature}"
-            if self.api_key:
-                params += f"&key={self.api_key}"
-
-            url = f"https://gen.pollinations.ai/text/{encoded_prompt}?{params}"
-
-            # Prepare headers (some APIs prefer headers over query params)
-            headers = {}
+            # Use the new Pollinations API endpoint (migrated from legacy text.pollinations.ai)
+            # For authenticated users, use enter.pollinations.ai
+            # Prepare headers with Bearer token authentication
+            headers = {"Content-Type": "application/json"}
             if self.api_key:
                 headers["Authorization"] = f"Bearer {self.api_key}"
             else:
-                # If no API key, don't make the request
+                # If no API key, don't make the request (new API requires auth)
                 logger.warning("Pollinations API key not available, skipping API call")
                 return text
 
+            # Use POST request with JSON payload for new API format
+            payload = {
+                "model": model,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "Rewrite the following text to make it sound more natural and human-like. Remove AI patterns, vary sentence structure, and use a conversational but professional tone. Do not change the core meaning."
+                    },
+                    {
+                        "role": "user",
+                        "content": text
+                    }
+                ],
+                "temperature": temperature
+            }
+
+            # Use new enter.pollinations.ai for authenticated requests
+            url = "https://enter.pollinations.ai/chat"
+
             async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.get(url, headers=headers)
+                response = await client.post(url, json=payload, headers=headers)
 
                 if response.status_code == 200:
+                    # Parse JSON response (chat completions format)
+                    data = response.json()
+                    message = (data.get("choices") or [{}])[0].get("message") or {}
+                    content = (message.get("content") or "").strip()
+                    if content:
+                        return content
+                    # Fallback to raw text if JSON parsing fails
                     return response.text.strip()
                 else:
                     logger.warning(f"Pollinations API failed with status {response.status_code}: {response.text}")
