@@ -25,7 +25,7 @@
     <!-- Additional SEO -->
     <meta name="canonicalURL" content="https://textsense.org/">
     <link rel="canonical" href="https://textsense.org/">
-    <!-- Google AdSense verification -->
+    <!-- Google AdSense verification (pending approval) -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2409576003450898" crossorigin="anonymous"></script>
     <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="static/apple-touch-icon.png">
@@ -100,37 +100,8 @@
                             </div>
                         </div>
                         <div class="col-lg-6 text-center">
-                            <div class="hero-features">
-                                <div class="row">
-                                    <div class="col-6 mb-4">
-                                        <div class="hero-feature">
-                                            <i class="fas fa-brain fa-3x mb-3"></i>
-                                            <h3>AI Detection</h3>
-                                            <p class="small">Advanced algorithms</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 mb-4">
-                                        <div class="hero-feature">
-                                            <i class="fas fa-image fa-3x mb-3"></i>
-                                            <h3>OCR Technology</h3>
-                                            <p class="small">Extract text from images</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 mb-4">
-                                        <div class="hero-feature">
-                                            <i class="fas fa-microphone fa-3x mb-3"></i>
-                                            <h3>Speech-to-Text</h3>
-                                            <p class="small">Audio transcription</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-6 mb-4">
-                                        <div class="hero-feature">
-                                            <i class="fas fa-palette fa-3x mb-3"></i>
-                                            <h3>Text-to-Image</h3>
-                                            <p class="small">AI image generation</p>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="dolphin-ascii-wrap">
+                                <pre id="dolphin-ascii" class="dolphin-ascii" aria-hidden="true"></pre>
                             </div>
                         </div>
                     </div>
@@ -183,11 +154,8 @@
                     
                     <div class="row">
                         <!-- AI Text Detector -->
-                        <div class="col-lg-6 mb-4">
+                        <div class="col-lg-6 mb-4 d-flex">
                             <div class="product-card h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-search"></i>
-                                </div>
                                 <h3 class="fw-bold mb-3">AI Text Detector</h3>
                                 <p class="text-muted mb-4">
                                     Detect AI-generated content with sentence-level analysis. Get detailed probability
@@ -206,11 +174,8 @@
                         </div>
 
                         <!-- AI Humanizer -->
-                        <div class="col-lg-6 mb-4">
+                        <div class="col-lg-6 mb-4 d-flex">
                             <div class="product-card h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-magic"></i>
-                                </div>
                                 <h3 class="fw-bold mb-3">AI Text Humanizer</h3>
                                 <p class="text-muted mb-4">
                                     Transform AI-generated content into natural, human-like text. 
@@ -229,11 +194,8 @@
                         </div>
 
                         <!-- OCR Tool -->
-                        <div class="col-lg-6 mb-4">
+                        <div class="col-lg-6 mb-4 d-flex">
                             <div class="product-card h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-image"></i>
-                                </div>
                                 <h3 class="fw-bold mb-3">Image to Text (OCR)</h3>
                                 <p class="text-muted mb-4">
                                     Extract text from images with high accuracy. Upload photos, screenshots,
@@ -252,11 +214,8 @@
                         </div>
 
                         <!-- Audio to Text -->
-                        <div class="col-lg-6 mb-4">
+                        <div class="col-lg-6 mb-4 d-flex">
                             <div class="product-card h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-microphone"></i>
-                                </div>
                                 <h3 class="fw-bold mb-3">Audio to Text</h3>
                                 <p class="text-muted mb-4">
                                     Convert speech to text with advanced AI transcription. Upload audio files
@@ -275,11 +234,8 @@
                         </div>
 
                         <!-- Text to Image -->
-                        <div class="col-lg-6 mb-4">
+                        <div class="col-lg-6 mb-4 d-flex">
                             <div class="product-card h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-palette"></i>
-                                </div>
                                 <h3 class="fw-bold mb-3">Text to Image</h3>
                                 <p class="text-muted mb-4">
                                     Generate stunning images from text descriptions using advanced AI. Create
@@ -298,11 +254,8 @@
                         </div>
 
                         <!-- Text to Speech -->
-                        <div class="col-lg-6 mb-4">
+                        <div class="col-lg-6 mb-4 d-flex">
                             <div class="product-card h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-volume-up"></i>
-                                </div>
                                 <h3 class="fw-bold mb-3">Text to Speech</h3>
                                 <p class="text-muted mb-4">
                                     Transform your text into natural-sounding speech with AI voice synthesis.
@@ -398,7 +351,7 @@
                         </ul>
                     </div>
                     <div class="col-md-4 col-lg-3 footer-column">
-                        <h6 class="footer-column-title">Technology</h6>
+                        <h6 class="footer-column-title">Tools</h6>
                         <ul class="footer-links-list">
                             <li><a href="/technology/ai-detector">AI Detector</a></li>
                             <li><a href="/technology/ai-humanizer">AI Humanizer</a></li>
@@ -444,5 +397,6 @@
             }
         });
     </script>
+    <script src="static/js/dolphin-ascii.js?v={{ cache_version }}"></script>
 </body>
 </html>

@@ -394,6 +394,7 @@ textarea.form-control {
     overflow: hidden;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    box-shadow: none;
 }
 
 .btn::before {
@@ -413,17 +414,17 @@ textarea.form-control {
 
 .btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 122, 255, 0.25);
+    box-shadow: none;
 }
 
 .btn-primary {
     background: linear-gradient(135deg, #007AFF 0%, #0051D5 100%);
-    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: none;
 }
 
 .btn-primary:hover {
     background: linear-gradient(135deg, #0051D5 0%, #003D9E 100%);
-    box-shadow: 0 8px 24px rgba(0, 122, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    box-shadow: none;
 }
 
 .btn-lg {
@@ -721,18 +722,25 @@ footer .container {
 }
 
 footer .footer-columns {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
     margin-bottom: 1.5rem;
     display: flex !important;
     justify-content: flex-end !important;
     align-items: flex-start;
     gap: 3rem;
     flex-wrap: wrap;
+    width: 100%;
 }
 
 footer .footer-columns .footer-column {
     margin-bottom: 1.5rem;
-    flex: 0 0 auto;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: none !important;
     min-width: 150px;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
 }
 
 footer .footer-column-title {
@@ -1480,7 +1488,7 @@ main.container .card {
     text-decoration: none;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: none;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     position: relative;
@@ -1503,7 +1511,7 @@ main.container .card {
 }
 
 .creator-badge:hover {
-    box-shadow: 0 8px 24px rgba(0, 122, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    box-shadow: none;
     color: white;
     text-decoration: none;
 }
@@ -1553,7 +1561,7 @@ main.container .card {
     font-weight: 600;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     color: white !important;
-    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: none;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     position: relative;
@@ -1577,7 +1585,7 @@ main.container .card {
 
 .btn-primary-gradient:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0, 122, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    box-shadow: none;
     color: white !important;
 }
 
@@ -1660,15 +1668,30 @@ main.container .card {
     left: 0;
     right: 0;
     width: 100%;
+    background: transparent;
+    z-index: 1030;
+    overflow: visible;
+}
+
+.site-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
     background: rgba(255, 255, 255, 0.72);
     backdrop-filter: var(--backdrop-blur);
     -webkit-backdrop-filter: var(--backdrop-blur);
     box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.08);
-    z-index: 1030;
     border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+    pointer-events: none;
+    z-index: 0;
 }
 
 .site-header .container {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1769,22 +1792,38 @@ main.container .card {
     transform: rotate(-45deg) translate(7px, -6px);
 }
 
+.site-header .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding: 0 1rem;
+    max-width: 100%;
+    margin: 0 auto;
+    gap: 1rem;
+}
+
 /* Navigation styles */
 .site-nav {
     position: fixed;
     top: var(--header-height);
     left: 0;
     right: 0;
-    background: rgba(255, 255, 255, 0.72);
+    width: 100%;
+    background: rgba(255, 255, 255, 0.97);
     backdrop-filter: var(--backdrop-blur);
     -webkit-backdrop-filter: var(--backdrop-blur);
-    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     border-bottom: 1px solid rgba(255, 255, 255, 0.18);
     transform: translateY(-100%);
     opacity: 0;
     visibility: hidden;
     transition: all var(--transition-speed) ease;
-    z-index: 1029;
+    z-index: 1040;
+    max-height: calc(100dvh - var(--header-height));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .site-nav.active {
@@ -1797,13 +1836,20 @@ main.container .card {
     list-style: none;
     margin: 0;
     padding: 1rem;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
     gap: var(--nav-gap-mobile);
 }
 
+.nav-list li {
+    width: 100%;
+}
+
 .nav-link {
     display: block;
+    width: 100%;
+    box-sizing: border-box;
     padding: 0.75rem 1rem;
     color: var(--text-primary);
     text-decoration: none;
@@ -1811,9 +1857,29 @@ main.container .card {
     font-size: 0.9rem;
     border-radius: 10px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid transparent;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+}
+
+.nav-list li:has(.social-link) {
+    width: auto;
+}
+
+.nav-list .social-link {
+    width: 44px;
+    margin-top: 0.25rem;
+}
+
+@media (max-width: 767.98px) {
+    .nav-list li:has(.social-link) {
+        display: inline-block;
+    }
+
+    body:has(.site-nav.active) {
+        overflow: hidden;
+    }
 }
 
 .nav-link:hover {
@@ -1970,9 +2036,12 @@ main.container .card {
         box-shadow: none;
         border: none;
         height: auto;
+        max-height: none;
+        overflow: visible;
         flex: 1;
         display: flex;
         justify-content: center;
+        z-index: auto;
     }
     
     .nav-list {
@@ -1984,14 +2053,21 @@ main.container .card {
         justify-content: flex-end;
         width: 100%;
     }
+
+    .nav-list li {
+        width: auto;
+    }
     
     .twitter-link {
         margin-left: auto;
     }
     
     .nav-link {
+        width: auto;
         padding: 0.5rem 1rem;
         white-space: nowrap;
+        background: transparent;
+        border-color: transparent;
     }
     
     .brand-name {
