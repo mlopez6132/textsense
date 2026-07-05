@@ -5,23 +5,32 @@
   const previewImg = document.getElementById('preview');
   const extractBtn = document.getElementById('extractBtn');
   const clearBtn = document.getElementById('clearBtn');
-  const loading = document.getElementById('loading');
   const analyzing = document.getElementById('analyzing');
   const analysisSection = document.getElementById('analysisSection');
   const outputControls = document.getElementById('outputControls');
   const output = document.getElementById('ocrOutput');
   const copyBtn = document.getElementById('copyBtn');
   const downloadBtn = document.getElementById('downloadBtn');
+  const errorSection = document.getElementById('errorSection');
+  const errorMessage = document.getElementById('errorMessage');
 
   let currentFile = null;
+
+  function showError(msg) {
+    if (errorMessage) errorMessage.textContent = msg;
+    if (errorSection) errorSection.classList.remove('d-none');
+  }
+
+  function hideError() {
+    if (errorSection) errorSection.classList.add('d-none');
+  }
 
   function showPreviewFromFile(file) {
     const reader = new FileReader();
     reader.onload = (e) => {
       previewImg.src = e.target.result;
       analysisSection.style.display = 'block';
-      
-      // Smooth scroll to analysis section
+
       setTimeout(() => {
         analysisSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }, 100);
@@ -32,8 +41,7 @@
   function showPreviewFromUrl(url) {
     previewImg.src = url;
     analysisSection.style.display = 'block';
-    
-    // Smooth scroll to analysis section
+
     setTimeout(() => {
       analysisSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 100);
@@ -48,17 +56,7 @@
     output.value = '';
     outputControls.style.display = 'none';
     analyzing.style.display = 'none';
-  }
-
-  function setLoading(isLoading) {
-    if (isLoading) {
-      loading.style.display = 'inline-block';
-      loading.classList.add('show');
-    } else {
-      loading.style.display = 'none';
-      loading.classList.remove('show');
-    }
-    extractBtn.disabled = isLoading;
+    hideError();
   }
 
   function setAnalyzing(isAnalyzing) {
@@ -88,7 +86,6 @@
     }
   });
 
-  // Paste image handler
   document.addEventListener('paste', async (e) => {
     const items = e.clipboardData && e.clipboardData.items;
     if (!items) return;
@@ -119,7 +116,9 @@
       await navigator.clipboard.writeText(output.value);
       copyBtn.textContent = 'Copied!';
       setTimeout(() => (copyBtn.textContent = 'Copy'), 1200);
-    } catch {}
+    } catch {
+      showError('Failed to copy text to clipboard.');
+    }
   });
 
   downloadBtn.addEventListener('click', () => {
@@ -128,18 +127,17 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-            a.download = 'textsense-ocr.txt';
+    a.download = 'textsense-ocr.txt';
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
   });
 
-  // Handle URL input
   imageUrlInput.addEventListener('input', () => {
     const urlVal = imageUrlInput.value.trim();
     if (urlVal && urlVal.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
-      currentFile = null; // Clear file if URL is provided
+      currentFile = null;
       showPreviewFromUrl(urlVal);
     }
   });
@@ -147,14 +145,15 @@
   extractBtn.addEventListener('click', async () => {
     output.value = '';
     outputControls.style.display = 'none';
-    
+
     const hasFile = !!currentFile;
     const urlVal = imageUrlInput.value.trim();
     if (!hasFile && !urlVal) {
-      alert('Please upload/paste an image or enter an image URL.');
+      showError('Please upload/paste an image or enter an image URL.');
       return;
     }
 
+    hideError();
     setAnalyzing(true);
     try {
       const form = new FormData();
@@ -163,8 +162,7 @@
       } else {
         form.append('image_url', urlVal);
       }
-      
-      // Add selected language
+
       const languageSelect = document.getElementById('languageSelect');
       form.append('language', languageSelect.value);
 
@@ -174,20 +172,17 @@
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || 'OCR failed');
-      
+
       output.value = data.text || '';
-      
-      // Show output controls if text was extracted
+
       if (data.text && data.text.trim()) {
         outputControls.style.display = 'flex';
       }
-      
+
     } catch (err) {
-      output.value = `Error: ${err.message || err}`;
+      showError(err.message || 'OCR failed. Please try again.');
     } finally {
       setAnalyzing(false);
     }
   });
 })();
-
-

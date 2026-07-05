@@ -12,9 +12,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const generatedAudio = document.getElementById('generatedAudio');
     const downloadAudioBtn = document.getElementById('downloadAudioBtn');
     const playAgainBtn = document.getElementById('playAgainBtn');
+    const errorSection = document.getElementById('errorSection');
+    const errorMessage = document.getElementById('errorMessage');
 
     let currentAudioUrl = null;
     let currentAudioBlob = null;
+
+    function showError(msg) {
+        if (errorMessage) errorMessage.textContent = msg;
+        if (errorSection) errorSection.classList.remove('d-none');
+    }
+
+    function hideError() {
+        if (errorSection) errorSection.classList.add('d-none');
+    }
+
+    function setGenerating(isGenerating) {
+        if (generatingSpeech) generatingSpeech.style.display = isGenerating ? 'block' : 'none';
+        if (generateSpeechBtn) generateSpeechBtn.disabled = isGenerating;
+        if (clearBtn) clearBtn.disabled = isGenerating;
+    }
 
     // Character count functionality
     function updateCharCount() {
@@ -49,6 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
         vibeSelect.selectedIndex = 0;
         hideAudioPreview();
         clearAudioData();
+        hideError();
     }
 
     function clearAudioData() {
@@ -77,18 +95,17 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Form data:', { text: text.substring(0, 50), voice, vibe: vibe.substring(0, 50) });
 
         if (!text) {
-            alert('Please enter some text to convert to speech.');
+            showError('Please enter some text to convert to speech.');
             return;
         }
 
         if (text.length > 999) {
-            alert('Text is too long. Please limit to 999 characters.');
+            showError('Text is too long. Please limit to 999 characters.');
             return;
         }
 
-        // Show loading state
-        generatingSpeech.style.display = 'block';
-        generateSpeechBtn.disabled = true;
+        hideError();
+        setGenerating(true);
         hideAudioPreview();
         clearAudioData();
 
@@ -125,17 +142,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('Speech generation error:', error);
-            alert(`Failed to generate speech: ${error.message}`);
+            showError(error.message || 'Failed to generate speech. Please try again.');
         } finally {
-            generatingSpeech.style.display = 'none';
-            generateSpeechBtn.disabled = false;
+            setGenerating(false);
         }
     });
 
     // Download audio functionality
     downloadAudioBtn.addEventListener('click', () => {
         if (!currentAudioBlob) {
-            alert('No audio available to download.');
+            showError('No audio available to download.');
             return;
         }
 

@@ -16,6 +16,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const resultsHeader = document.getElementById('resultsHeader');
     const imageResults = document.getElementById('imageResults');
     const downloadAllBtn = document.getElementById('downloadAllBtn');
+    const errorSection = document.getElementById('errorSection');
+    const errorMessage = document.getElementById('errorMessage');
+
+    function showError(msg) {
+        if (errorMessage) errorMessage.textContent = msg;
+        if (errorSection) errorSection.classList.remove('d-none');
+    }
+
+    function hideError() {
+        if (errorSection) errorSection.classList.add('d-none');
+    }
+
+    function setGenerating(isGenerating) {
+        if (generateBtn) generateBtn.disabled = isGenerating;
+        if (clearBtn) clearBtn.disabled = isGenerating;
+        if (generating) generating.style.display = isGenerating ? 'block' : 'none';
+        if (generationProgress) generationProgress.style.display = isGenerating ? 'block' : 'none';
+    }
 
     // Update steps value display
     inferenceSteps.addEventListener('input', function() {
@@ -27,15 +45,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const prompt = promptInput.value.trim();
         
         if (!prompt) {
-            alert('Please enter a description for the image you want to generate.');
+            showError('Please enter a description for the image you want to generate.');
             promptInput.focus();
             return;
         }
 
-        // Disable button and show loading
-        generateBtn.disabled = true;
-        generating.style.display = 'block';
-        generationProgress.style.display = 'block';
+        hideError();
+        setGenerating(true);
         imageResults.innerHTML = '';
         resultsHeader.style.display = 'none';
 
@@ -68,12 +84,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('Generation error:', error);
-            alert(`Error generating image: ${error.message}`);
+            showError(error.message || 'Error generating image. Please try again.');
         } finally {
-            // Re-enable button and hide loading
-            generateBtn.disabled = false;
-            generating.style.display = 'none';
-            generationProgress.style.display = 'none';
+            setGenerating(false);
         }
     });
 
@@ -89,6 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
         promptOptimizer.checked = true;
         imageResults.innerHTML = '';
         resultsHeader.style.display = 'none';
+        hideError();
         promptInput.focus();
     });
 
@@ -282,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Download failed:', error);
-            alert('Download failed. Please try right-clicking the image and selecting "Save As" to download manually.');
+            showError('Download failed. Please try right-clicking the image and selecting "Save As" to download manually.');
         }
     }
 

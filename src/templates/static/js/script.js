@@ -16,8 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const MAX_CHARS = 50000;
     
     // UI elements
-    const loadingSpinner = document.getElementById('loadingSpinner');
-    const inputLoadingOverlay = document.getElementById('inputLoadingOverlay');
+    const cardLoadingOverlay = document.getElementById('cardLoadingOverlay');
     const resultsSection = document.getElementById('resultsSection');
     const errorSection = document.getElementById('errorSection');
     const errorMessage = document.getElementById('errorMessage');
@@ -340,20 +339,19 @@ document.addEventListener('DOMContentLoaded', function() {
         return div.innerHTML;
     }
     
-    // Show loading spinner
+    // Show loading overlay (covers both text and file tabs)
     function showLoading() {
         hideError();
         resultsSection.classList.add('d-none');
-        // Old global spinner hidden; show in-text overlay instead
-        loadingSpinner.classList.add('d-none');
-        if (inputLoadingOverlay) inputLoadingOverlay.classList.remove('d-none');
+        if (cardLoadingOverlay) cardLoadingOverlay.classList.remove('d-none');
+        if (textInput) textInput.readOnly = true;
         setSubmitting(true);
     }
     
-    // Hide loading spinner
+    // Hide loading overlay
     function hideLoading() {
-        loadingSpinner.classList.add('d-none');
-        if (inputLoadingOverlay) inputLoadingOverlay.classList.add('d-none');
+        if (cardLoadingOverlay) cardLoadingOverlay.classList.add('d-none');
+        if (textInput) textInput.readOnly = false;
         setSubmitting(false);
     }
     

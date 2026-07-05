@@ -16,9 +16,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const downloadTranscriptionBtn = document.getElementById('downloadTranscriptionBtn');
     const audioTypeSelect = document.getElementById('audioType');
     const languageCodeInput = document.getElementById('languageCode');
+    const errorSection = document.getElementById('errorSection');
+    const errorMessage = document.getElementById('errorMessage');
 
     let currentAudioFile = null;
     let currentTranscriptionData = null;
+
+    function showError(msg) {
+        if (errorMessage) errorMessage.textContent = msg;
+        if (errorSection) errorSection.classList.remove('d-none');
+    }
+
+    function hideError() {
+        if (errorSection) errorSection.classList.add('d-none');
+    }
+
+    function setTranscribing(isTranscribing) {
+        if (transcribing) transcribing.style.display = isTranscribing ? 'block' : 'none';
+        if (transcribeBtn) transcribeBtn.disabled = isTranscribing;
+        if (clearAudioBtn) clearAudioBtn.disabled = isTranscribing;
+    }
 
     // File handling
     function handleAudioFile(file) {
@@ -26,24 +43,23 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Check if file format is supported (MP3 or WAV only)
         const fileName = file.name.toLowerCase();
         const isMp3 = fileName.endsWith('.mp3') || file.type.includes('mpeg');
         const isWav = fileName.endsWith('.wav') || file.type.includes('wav');
-        
+
         if (!isMp3 && !isWav) {
-            alert('Only MP3 and WAV files are supported. Please select a different file.');
+            showError('Only MP3 and WAV files are supported. Please select a different file.');
             return;
         }
 
+        hideError();
         currentAudioFile = file;
         const url = URL.createObjectURL(file);
         audioPreview.src = url;
-        
-        // Format file size
+
         const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
         audioInfo.textContent = `${file.name} (${sizeInMB} MB)`;
-        
+
         audioAnalysisSection.style.display = 'block';
         clearResults();
     }
@@ -53,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        hideError();
         currentAudioFile = null;
         audioPreview.src = url;
         audioInfo.textContent = `Audio from URL: ${url}`;
@@ -82,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function() {
         audioInfo.textContent = 'No audio loaded';
         audioAnalysisSection.style.display = 'none';
         clearResults();
+        hideError();
     }
 
     // Drag and drop functionality
@@ -102,14 +120,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // File input change
     audioFileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
             handleAudioFile(e.target.files[0]);
         }
     });
 
-    // URL input handling
     audioUrl.addEventListener('blur', () => {
         const url = audioUrl.value.trim();
         if (url) {
@@ -127,37 +143,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Clear button
     clearAudioBtn.addEventListener('click', clearAll);
 
-    // Transcribe button
     transcribeBtn.addEventListener('click', async () => {
         if (!currentAudioFile && !audioUrl.value.trim()) {
-            alert('Please upload an MP3/WAV file or enter a valid audio URL.');
+            showError('Please upload an MP3/WAV file or enter a valid audio URL.');
             return;
         }
 
-        // Show loading state
-        transcribing.style.display = 'block';
-        transcribeBtn.disabled = true;
+        hideError();
+        setTranscribing(true);
 
         try {
             const formData = new FormData();
-            
+
             if (currentAudioFile) {
                 formData.append('audio', currentAudioFile);
             } else {
                 formData.append('audio_url', audioUrl.value.trim());
             }
 
-            // Include audio type and optional language code
             const audioType = (audioTypeSelect?.value || 'general').trim();
             formData.append('audio_type', audioType);
             const languageCode = (languageCodeInput?.value || '').trim();
             if (languageCode) {
                 formData.append('language', languageCode);
             }
-
 
             const response = await fetch('/audio-transcribe', {
                 method: 'POST',
@@ -170,30 +181,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(data.error || 'Transcription failed');
             }
 
-            // Display results
             currentTranscriptionData = data;
             transcriptionOutput.value = data.text || '';
             transcriptionControls.style.display = 'block';
 
         } catch (error) {
             console.error('Transcription error:', error);
-            alert(`Transcription failed: ${error.message}`);
+            showError(error.message || 'Transcription failed. Please try again.');
         } finally {
-            transcribing.style.display = 'none';
-            transcribeBtn.disabled = false;
+            setTranscribing(false);
         }
     });
 
-    // Copy transcription
     copyTranscriptionBtn.addEventListener('click', async () => {
         try {
             await navigator.clipboard.writeText(transcriptionOutput.value);
         } catch (error) {
             console.error('Copy error:', error);
+            showError('Failed to copy transcription to clipboard.');
         }
     });
 
-    // Download transcription
     downloadTranscriptionBtn.addEventListener('click', () => {
         const text = transcriptionOutput.value;
         if (!text) {
@@ -210,7 +218,4 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     });
-
-
-
 });
