@@ -385,6 +385,17 @@ def get_cache_bust_version() -> str:
     return datetime.now().strftime("%Y%m%d%H")
 
 
+def render_page(request: Request, template_name: str, **extra_context):
+    """Render a Jinja template using the Starlette 1.0+ TemplateResponse signature."""
+    context = {
+        "request": request,
+        "contact_email": os.getenv("CONTACT_EMAIL", ""),
+        "cache_version": get_cache_bust_version(),
+        **extra_context,
+    }
+    return templates.TemplateResponse(request, template_name, context)
+
+
 @app.get("/favicon.ico")
 async def favicon():
     return FileResponse("src/templates/static/favicon.ico")
@@ -423,113 +434,61 @@ async def android_chrome_512():
 @app.get("/", response_class=HTMLResponse)
 @app.head("/")
 async def index(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("index.html", context)
+    return render_page(request, "index.html")
 
 
 @app.get("/about", response_class=HTMLResponse)
 async def about(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("about.html", context)
+    return render_page(request, "about.html")
 
 
 @app.get("/privacy", response_class=HTMLResponse)
 async def privacy(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("privacy.html", context)
+    return render_page(request, "privacy.html")
 
 
 @app.get("/terms", response_class=HTMLResponse)
 async def terms(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("terms.html", context)
+    return render_page(request, "terms.html")
 
 
 @app.get("/contact", response_class=HTMLResponse)
 async def contact(request: Request):
-    context = {
-        "request": request,
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "recaptcha_site_key": os.getenv("RECAPTCHA_SITE_KEY", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("contact.html", context)
+    return render_page(
+        request,
+        "contact.html",
+        recaptcha_site_key=os.getenv("RECAPTCHA_SITE_KEY", ""),
+    )
 
 
 @app.get("/ocr", response_class=HTMLResponse)
 async def ocr_page(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("ocr.html", context)
+    return render_page(request, "ocr.html")
 
 
 @app.get("/audio-text", response_class=HTMLResponse)
 async def audio_text_page(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("audio-text.html", context)
+    return render_page(request, "audio-text.html")
 
 
 @app.get("/ai-detector", response_class=HTMLResponse)
 async def ai_detector_page(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("ai-detector.html", context)
+    return render_page(request, "ai-detector.html")
 
 
 @app.get("/ai-humanizer", response_class=HTMLResponse)
 async def ai_humanizer_page(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("ai-humanizer.html", context)
+    return render_page(request, "ai-humanizer.html")
 
 
 @app.get("/generate-image", response_class=HTMLResponse)
 async def generate_image_page(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("generate-image.html", context)
+    return render_page(request, "generate-image.html")
 
 
 @app.get("/text-to-speech", response_class=HTMLResponse)
 async def text_to_speech_page(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("text-to-speech.html", context)
+    return render_page(request, "text-to-speech.html")
 
 
 @app.post("/contact")
@@ -564,72 +523,37 @@ async def submit_contact(request: Request):
 
 @app.get("/cookies", response_class=HTMLResponse)
 async def cookies(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("cookies.html", context)
+    return render_page(request, "cookies.html")
 
 
 @app.get("/technology/ai-detector", response_class=HTMLResponse)
 async def technology_ai_detector(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("technology-ai-detector.html", context)
+    return render_page(request, "technology-ai-detector.html")
 
 
 @app.get("/technology/ocr", response_class=HTMLResponse)
 async def technology_ocr(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("technology-ocr.html", context)
+    return render_page(request, "technology-ocr.html")
 
 
 @app.get("/technology/audio-text", response_class=HTMLResponse)
 async def technology_audio_text(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("technology-audio-text.html", context)
+    return render_page(request, "technology-audio-text.html")
 
 
 @app.get("/technology/text-to-speech", response_class=HTMLResponse)
 async def technology_text_to_speech(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("technology-text-to-speech.html", context)
+    return render_page(request, "technology-text-to-speech.html")
 
 
 @app.get("/technology/text-to-image", response_class=HTMLResponse)
 async def technology_text_to_image(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("technology-text-to-image.html", context)
+    return render_page(request, "technology-text-to-image.html")
 
 
 @app.get("/technology/ai-humanizer", response_class=HTMLResponse)
 async def technology_ai_humanizer(request: Request):
-    context = {
-        "request": request, 
-        "contact_email": os.getenv("CONTACT_EMAIL", ""),
-        "cache_version": get_cache_bust_version()
-    }
-    return templates.TemplateResponse("technology-ai-humanizer.html", context)
+    return render_page(request, "technology-ai-humanizer.html")
 
 
 @app.get("/ads.txt", response_class=PlainTextResponse)
