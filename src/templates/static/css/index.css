@@ -45,16 +45,17 @@ body.index-page {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 100%;
-    padding: 0 1rem;
+    min-height: var(--header-height);
+    box-sizing: border-box;
+    padding: 0.75rem 1.25rem;
     max-width: 100%;
     margin: 0 auto;
-    gap: 1rem;
+    gap: 1.25rem;
 }
 
 @media (min-width: 768px) {
     .index-page .site-header .container {
-        padding: 0 2rem;
+        padding: 0.75rem 2rem;
         justify-content: space-between;
     }
 }
