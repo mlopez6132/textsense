@@ -66,3 +66,6 @@ uploads/
 
 # Test files
 test_*.*
+
+# NLTK corpora (downloaded at build time)
+nltk_data/

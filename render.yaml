@@ -3,9 +3,11 @@ services:
     name: textsense
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python scripts/download_nltk_data.py
     startCommand: uvicorn src.app:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: NLTK_DATA
+        value: /opt/render/project/src/nltk_data
       - key: TOKENIZERS_PARALLELISM
         value: "true"
       - key: HF_INFERENCE_URL

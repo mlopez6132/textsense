@@ -14,29 +14,73 @@ from textstat import flesch_reading_ease, flesch_kincaid_grade
 logger = logging.getLogger(__name__)
 
 # NLTK imports with error handling
+NLTK_RESOURCES = (
+    ("tokenizers/punkt", "punkt"),
+    ("tokenizers/punkt_tab", "punkt_tab"),
+    ("corpora/stopwords", "stopwords"),
+    ("corpora/wordnet", "wordnet"),
+)
+
+
+def _get_nltk_data_dir() -> str:
+    return os.path.abspath(
+        os.environ.get(
+            "NLTK_DATA",
+            os.path.join(os.path.dirname(__file__), "..", "..", "nltk_data"),
+        )
+    )
+
+
+def _ensure_nltk_resources() -> bool:
+    try:
+        import nltk
+        from nltk.tokenize import sent_tokenize, word_tokenize
+        from nltk.corpus import stopwords
+    except ImportError:
+        logger.warning("NLTK not available. Some features will be limited.")
+        return False
+
+    data_dir = _get_nltk_data_dir()
+    if os.path.isdir(data_dir) and data_dir not in nltk.data.path:
+        nltk.data.path.insert(0, data_dir)
+
+    for resource_path, package in NLTK_RESOURCES:
+        try:
+            nltk.data.find(resource_path)
+        except LookupError:
+            try:
+                os.makedirs(data_dir, exist_ok=True)
+                nltk.download(package, download_dir=data_dir, quiet=True)
+            except Exception as download_error:
+                logger.warning(
+                    "Failed to download NLTK package '%s': %s",
+                    package,
+                    download_error,
+                )
+                return False
+
+    try:
+        sent_tokenize("Test sentence.")
+        word_tokenize("test")
+        stopwords.words("english")
+    except LookupError as verify_error:
+        logger.warning("NLTK resources incomplete: %s", verify_error)
+        return False
+    except Exception as verify_error:
+        logger.warning("NLTK verification failed: %s", verify_error)
+        return False
+
+    return True
+
+
 try:
     import nltk
     from nltk.tokenize import sent_tokenize, word_tokenize
     from nltk.corpus import stopwords
-    
-    # Download necessary NLTK data
-    try:
-        nltk.data.find('tokenizers/punkt')
-    except LookupError:
-        nltk.download('punkt', quiet=True)
-        nltk.download('punkt_tab', quiet=True)
-    
-    try:
-        nltk.data.find('corpora/stopwords')
-    except LookupError:
-        nltk.download('stopwords', quiet=True)
-    
-    try:
-        nltk.data.find('corpora/wordnet')
-    except LookupError:
-        nltk.download('wordnet', quiet=True)
-        
-    NLTK_AVAILABLE = True
+
+    NLTK_AVAILABLE = _ensure_nltk_resources()
+    if not NLTK_AVAILABLE:
+        logger.warning("NLTK not available. Some features will be limited.")
 except ImportError:
     NLTK_AVAILABLE = False
     logger.warning("NLTK not available. Some features will be limited.")
