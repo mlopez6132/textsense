@@ -15,10 +15,8 @@ logger = logging.getLogger(__name__)
 
 # NLTK imports with error handling
 NLTK_RESOURCES = (
-    ("tokenizers/punkt", "punkt"),
     ("tokenizers/punkt_tab", "punkt_tab"),
     ("corpora/stopwords", "stopwords"),
-    ("corpora/wordnet", "wordnet"),
 )
 
 
@@ -31,6 +29,13 @@ def _get_nltk_data_dir() -> str:
     )
 
 
+def _allow_runtime_nltk_download() -> bool:
+    """Avoid GitHub rate limits on Render by never downloading at runtime there."""
+    if os.environ.get("RENDER"):
+        return False
+    return os.environ.get("NLTK_ALLOW_DOWNLOAD", "").lower() in ("1", "true", "yes")
+
+
 def _ensure_nltk_resources() -> bool:
     try:
         import nltk
@@ -41,16 +46,31 @@ def _ensure_nltk_resources() -> bool:
         return False
 
     data_dir = _get_nltk_data_dir()
-    if os.path.isdir(data_dir) and data_dir not in nltk.data.path:
+    if os.path.isdir(data_dir):
         nltk.data.path.insert(0, data_dir)
 
+    missing = []
     for resource_path, package in NLTK_RESOURCES:
         try:
             nltk.data.find(resource_path)
         except LookupError:
+            missing.append(package)
+
+    if missing:
+        if not _allow_runtime_nltk_download():
+            logger.warning(
+                "NLTK data missing (%s) at %s. Run scripts/download_nltk_data.py locally "
+                "or set NLTK_ALLOW_DOWNLOAD=true to fetch at runtime.",
+                ", ".join(missing),
+                data_dir,
+            )
+            return False
+        for package in missing:
             try:
                 os.makedirs(data_dir, exist_ok=True)
-                nltk.download(package, download_dir=data_dir, quiet=True)
+                if not nltk.download(package, download_dir=data_dir, quiet=True):
+                    logger.warning("Failed to download NLTK package '%s'.", package)
+                    return False
             except Exception as download_error:
                 logger.warning(
                     "Failed to download NLTK package '%s': %s",

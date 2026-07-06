@@ -3,7 +3,7 @@ services:
     name: textsense
     env: python
     plan: free
-    buildCommand: pip install -r requirements.txt && python scripts/download_nltk_data.py
+    buildCommand: pip install -r requirements.txt
     startCommand: uvicorn src.app:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: NLTK_DATA
