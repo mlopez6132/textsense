@@ -146,13 +146,32 @@ body.index-page {
     color: rgba(255, 255, 255, 0.78);
 }
 
-.index-page .nav-link {
-    color: rgba(255, 255, 255, 0.92);
+@media (min-width: 768px) {
+    .index-page .nav-link {
+        color: rgba(255, 255, 255, 0.92);
+    }
+
+    .index-page .nav-link:hover {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.12);
+    }
 }
 
-.index-page .nav-link:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.12);
+@media (max-width: 767.98px) {
+    .index-page .site-nav .nav-link {
+        color: var(--color-text-primary);
+        background: rgba(255, 255, 255, 0.92);
+        border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .index-page .site-nav .nav-link:hover {
+        color: var(--color-primary);
+        background: rgba(0, 122, 255, 0.1);
+    }
+
+    .index-page .site-nav .social-link {
+        color: var(--color-text-primary);
+    }
 }
 
 .index-page .hamburger-line {
