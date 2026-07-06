@@ -48,7 +48,7 @@ body {
     background-attachment: fixed;
 }
 
-/* Gradient background only for index page */
+/* Gradient background only for index page (overridden in index.css) */
 body.index-page {
     background: linear-gradient(135deg, #E8F0F8 0%, #F0F5FA 25%, #F8FAFC 50%, #F0F5FA 75%, #E8F0F8 100%);
     background-attachment: fixed;
@@ -1401,50 +1401,11 @@ main.container .card {
    20. INDEX PAGE SPECIFIC STYLES
    ----------------------------------------------------------------------------- */
 
-/* Hero Section */
+/* Hero Section (index page styles live in index.css) */
 .hero-section {
-    background: url('../index-img.png') center center / cover no-repeat;
     color: white;
-    padding: 30px 0;
     position: relative;
-    overflow: hidden;
     margin-bottom: 0;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
-}
-
-.hero-video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.8s ease;
-}
-
-.hero-video.is-playing {
-    opacity: 1;
-}
-
-.hero-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 30, 80, 0.35);
-    pointer-events: none;
-    z-index: 1;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .hero-video {
-        display: none;
-    }
 }
 
 /* Feature Cards */

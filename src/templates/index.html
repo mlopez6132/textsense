@@ -81,9 +81,9 @@
         <main class="page-container">
             <!-- Hero Section -->
             <section class="hero-section">
-                <video class="hero-video" muted loop playsinline preload="auto" poster="static/index-img.png" aria-hidden="true">
-                    <source src="motion/index-motion.mp4" type="video/mp4">
-                </video>
+                <div class="hero-media" aria-hidden="true">
+                    <img class="hero-image" src="static/index-img.png" alt="">
+                </div>
                 <div class="container">
                     <div class="row align-items-center">
                         <div class="col-lg-8">
@@ -393,14 +393,6 @@
                     menuToggle.classList.toggle('active');
                     siteNav.classList.toggle('active');
                 });
-            }
-
-            const heroVideo = document.querySelector('.hero-video');
-            if (heroVideo && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                setTimeout(function() {
-                    heroVideo.classList.add('is-playing');
-                    heroVideo.play().catch(function() {});
-                }, 2000);
             }
         });
     </script>

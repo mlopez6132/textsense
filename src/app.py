@@ -327,7 +327,6 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Static and templates
 app.mount("/static", StaticFiles(directory="src/templates/static"), name="static")
-app.mount("/motion", StaticFiles(directory="src/templates/motion"), name="motion")
 templates = Jinja2Templates(directory="src/templates")
 
 
@@ -337,7 +336,7 @@ async def add_cache_and_cdn_headers(request: Request, call_next):
     response = await call_next(request)
     
     # Add cache headers for static assets
-    if request.url.path.startswith(("/static/", "/motion/")):
+    if request.url.path.startswith("/static/"):
         # Check if it's a CSS file - use shorter cache for CSS to allow updates
         if request.url.path.endswith(".css"):
             # CSS files: shorter cache (1 hour) to allow updates

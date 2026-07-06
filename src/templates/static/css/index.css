@@ -15,17 +15,18 @@ body {
 
 .container-fluid {
     max-width: 100%;
-    width: 100vw;
+    width: 100%;
     margin: 0;
     padding: 0;
     position: relative;
     z-index: 1;
+    overflow-x: clip;
 }
 
 /* Full width page container */
 .page-container {
     max-width: 100%;
-    width: 100vw;
+    width: 100%;
     margin: 0;
     padding: 0;
 }
@@ -35,9 +36,11 @@ body {
     padding-top: 0;
 }
 
-/* Keep body padding-top for index page to prevent header overlap */
+/* Keep body flush on index page; hero handles header offset */
 body.index-page {
-    padding-top: var(--header-height);
+    padding-top: 0;
+    background: #eef2f6;
+    background-attachment: scroll;
 }
 
 /* Ensure header container spacing matches navigation pages */
@@ -69,29 +72,95 @@ body.index-page {
 }
 
 /* -----------------------------------------------------------------------------
-   Hero Section - Simplified Approach
-   Full width background with negative top margin to touch the header
+   Hero Section
+   Full-bleed image background aligned to page content width
    ----------------------------------------------------------------------------- */
 
-.hero-section {
-    width: 100vw;
-    max-width: 100vw;
+.index-page .hero-section {
+    width: 100%;
     margin: 0;
-    margin-top: calc(var(--header-height) * -1);
-    padding: calc(100px + var(--header-height)) 0 100px;
+    padding: calc(var(--header-height) + 3.5rem) 0 4rem;
     position: relative;
-    left: 50%;
-    right: 50%;
-    margin-left: -50vw;
-    margin-right: -50vw;
+    overflow: hidden;
+    min-height: clamp(480px, 52vw, 680px);
+    display: flex;
+    align-items: center;
+    background-color: #061428;
+    color: #fff;
+    box-shadow: none;
 }
 
-.hero-section .container {
+.index-page .hero-media {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.index-page .hero-image {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translate(-50%, -50%);
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    pointer-events: none;
+}
+
+.index-page .hero-media::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(6, 20, 40, 0.38);
+    pointer-events: none;
+}
+
+.index-page .hero-section .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 2rem;
     position: relative;
     z-index: 2;
+    width: 100%;
+}
+
+/* Transparent header over hero image */
+.index-page .site-header::before {
+    background: rgba(6, 20, 40, 0.28);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    box-shadow: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.index-page .brand-name {
+    color: #fff;
+}
+
+.index-page .brand-tagline {
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.index-page .nav-link {
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.index-page .nav-link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.index-page .hamburger-line {
+    background-color: #fff;
+}
+
+.index-page .menu-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.12);
 }
 
 @media (max-width: 767.98px) {
@@ -197,8 +266,9 @@ main, .main-content, .page-container {
    ----------------------------------------------------------------------------- */
 
 @media (max-width: 768px) {
-    .hero-section {
-        padding: calc(80px + var(--header-height)) 0 60px;
+    .index-page .hero-section {
+        min-height: clamp(360px, 70vw, 520px);
+        padding: calc(var(--header-height) + 2.5rem) 0 3rem;
     }
 
     .about-section {
