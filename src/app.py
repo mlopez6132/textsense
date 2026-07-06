@@ -327,6 +327,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Static and templates
 app.mount("/static", StaticFiles(directory="src/templates/static"), name="static")
+app.mount("/motion", StaticFiles(directory="src/templates/motion"), name="motion")
 templates = Jinja2Templates(directory="src/templates")
 
 
@@ -336,12 +337,12 @@ async def add_cache_and_cdn_headers(request: Request, call_next):
     response = await call_next(request)
     
     # Add cache headers for static assets
-    if request.url.path.startswith("/static/"):
+    if request.url.path.startswith(("/static/", "/motion/")):
         # Check if it's a CSS file - use shorter cache for CSS to allow updates
         if request.url.path.endswith(".css"):
             # CSS files: shorter cache (1 hour) to allow updates
             response.headers["Cache-Control"] = "public, max-age=3600, must-revalidate"
-        elif request.url.path.endswith((".js", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".svg")):
+        elif request.url.path.endswith((".js", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".svg", ".mp4", ".webm")):
             # Images and JS: longer cache (1 week) but not immutable
             response.headers["Cache-Control"] = "public, max-age=604800"
         else:

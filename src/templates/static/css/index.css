@@ -94,63 +94,6 @@ body.index-page {
     z-index: 2;
 }
 
-.dolphin-ascii-wrap {
-    display: inline-block;
-    max-width: 100%;
-    animation: dolphin-swim 4s ease-in-out infinite;
-}
-
-.dolphin-ascii {
-    background: none;
-    border: 0;
-    color: currentColor;
-    display: inline-block;
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-    font-size: clamp(7px, 1.4vw, 16px);
-    letter-spacing: 0;
-    line-height: 1;
-    margin: 0;
-    padding: 0;
-    text-align: left;
-    white-space: pre;
-}
-
-.dolphin-line {
-    display: block;
-    animation: dolphin-wave 3s ease-in-out infinite;
-}
-
-@keyframes dolphin-swim {
-    0%, 100% {
-        transform: translate(0, 8px);
-    }
-    25% {
-        transform: translate(6px, 0);
-    }
-    50% {
-        transform: translate(12px, -10px);
-    }
-    75% {
-        transform: translate(6px, 0);
-    }
-}
-
-@keyframes dolphin-wave {
-    0%, 100% {
-        transform: translateX(0);
-    }
-    50% {
-        transform: translateX(5px);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .dolphin-ascii-wrap,
-    .dolphin-line {
-        animation: none;
-    }
-}
-
 @media (max-width: 767.98px) {
     body:has(.site-nav.active) .hero-section,
     body:has(.site-nav.active) .hero-section .container {
