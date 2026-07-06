@@ -2156,21 +2156,16 @@ main.container .card {
 
 /* Humanizer result highlighting */
 .humanizer-result {
+    color: var(--color-text-primary);
     min-height: 12rem;
-    max-height: 28rem;
-    overflow-y: auto;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    line-height: 1.7;
-    font-size: 1rem;
 }
 
 .humanizer-result mark.humanizer-change,
 .humanizer-change {
-    background: linear-gradient(180deg, rgba(48, 209, 88, 0.28) 0%, rgba(48, 209, 88, 0.18) 100%);
-    color: #0f5132;
+    background: linear-gradient(180deg, rgba(48, 209, 88, 0.35) 0%, rgba(48, 209, 88, 0.22) 100%);
+    color: #0b5e36;
     border-radius: 0.25rem;
-    padding: 0.05rem 0.2rem;
+    padding: 0.1rem 0.25rem;
     font-weight: 600;
 }
 

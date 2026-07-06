@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const inputLoadingOverlay = document.getElementById('inputLoadingOverlay');
     const resultsSection = document.getElementById('resultsSection');
     const resultText = document.getElementById('resultText');
+    const resultHighlight = document.getElementById('resultHighlight');
     const errorSection = document.getElementById('errorSection');
     const errorMessage = document.getElementById('errorMessage');
     const submitBtn = humanizerForm ? humanizerForm.querySelector('button[type="submit"]') : null;
@@ -70,10 +71,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function displayResults(data) {
-        resultText.value = data.humanized_text;
-        const resultHighlight = document.getElementById('resultHighlight');
+        const plainText = data.humanized_text || '';
+        const highlightedHtml = (data.highlighted_html || '').trim();
+
+        resultText.value = plainText;
+
         if (resultHighlight) {
-            resultHighlight.innerHTML = data.highlighted_html || escapeHtml(data.humanized_text || '');
+            if (highlightedHtml) {
+                resultHighlight.innerHTML = highlightedHtml;
+            } else {
+                resultHighlight.textContent = plainText;
+            }
+
+            // Fallback if HTML rendering produced no visible text
+            if (!resultHighlight.textContent.trim() && plainText) {
+                resultHighlight.textContent = plainText;
+            }
         }
 
         const changesCount = document.getElementById('changesCount');
@@ -228,19 +241,11 @@ document.addEventListener('DOMContentLoaded', function() {
         errorSection.classList.add('d-none');
     }
 
-    function escapeHtml(text) {
-        return String(text)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
-
     // Copy functionality
     window.copyToClipboard = function() {
-        if (resultText && resultText.value) {
-            navigator.clipboard.writeText(resultText.value).then(() => {
+        const textToCopy = (resultText && resultText.value) || (resultHighlight && resultHighlight.textContent) || '';
+        if (textToCopy) {
+            navigator.clipboard.writeText(textToCopy).then(() => {
                 const btn = document.querySelector('button[onclick="copyToClipboard()"]');
                 const originalHtml = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-check me-1"></i>Copied!';
