@@ -3,6 +3,8 @@ import re
 import random
 import math
 import logging
+import html
+import difflib
 import urllib.parse
 from collections import Counter
 from typing import Dict, Tuple
@@ -108,6 +110,10 @@ except ImportError:
 class AdvancedAIHumanizer:
     def __init__(self):
         self.api_key = os.getenv("POLLINATIONS_API_KEY", "").strip()
+        self.api_url = os.getenv(
+            "POLLINATIONS_TEXT_URL",
+            "https://gen.pollinations.ai/v1/chat/completions",
+        ).strip()
         self.setup_humanization_patterns()
         self.setup_fallback_embeddings()
         if NLTK_AVAILABLE:
@@ -225,70 +231,81 @@ class AdvancedAIHumanizer:
         except Exception as e:
             logger.error(f"Linguistic resource error: {e}")
 
+    def build_highlighted_html(self, original: str, modified: str) -> Tuple[str, int]:
+        """Highlight changed words in the humanized output."""
+        orig_words = original.split()
+        mod_words = modified.split()
+        if not mod_words:
+            return html.escape(modified), 0
+
+        matcher = difflib.SequenceMatcher(None, orig_words, mod_words)
+        html_parts = []
+        changed_words = 0
+
+        for op, _i1, _i2, j1, j2 in matcher.get_opcodes():
+            chunk_words = mod_words[j1:j2]
+            if not chunk_words:
+                continue
+            chunk = html.escape(" ".join(chunk_words))
+            if op == "equal":
+                html_parts.append(chunk)
+            elif op in ("insert", "replace"):
+                html_parts.append(f'<mark class="humanizer-change">{chunk}</mark>')
+                changed_words += len(chunk_words)
+
+        return " ".join(html_parts), changed_words
+
     async def call_pollinations_api(self, text: str, model: str = "openai", temperature: float = 0.7) -> str:
         """
         Improve humanization by calling Pollinations.ai text API.
         Uses the prompt to request a more human-like rewrite.
         """
         try:
-            # Construct a prompt that encourages human-like rewriting
-            system_prompt = (
-                "Rewrite the following text to make it sound more natural and human-like. "
-                "Remove AI patterns, vary sentence structure, and use a conversational but professional tone. "
-                "Do not change the core meaning."
-            )
-            full_prompt = f"{system_prompt} Text: {text}"
-
-            # Use the new Pollinations API endpoint (migrated from legacy text.pollinations.ai)
-            # For authenticated users, use enter.pollinations.ai
-            # Prepare headers with Bearer token authentication
             headers = {"Content-Type": "application/json"}
             if self.api_key:
                 headers["Authorization"] = f"Bearer {self.api_key}"
             else:
-                # If no API key, don't make the request (new API requires auth)
                 logger.warning("Pollinations API key not available, skipping API call")
                 return text
 
-            # Use POST request with JSON payload for new API format
             payload = {
                 "model": model,
                 "messages": [
                     {
                         "role": "system",
-                        "content": "Rewrite the following text to make it sound more natural and human-like. Remove AI patterns, vary sentence structure, and use a conversational but professional tone. Do not change the core meaning."
+                        "content": (
+                            "Rewrite the following text to make it sound more natural and human-like. "
+                            "Remove AI patterns, vary sentence structure, and use a conversational but "
+                            "professional tone. Do not change the core meaning."
+                        ),
                     },
-                    {
-                        "role": "user",
-                        "content": text
-                    }
+                    {"role": "user", "content": text},
                 ],
-                "temperature": temperature
+                "temperature": temperature,
             }
 
-            # Use new enter.pollinations.ai for authenticated requests
-            url = "https://enter.pollinations.ai/chat"
-
             async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(url, json=payload, headers=headers)
+                response = await client.post(self.api_url, json=payload, headers=headers)
 
                 if response.status_code == 200:
-                    # Parse JSON response (chat completions format)
                     data = response.json()
                     message = (data.get("choices") or [{}])[0].get("message") or {}
                     content = (message.get("content") or "").strip()
                     if content:
                         return content
-                    # Fallback to raw text if JSON parsing fails
                     return response.text.strip()
-                else:
-                    logger.warning(f"Pollinations API failed with status {response.status_code}: {response.text}")
-                    return text
+
+                logger.warning(
+                    "Pollinations API failed with status %s: %s",
+                    response.status_code,
+                    response.text,
+                )
+                return text
         except Exception as e:
             logger.error(f"Pollinations API error: {e}")
             return text
 
-    async def humanize_text(self, text: str, intensity: str = "standard", use_pollinations: bool = True) -> Tuple[str, Dict]:
+    async def humanize_text(self, text: str, intensity: str = "standard", use_pollinations: bool = True) -> Tuple[str, Dict, str]:
         """Main humanization method with advanced processing"""
         if not text or not text.strip():
             raise ValueError("Please provide text to humanize.")
@@ -324,15 +341,19 @@ class AdvancedAIHumanizer:
             
             # Step 4: Calculate comprehensive metrics including detector scores
             metrics = self.get_analysis_metrics(current_text, original_text)
-            
+
             # Merge quality metrics into main metrics
             metrics.update(quality_metrics)
-            
-            return current_text, metrics
+
+            highlighted_html, changes_count = self.build_highlighted_html(original_text, current_text)
+            metrics["changes_count"] = changes_count
+
+            return current_text, metrics, highlighted_html
             
         except Exception as e:
             logger.error(f"Humanization error: {e}")
-            return text, {}
+            highlighted_html, _ = self.build_highlighted_html(text, text)
+            return text, {}, highlighted_html
 
     def replace_ai_patterns(self, text: str, intensity: int = 2) -> str:
         """Replace AI-flagged patterns aggressively"""

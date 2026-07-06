@@ -18,7 +18,10 @@ class ImageGenerator:
     def __init__(self):
         # Use new enter.pollinations.ai for text API (migrated from legacy text.pollinations.ai)
         # The new API uses /chat endpoint for chat completions
-        self.text_api_url = os.getenv("FLUX_TEXT_URL", "https://enter.pollinations.ai/chat").strip()
+        self.text_api_url = os.getenv(
+            "FLUX_TEXT_URL",
+            "https://gen.pollinations.ai/v1/chat/completions",
+        ).strip()
         # Use new gen.pollinations.ai API base URL
         self.image_api_base = os.getenv("FLUX_IMAGE_BASE", "https://gen.pollinations.ai").strip()
         self.auth_token = os.getenv("FLUX_API_KEY", "").strip()

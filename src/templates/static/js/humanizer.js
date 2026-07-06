@@ -71,6 +71,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function displayResults(data) {
         resultText.value = data.humanized_text;
+        const resultHighlight = document.getElementById('resultHighlight');
+        if (resultHighlight) {
+            resultHighlight.innerHTML = data.highlighted_html || escapeHtml(data.humanized_text || '');
+        }
+
+        const changesCount = document.getElementById('changesCount');
+        const changedWords = data.metrics?.changes_count;
+        if (changesCount) {
+            changesCount.textContent = typeof changedWords === 'number'
+                ? `${changedWords.toLocaleString()} word${changedWords === 1 ? '' : 's'} changed`
+                : '';
+        }
         
         // Update metrics
         const metrics = data.metrics || {};
@@ -214,6 +226,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function hideError() {
         errorSection.classList.add('d-none');
+    }
+
+    function escapeHtml(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
     }
 
     // Copy functionality

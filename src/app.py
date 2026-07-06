@@ -604,9 +604,10 @@ async def humanize_text(
 ):
     """Humanize text to reduce AI detection likelihood."""
     try:
-        result, metrics = await text_humanizer.humanize_text(text, intensity)
+        result, metrics, highlighted_html = await text_humanizer.humanize_text(text, intensity)
         return JSONResponse({
             "humanized_text": result,
+            "highlighted_html": highlighted_html,
             "metrics": metrics
         })
     except Exception as e:
